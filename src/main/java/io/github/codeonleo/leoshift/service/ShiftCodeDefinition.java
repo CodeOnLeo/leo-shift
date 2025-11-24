@@ -3,10 +3,10 @@ package io.github.codeonleo.leoshift.service;
 import java.time.LocalTime;
 
 public enum ShiftCodeDefinition {
-    D("Day", LocalTime.of(6, 0), LocalTime.of(14, 0)),
-    A("Afternoon", LocalTime.of(14, 0), LocalTime.of(22, 0)),
-    N("Night", LocalTime.of(22, 0), LocalTime.of(6, 0)),
-    O("Off", null, null);
+    D("주간", LocalTime.of(6, 0), LocalTime.of(14, 0)),
+    A("오후", LocalTime.of(14, 0), LocalTime.of(22, 0)),
+    N("야간", LocalTime.of(22, 0), LocalTime.of(6, 0)),
+    O("휴무", null, null);
 
     private final String label;
     private final LocalTime start;
@@ -32,7 +32,7 @@ public enum ShiftCodeDefinition {
 
     public String timeRangeLabel() {
         if (this == O || start == null || end == null) {
-            return "Off";
+            return "휴무";
         }
         return start + "–" + end;
     }

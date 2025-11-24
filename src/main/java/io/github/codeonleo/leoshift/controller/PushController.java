@@ -5,6 +5,7 @@ import io.github.codeonleo.leoshift.dto.PushSubscriptionRequest;
 import io.github.codeonleo.leoshift.service.PushNotificationService;
 import jakarta.validation.Valid;
 import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/push")
+@Slf4j
 public class PushController {
 
     private final PushNotificationService pushNotificationService;
@@ -43,7 +45,14 @@ public class PushController {
 
     @PostMapping("/send-scheduled-reminder")
     public Map<String, Object> sendScheduledReminder() {
-        int sent = pushNotificationService.sendScheduledReminder();
-        return Map.of("sent", sent, "message", "Scheduled reminder processed");
+        try {
+            log.info("Scheduled reminder endpoint called");
+            int sent = pushNotificationService.sendScheduledReminder();
+            log.info("Scheduled reminder sent to {} subscribers", sent);
+            return Map.of("sent", sent, "message", "Scheduled reminder processed");
+        } catch (Exception e) {
+            log.error("Failed to send scheduled reminder", e);
+            throw e;
+        }
     }
 }

@@ -1,61 +1,102 @@
 :root {
-  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  color: #0f172a;
-  background-color: #f8fafc;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+  color: #1c1c1e;
+  background-color: #f2f2f7;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
 }
 
 body {
   margin: 0;
   padding: 0;
-  background-color: #eef2ff;
+  background-color: #f2f2f7;
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 header {
-  background: linear-gradient(120deg, #0f172a, #2563eb);
+  background: linear-gradient(135deg, #007AFF, #5856D6);
   color: #fff;
-  padding: 1.5rem;
+  padding: max(1.5rem, env(safe-area-inset-top) + 1rem) 1.5rem 1.5rem;
   text-align: center;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+header h1 {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+header p {
+  margin: 0.5rem 0 0;
+  opacity: 0.9;
+  font-size: 0.95rem;
 }
 
 main {
-  max-width: 960px;
+  max-width: 100%;
   margin: 0 auto;
-  padding: 1.5rem;
+  padding: 1rem;
+  padding-bottom: calc(1rem + env(safe-area-inset-bottom));
 }
 
 section {
   background: #fff;
-  border-radius: 12px;
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  border-radius: 16px;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
+section h2 {
+  margin: 0 0 1rem;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #1c1c1e;
+}
+
+/* Today Card */
 .today-card {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: linear-gradient(135deg, #F5F5F7, #E8E8ED);
+  border-radius: 12px;
 }
 
 .today-card strong {
-  font-size: 1.25rem;
+  font-size: 1.5rem;
+  color: #007AFF;
 }
 
+/* Upcoming Cards */
 .upcoming-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
   margin-top: 1rem;
 }
 
 .upcoming-card {
-  flex: 1 1 150px;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 0.75rem;
-  background: #f8fafc;
+  border: none;
+  border-radius: 12px;
+  padding: 1rem;
+  background: #F5F5F7;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
+.upcoming-card strong {
+  color: #007AFF;
+  font-size: 1.1rem;
+}
+
+/* Calendar */
 .calendar-header {
   display: flex;
   justify-content: space-between;
@@ -63,133 +104,279 @@ section {
   margin-bottom: 1rem;
 }
 
+.calendar-header button {
+  background: #007AFF;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  width: 44px;
+  height: 44px;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.calendar-header button:active {
+  opacity: 0.7;
+  transform: scale(0.95);
+}
+
+.calendar-header h2 {
+  margin: 0;
+  font-size: 1.3rem;
+}
+
 .calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 0.5rem;
+  gap: 6px;
 }
 
 .day-cell {
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  padding: 0.75rem;
-  min-height: 90px;
+  border: 1px solid #e5e5ea;
+  border-radius: 12px;
+  padding: 0.6rem 0.4rem;
+  min-height: 85px;
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
   background: #fff;
   cursor: pointer;
-  transition: transform 0.1s ease, box-shadow 0.1s ease;
+  -webkit-tap-highlight-color: transparent;
+  transition: all 0.2s ease;
 }
 
-.day-cell.weekday,
-.day-cell.empty {
-  background: transparent;
-  border: none;
-  box-shadow: none;
-  cursor: default;
-  min-height: 40px;
-  font-weight: 600;
+.day-cell:active {
+  transform: scale(0.95);
+  background: #f5f5f7;
 }
 
 .day-cell.weekday {
-  color: #475569;
+  background: transparent;
+  border: none;
+  min-height: 35px;
+  font-weight: 600;
+  color: #8e8e93;
+  font-size: 0.85rem;
+  cursor: default;
 }
 
-.day-cell:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+.day-cell.weekday:active {
+  transform: none;
+  background: transparent;
+}
+
+.day-cell.empty {
+  background: transparent;
+  border: none;
+  cursor: default;
+}
+
+.day-cell.empty:active {
+  transform: none;
 }
 
 .day-cell.today {
-  border: 2px solid #2563eb;
+  border: 2px solid #007AFF;
+  background: #E3F2FF;
 }
 
 .day-cell .date-label {
   font-weight: 600;
+  font-size: 0.9rem;
+  color: #1c1c1e;
 }
 
 .day-cell .shift-code {
-  font-size: 1.25rem;
+  font-size: 1.4rem;
   font-weight: 700;
+  color: #007AFF;
 }
 
+.day-cell .memos {
+  font-size: 0.7rem;
+  color: #8e8e93;
+  text-align: center;
+  line-height: 1.2;
+}
+
+/* Legend */
 .legend {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 0.75rem;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
   margin-top: 1rem;
 }
 
 .legend-item {
   padding: 0.75rem;
-  background: #f1f5f9;
-  border-radius: 8px;
+  background: #f5f5f7;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  text-align: center;
+  font-weight: 500;
 }
 
+/* Forms */
 .pattern-form,
 .notification-form,
 .day-detail-form {
   display: flex;
   flex-direction: column;
+  gap: 1rem;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-weight: 500;
+  font-size: 0.95rem;
+  color: #1c1c1e;
+}
+
+.checkbox-label {
+  flex-direction: row;
+  align-items: center;
   gap: 0.75rem;
 }
 
-input,
-select,
-textarea,
-button {
-  font: inherit;
+.checkbox-label input[type="checkbox"] {
+  width: 24px;
+  height: 24px;
+  margin: 0;
 }
 
 input,
 textarea,
 select {
-  padding: 0.6rem;
-  border-radius: 8px;
-  border: 1px solid #cbd5f5;
+  font: inherit;
+  padding: 0.85rem;
+  border-radius: 12px;
+  border: 1px solid #d1d1d6;
+  background: #fff;
+  font-size: 1rem;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: #007AFF;
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
 }
 
 button {
-  padding: 0.7rem 1rem;
+  padding: 0.9rem 1.2rem;
   border: none;
-  border-radius: 8px;
+  border-radius: 12px;
   cursor: pointer;
-  background: #2563eb;
+  background: #007AFF;
   color: #fff;
   font-weight: 600;
+  font-size: 1rem;
+  -webkit-tap-highlight-color: transparent;
+  transition: all 0.2s ease;
+  min-height: 50px;
+}
+
+button:active {
+  transform: scale(0.97);
+  opacity: 0.8;
 }
 
 button.secondary {
-  background: #475569;
+  background: #8e8e93;
 }
 
+/* Day Detail Panel */
 .day-detail-panel {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  padding: 1rem;
+  background: #f5f5f7;
+  border-radius: 12px;
+  margin-bottom: 1rem;
 }
 
+/* Summary */
 .summary-list {
   display: flex;
-  gap: 1rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
   margin-top: 1rem;
 }
 
 .summary-item {
-  background: #fef3c7;
-  padding: 0.5rem 0.75rem;
-  border-radius: 8px;
+  background: #FFD60A;
+  padding: 0.5rem 1rem;
+  border-radius: 10px;
   font-weight: 600;
+  font-size: 0.9rem;
+  color: #1c1c1e;
 }
 
-.memos {
-  font-size: 0.85rem;
-  color: #475569;
-}
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  main {
+    padding: 0.75rem;
+  }
 
-@media (max-width: 640px) {
+  section {
+    padding: 1rem;
+    border-radius: 14px;
+  }
+
   .calendar-grid {
-    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+  }
+
+  .day-cell {
+    min-height: 75px;
+    padding: 0.5rem 0.3rem;
+  }
+
+  .day-cell .shift-code {
+    font-size: 1.2rem;
+  }
+
+  .day-cell .memos {
+    font-size: 0.65rem;
+  }
+
+  .legend {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Very small screens */
+@media (max-width: 375px) {
+  header h1 {
+    font-size: 1.5rem;
+  }
+
+  .calendar-grid {
+    gap: 3px;
+  }
+
+  .day-cell {
+    min-height: 65px;
+    padding: 0.4rem 0.2rem;
+  }
+
+  .day-cell .date-label {
+    font-size: 0.8rem;
+  }
+
+  .day-cell .shift-code {
+    font-size: 1.1rem;
   }
 }
