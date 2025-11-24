@@ -38,14 +38,13 @@ npx web-push generate-vapid-keys
 Railway 프로젝트 → Variables 탭:
 
 ```bash
-# VAPID 키 (위에서 생성한 값)
+# VAPID 키 (위에서 생성한 값) - 필수!
 PUSH_VAPID_PUBLIC_KEY=BNxxx...
 PUSH_VAPID_PRIVATE_KEY=xxx...
 PUSH_VAPID_SUBJECT=mailto:your-email@gmail.com
-
-# 포트 (Railway 자동 설정)
-PORT=8080
 ```
+
+**참고:** PORT는 Railway가 자동으로 설정하므로 추가하지 마세요.
 
 ### 4. Volume 설정 (데이터 영구 저장)
 
@@ -130,19 +129,32 @@ export SPRING_DATASOURCE_DRIVER=org.postgresql.Driver
 
 ## 문제 해결
 
+### Healthcheck 실패
+
+**원인:** VAPID 환경 변수가 설정되지 않았거나 앱이 시작되지 않음
+
+**해결:**
+1. Railway → Variables에서 VAPID 키 3개가 모두 설정되었는지 확인
+2. Railway → Logs에서 "Started LeoShiftApplication" 메시지 확인
+3. 로그에서 에러 메시지 확인
+
+**테스트:**
+```bash
+curl https://your-app.up.railway.app/health
+# 응답: {"status":"UP"}
+```
+
 ### Railway 배포 실패
 
 로컬에서 빌드 테스트:
 
 ```bash
-./gradlew clean build
-docker build -t leo-shift .
-docker run -p 8080:8080 leo-shift
+./gradlew clean build -x test
 ```
 
 ### 푸시 알림 작동 안 함
 
-1. VAPID 키 환경 변수 확인
+1. VAPID 키 환경 변수 확인 (3개 모두 설정 필요)
 2. HTTPS 사용 확인 (Railway는 자동 HTTPS)
 3. 브라우저에서 알림 권한 허용 확인
 4. `/api/push/public-key` 응답 확인
@@ -150,8 +162,10 @@ docker run -p 8080:8080 leo-shift
 ### 데이터 손실
 
 Railway Logs에서 확인:
-- "Creating directory /app/data" 로그
-- Volume 마운트 경로: `/app/data`
+- Volume 마운트: `/app/data`
+- H2 데이터베이스 경로: `/app/data/leoshift.mv.db`
+
+**자세한 문제 해결은 [RAILWAY_ENV.md](RAILWAY_ENV.md)를 참고하세요.**
 
 ## API 엔드포인트
 

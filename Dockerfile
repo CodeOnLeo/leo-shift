@@ -23,11 +23,11 @@ RUN mkdir -p /app/data
 # Copy the built jar from build stage
 COPY --from=build /app/build/libs/*.jar app.jar
 
-# Expose port
-EXPOSE 8080
+# Set default port (Railway will provide PORT via environment)
+ENV PORT=8080
 
 # Set environment variable for database location
-ENV SPRING_DATASOURCE_URL=jdbc:h2:file:/app/data/leoshift;MODE=PostgreSQL;DB_CLOSE_ON_EXIT=FALSE;AUTO_SERVER=TRUE
+ENV SPRING_DATASOURCE_URL=jdbc:h2:file:/app/data/leoshift;MODE=PostgreSQL
 
-# Run the application
-ENTRYPOINT ["java", "-jar", "/app/app.jar"]
+# Run the application with proper memory settings
+CMD java -Xmx512m -Xms256m -Dserver.port=$PORT -jar /app/app.jar
