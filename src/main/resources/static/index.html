@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shift Widget</title>
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#0f172a" />
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+  <header>
+    <h1>Shift Widget</h1>
+    <p>Personal shift calendar & reminders</p>
+  </header>
+  <main>
+    <section id="pattern-setup" hidden>
+      <h2>Pattern Setup</h2>
+      <form class="pattern-form" id="patternForm">
+        <label>
+          Pattern codes (comma separated).
+          <input type="text" id="patternInput" placeholder="D,A,N,O" required />
+        </label>
+        <label>
+          Pattern start date
+          <input type="date" id="patternStartDate" required />
+        </label>
+        <label>
+          Default reminder minutes (5-240)
+          <input type="number" id="patternMinutes" min="5" max="240" value="60" />
+        </label>
+        <button type="submit">Save pattern</button>
+      </form>
+    </section>
+
+    <section id="today-section" hidden>
+      <h2>Today & next few days</h2>
+      <div class="today-card" id="todayCard"></div>
+      <div class="upcoming-list" id="upcomingList"></div>
+    </section>
+
+    <section id="calendar-section" hidden>
+      <div class="calendar-header">
+        <button type="button" id="prevMonth">Prev</button>
+        <h2 id="calendarTitle"></h2>
+        <button type="button" id="nextMonth">Next</button>
+      </div>
+      <div class="calendar-grid" id="calendarGrid"></div>
+      <div class="summary-list" id="summaryList"></div>
+      <div class="legend">
+        <div class="legend-item">D = 06-14 (Day)</div>
+        <div class="legend-item">A = 14-22 (Afternoon)</div>
+        <div class="legend-item">N = 22-06 (Night)</div>
+        <div class="legend-item">O = Off</div>
+      </div>
+    </section>
+
+    <section id="day-detail" hidden>
+      <h2>Day detail</h2>
+      <div class="day-detail-panel" id="dayDetailPanel"></div>
+      <form class="day-detail-form" id="dayDetailForm">
+        <label>
+          Custom code (D/A/N/O or empty)
+          <input type="text" id="detailCode" maxlength="1" />
+        </label>
+        <label>
+          Memo
+          <textarea id="detailMemo" rows="3"></textarea>
+        </label>
+        <label>
+          <input type="checkbox" id="repeatYearly" /> Repeat every year
+        </label>
+        <button type="submit">Save day</button>
+      </form>
+    </section>
+
+    <section id="notifications" hidden>
+      <h2>Notifications</h2>
+      <form class="notification-form" id="notificationForm">
+        <label>
+          Reminder minutes before shift
+          <input type="number" id="notificationMinutes" min="5" max="240" />
+        </label>
+        <button type="submit">Save reminder</button>
+      </form>
+      <button type="button" id="subscribePush" class="secondary">Enable push reminders</button>
+    </section>
+  </main>
+
+  <script type="module" src="/js/main.js"></script>
+</body>
+</html>

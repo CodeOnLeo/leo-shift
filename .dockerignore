@@ -1,0 +1,38 @@
+# Gradle
+.gradle/
+.gradle-home/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+.settings/
+.project
+.classpath
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Data
+data/
+*.db
+*.mv.db
+*.trace.db
+
+# Logs
+logs/
+*.log
+
+# Documentation
+README.md
+DEPLOY.md
