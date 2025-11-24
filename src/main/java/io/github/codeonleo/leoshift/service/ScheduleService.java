@@ -31,6 +31,7 @@ public class ScheduleService {
         String baseCode = calculationService.determineCode(pattern, settings.getPatternStartDate(), date);
         ShiftException exception = exceptionRepository.findByDate(date).orElse(null);
         String memo = exception != null ? exception.getMemo() : null;
+        String anniversaryMemo = exception != null ? exception.getAnniversaryMemo() : null;
         boolean repeatYearly = exception != null && exception.isRepeatYearly();
         String effective = baseCode;
         if (exception != null && StringUtils.hasText(exception.getCustomCode())) {
@@ -38,12 +39,13 @@ public class ScheduleService {
         }
         List<String> yearlyMemos = exceptionRepository.findYearlyEntriesForMonth(date.getMonthValue()).stream()
                 .filter(e -> e.getDate().getDayOfMonth() == date.getDayOfMonth())
-                .filter(e -> memo == null || !e.getDate().equals(date))
-                .map(ShiftException::getMemo)
+                .filter(e -> !e.getDate().equals(date))
+                .filter(e -> !e.getDate().isAfter(date)) // 등록 날짜 이후만 표시
+                .map(ShiftException::getAnniversaryMemo)
                 .filter(StringUtils::hasText)
                 .map(String::trim)
                 .toList();
-        return Optional.of(new DaySchedule(date, baseCode, effective, memo, repeatYearly, yearlyMemos));
+        return Optional.of(new DaySchedule(date, baseCode, effective, memo, anniversaryMemo, repeatYearly, yearlyMemos));
     }
 
     @Transactional

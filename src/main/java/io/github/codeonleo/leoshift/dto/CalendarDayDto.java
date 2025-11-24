@@ -8,6 +8,7 @@ public record CalendarDayDto(
         String baseCode,
         String effectiveCode,
         List<String> memos,
+        List<String> anniversaryMemos,
         List<String> yearlyMemos,
         boolean hasException
 ) {

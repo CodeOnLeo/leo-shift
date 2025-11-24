@@ -22,7 +22,7 @@ import org.springframework.util.StringUtils;
 @RequestMapping("/api/settings")
 public class SettingsController {
 
-    private static final List<String> ALLOWED_CODES = List.of("D", "A", "N", "O");
+    private static final List<String> ALLOWED_CODES = List.of("D", "A", "N", "V", "O");
 
     private final SettingsService settingsService;
     private final NotificationPreferenceService preferenceService;

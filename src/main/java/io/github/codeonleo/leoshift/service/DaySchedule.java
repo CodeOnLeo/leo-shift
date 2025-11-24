@@ -9,6 +9,7 @@ public record DaySchedule(
         String baseCode,
         String effectiveCode,
         String memo,
+        String anniversaryMemo,
         boolean repeatYearly,
         List<String> yearlyMemos
 ) {
@@ -18,6 +19,9 @@ public record DaySchedule(
         if (memo != null && !memo.isBlank()) {
             memos.add(memo);
         }
+        if (anniversaryMemo != null && !anniversaryMemo.isBlank()) {
+            memos.add(anniversaryMemo);
+        }
         if (yearlyMemos != null) {
             memos.addAll(yearlyMemos);
         }
@@ -25,6 +29,6 @@ public record DaySchedule(
     }
 
     public static DaySchedule empty(LocalDate date) {
-        return new DaySchedule(date, null, null, null, false, Collections.emptyList());
+        return new DaySchedule(date, null, null, null, null, false, Collections.emptyList());
     }
 }

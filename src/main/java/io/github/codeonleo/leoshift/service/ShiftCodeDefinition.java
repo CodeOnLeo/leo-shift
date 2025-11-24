@@ -6,6 +6,7 @@ public enum ShiftCodeDefinition {
     D("주간", LocalTime.of(6, 0), LocalTime.of(14, 0)),
     A("오후", LocalTime.of(14, 0), LocalTime.of(22, 0)),
     N("야간", LocalTime.of(22, 0), LocalTime.of(6, 0)),
+    V("연차", null, null),
     O("휴무", null, null);
 
     private final String label;
@@ -31,14 +32,20 @@ public enum ShiftCodeDefinition {
     }
 
     public String timeRangeLabel() {
-        if (this == O || start == null || end == null) {
+        if (this == O) {
             return "휴무";
+        }
+        if (this == V) {
+            return "연차";
+        }
+        if (start == null || end == null) {
+            return "";
         }
         return start + "–" + end;
     }
 
     public boolean isWorkingShift() {
-        return this != O;
+        return this != O && this != V;
     }
 
     public static ShiftCodeDefinition fromCode(String code) {

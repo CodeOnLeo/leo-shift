@@ -5,10 +5,13 @@ export function renderCalendar({
   summaryEl,
   data,
   today,
+  selectedDate,
   onSelectDay
 }) {
   gridEl.innerHTML = '';
-  summaryEl.innerHTML = '';
+  // Clear only summary items, preserve the legend button
+  const summaryItems = summaryEl.querySelectorAll('.summary-item');
+  summaryItems.forEach(item => item.remove());
   if (!data.patternConfigured) {
     gridEl.innerHTML = '<p>Please configure your pattern first.</p>';
     return;
@@ -21,20 +24,27 @@ export function renderCalendar({
     gridEl.appendChild(label);
   });
 
-  const firstDate = new Date(data.year, data.month - 1, 1);
-  const offset = firstDate.getDay();
-  for (let i = 0; i < offset; i++) {
-    const filler = document.createElement('div');
-    filler.className = 'day-cell empty';
-    gridEl.appendChild(filler);
-  }
-
+  // 백엔드에서 35일(5주)을 보내주므로 빈 셀 없이 바로 렌더링
   data.days.forEach((day) => {
+    const dayDate = new Date(day.date);
+    const isCurrentMonth = dayDate.getMonth() === data.month - 1;
     const cell = document.createElement('div');
     cell.className = 'day-cell';
     cell.dataset.date = day.date;
+
+    // 다른 월의 날짜는 other-month 클래스 추가
+    if (!isCurrentMonth) {
+      cell.classList.add('other-month');
+    }
+
+    if (day.effectiveCode) {
+      cell.dataset.code = day.effectiveCode;
+    }
     if (day.date === today) {
       cell.classList.add('today');
+    }
+    if (day.date === selectedDate) {
+      cell.classList.add('selected');
     }
     const dateLabel = document.createElement('div');
     dateLabel.className = 'date-label';
@@ -42,13 +52,26 @@ export function renderCalendar({
     const codeLabel = document.createElement('div');
     codeLabel.className = 'shift-code';
     codeLabel.textContent = day.effectiveCode || '-';
-    const memo = document.createElement('div');
-    memo.className = 'memos';
-    memo.textContent = [...(day.memos || []), ...(day.yearlyMemos || [])].join(' \u2022 ');
+
     cell.append(dateLabel, codeLabel);
-    if (memo.textContent) {
+
+    // 기념일 메모를 먼저 표시 (당일 + 반복)
+    const allAnniversaries = [...(day.anniversaryMemos || []), ...(day.yearlyMemos || [])];
+    if (allAnniversaries.length > 0) {
+      const anniversary = document.createElement('div');
+      anniversary.className = 'memo-anniversary';
+      anniversary.textContent = '🎉 ' + allAnniversaries.join(' \u2022 ');
+      cell.append(anniversary);
+    }
+
+    // 일반 메모는 그 다음에 표시
+    if (day.memos && day.memos.length > 0) {
+      const memo = document.createElement('div');
+      memo.className = 'memo-regular';
+      memo.textContent = day.memos.join(' \u2022 ');
       cell.append(memo);
     }
+
     cell.addEventListener('click', () => onSelectDay(day.date));
     gridEl.appendChild(cell);
   });

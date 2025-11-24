@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>교대 근무표</title>
+  <title>근무 스케줄</title>
   <link rel="manifest" href="/manifest.json" />
   <meta name="theme-color" content="#007AFF" />
   <link rel="apple-touch-icon" href="/icons/icon-192.png" />
@@ -13,8 +13,6 @@
 </head>
 <body>
   <header>
-    <h1>교대 근무표</h1>
-    <p>나의 근무 일정과 알림</p>
   </header>
   <main>
     <section id="pattern-setup" hidden>
@@ -48,7 +46,7 @@
             <div class="shift-input-group">
               <input type="number" id="nDays" min="0" max="30" value="5" />
               <span>일 근무</span>
-              <input type="number" id="nOff" min="0" max="10" value="2" />
+              <input type="number" id="nOff" min="0" max="10" value="3" />
               <span>일 휴무</span>
             </div>
           </div>
@@ -73,18 +71,30 @@
           패턴 시작일
           <input type="date" id="patternStartDate" required />
         </label>
-        <label>
-          알림 시간 (근무 시작 전 5-240분)
-          <input type="number" id="patternMinutes" min="5" max="240" value="60" />
+
+        <div class="divider"></div>
+
+        <label class="checkbox-label">
+          <input type="checkbox" id="useNotification" checked />
+          <span>알림 사용</span>
         </label>
+
+        <div id="notificationTimeSection">
+          <label>알림 시간 (근무 시작 전, 최대 4시간)</label>
+          <div class="time-input-group">
+            <div class="time-input-item">
+              <input type="number" id="patternHours" min="0" max="10" value="0" />
+              <span>시간</span>
+            </div>
+            <div class="time-input-item">
+              <input type="number" id="patternMinutes" min="0" max="59" step="5" value="60" />
+              <span>분</span>
+            </div>
+          </div>
+        </div>
+
         <button type="submit">패턴 저장</button>
       </form>
-    </section>
-
-    <section id="today-section" hidden>
-      <h2>오늘과 다음 일정</h2>
-      <div class="today-card" id="todayCard"></div>
-      <div class="upcoming-list" id="upcomingList"></div>
     </section>
 
     <section id="calendar-section" hidden>
@@ -92,48 +102,103 @@
         <button type="button" id="prevMonth">◀</button>
         <h2 id="calendarTitle"></h2>
         <button type="button" id="nextMonth">▶</button>
+        <button type="button" id="settingsMenuButton" class="settings-icon-button" hidden title="설정">⚙</button>
       </div>
       <div class="calendar-grid" id="calendarGrid"></div>
-      <div class="summary-list" id="summaryList"></div>
-      <div class="legend">
+      <div class="summary-list" id="summaryList">
+        <button type="button" id="legendToggle" class="legend-toggle" title="근무코드 보기">?</button>
+      </div>
+      <div class="legend-tooltip" id="legendTooltip" hidden>
         <div class="legend-item">D = 주간 (06:00-14:00)</div>
         <div class="legend-item">A = 오후 (14:00-22:00)</div>
         <div class="legend-item">N = 야간 (22:00-06:00)</div>
+        <div class="legend-item">V = 연차</div>
         <div class="legend-item">O = 휴무</div>
       </div>
     </section>
 
-    <section id="day-detail" hidden>
-      <h2>날짜 상세</h2>
-      <div class="day-detail-panel" id="dayDetailPanel"></div>
-      <form class="day-detail-form" id="dayDetailForm">
-        <label>
-          근무 변경 (D/A/N/O 또는 비움)
-          <input type="text" id="detailCode" maxlength="1" />
-        </label>
-        <label>
-          메모
-          <textarea id="detailMemo" rows="3" placeholder="메모를 입력하세요"></textarea>
-        </label>
-        <label class="checkbox-label">
-          <input type="checkbox" id="repeatYearly" />
-          <span>매년 반복</span>
-        </label>
-        <button type="submit">저장</button>
-      </form>
-    </section>
+    <div id="dayModal" class="modal" hidden>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>날짜 상세</h2>
+          <button type="button" class="modal-close" id="modalClose">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="day-detail-panel" id="dayDetailPanel"></div>
+          <form class="day-detail-form" id="dayDetailForm">
+            <label>
+              근무 변경
+              <select id="detailCode">
+                <option value="">패턴대로</option>
+                <option value="D">주간 (D)</option>
+                <option value="A">오후 (A)</option>
+                <option value="N">야간 (N)</option>
+                <option value="V">연차 (V)</option>
+                <option value="O">휴무 (O)</option>
+              </select>
+            </label>
 
-    <section id="notifications" hidden>
-      <h2>알림 설정</h2>
-      <form class="notification-form" id="notificationForm">
-        <label>
-          근무 시작 전 알림 시간
-          <input type="number" id="notificationMinutes" min="5" max="240" />
-        </label>
-        <button type="submit">알림 시간 저장</button>
-      </form>
-      <button type="button" id="subscribePush" class="secondary">푸시 알림 활성화</button>
-    </section>
+            <label>
+              메모
+              <textarea id="detailMemo" rows="2" placeholder="일반 메모를 입력하세요"></textarea>
+            </label>
+            <button type="button" id="clearMemo" class="clear-button" style="display: none;">메모 지우기</button>
+
+            <div class="divider"></div>
+
+            <div class="anniversary-section">
+              <label>
+                기념일 메모
+                <input type="text" id="anniversaryMemo" placeholder="예: 생일, 결혼기념일" />
+              </label>
+
+              <label class="checkbox-label anniversary-checkbox">
+                <input type="checkbox" id="repeatYearly" />
+                <span>🎉 매년 반복</span>
+              </label>
+              <small class="anniversary-hint">체크하면 매년 같은 날짜에 표시됩니다</small>
+
+              <button type="button" id="clearAnniversary" class="clear-button" style="display: none;">기념일 지우기</button>
+            </div>
+
+            <button type="submit">저장</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div id="settingsModal" class="modal" hidden>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>설정</h2>
+          <button type="button" class="modal-close" id="settingsModalClose">&times;</button>
+        </div>
+        <div class="modal-body">
+          <section class="settings-section">
+            <h3>알림 설정</h3>
+            <form class="notification-form" id="notificationForm">
+              <label>근무 시작 전 알림 시간 (최대 4시간)</label>
+              <div class="time-input-group">
+                <div class="time-input-item">
+                  <input type="number" id="notificationHours" min="0" max="10" value="0" />
+                  <span>시간</span>
+                </div>
+                <div class="time-input-item">
+                  <input type="number" id="notificationMinutes" min="0" max="59" step="5" value="0" />
+                  <span>분</span>
+                </div>
+              </div>
+              <button type="submit">알림 시간 저장</button>
+            </form>
+            <button type="button" id="subscribePush" class="secondary" style="margin-top: 1rem;">푸시 알림 활성화</button>
+          </section>
+          <section class="settings-section">
+            <h3>패턴 관리</h3>
+            <button type="button" id="resetPattern" class="secondary">근무 패턴 재설정</button>
+          </section>
+        </div>
+      </div>
+    </div>
   </main>
 
   <script type="module" src="/js/main.js"></script>

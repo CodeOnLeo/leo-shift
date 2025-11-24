@@ -1,34 +1,41 @@
 import { api } from './api.js';
 import { renderCalendar } from './calendar.js';
-import { renderToday } from './today.js';
 import { initPatternForm } from './pattern.js';
 import { enablePushSubscription } from './notifications.js';
 
-const todaySection = document.getElementById('today-section');
-const todayCard = document.getElementById('todayCard');
-const upcomingList = document.getElementById('upcomingList');
 const calendarSection = document.getElementById('calendar-section');
 const calendarTitle = document.getElementById('calendarTitle');
 const calendarGrid = document.getElementById('calendarGrid');
 const summaryList = document.getElementById('summaryList');
 const prevMonthBtn = document.getElementById('prevMonth');
 const nextMonthBtn = document.getElementById('nextMonth');
-const dayDetailSection = document.getElementById('day-detail');
+const legendToggle = document.getElementById('legendToggle');
+const legendTooltip = document.getElementById('legendTooltip');
+const settingsMenuButton = document.getElementById('settingsMenuButton');
+const settingsModal = document.getElementById('settingsModal');
+const settingsModalClose = document.getElementById('settingsModalClose');
+const dayModal = document.getElementById('dayModal');
+const modalClose = document.getElementById('modalClose');
 const dayDetailPanel = document.getElementById('dayDetailPanel');
 const dayDetailForm = document.getElementById('dayDetailForm');
 const detailCode = document.getElementById('detailCode');
 const detailMemo = document.getElementById('detailMemo');
 const repeatYearly = document.getElementById('repeatYearly');
-const notificationsSection = document.getElementById('notifications');
+const anniversaryMemo = document.getElementById('anniversaryMemo');
+const clearMemoButton = document.getElementById('clearMemo');
+const clearAnniversaryButton = document.getElementById('clearAnniversary');
 const notificationForm = document.getElementById('notificationForm');
+const notificationHoursInput = document.getElementById('notificationHours');
 const notificationMinutesInput = document.getElementById('notificationMinutes');
 const subscribePushButton = document.getElementById('subscribePush');
+const resetPatternButton = document.getElementById('resetPattern');
 
 const patternManager = initPatternForm({
   sectionEl: document.getElementById('pattern-setup'),
   formEl: document.getElementById('patternForm'),
   patternInput: document.getElementById('patternInput'),
   startInput: document.getElementById('patternStartDate'),
+  hoursInput: document.getElementById('patternHours'),
   minutesInput: document.getElementById('patternMinutes'),
   onSave: async (payload) => {
     await api.saveSettings(payload);
@@ -48,22 +55,16 @@ async function bootstrap() {
   state.patternConfigured = settings.configured;
   if (!settings.configured) {
     patternManager.show(settings.defaultNotificationMinutes || 60);
-    todaySection.hidden = true;
     calendarSection.hidden = true;
-    notificationsSection.hidden = true;
-    dayDetailSection.hidden = true;
+    settingsMenuButton.hidden = true;
+    dayModal.hidden = true;
+    settingsModal.hidden = true;
     return;
   }
   patternManager.hide();
   calendarSection.hidden = false;
-  notificationsSection.hidden = false;
-  todaySection.hidden = false;
-  await Promise.all([loadToday(), loadCalendar(state.year, state.month), loadNotificationSettings()]);
-}
-
-async function loadToday() {
-  const data = await api.getToday();
-  renderToday({ sectionEl: todaySection, cardEl: todayCard, upcomingEl: upcomingList, data });
+  settingsMenuButton.hidden = false;
+  await Promise.all([loadCalendar(state.year, state.month), loadNotificationSettings()]);
 }
 
 async function loadCalendar(year, month) {
@@ -76,6 +77,7 @@ async function loadCalendar(year, month) {
     summaryEl: summaryList,
     data,
     today: new Date().toISOString().split('T')[0],
+    selectedDate: state.selectedDate,
     onSelectDay: (date) => selectDay(date)
   });
 }
@@ -83,23 +85,129 @@ async function loadCalendar(year, month) {
 async function selectDay(date) {
   state.selectedDate = date;
   const detail = await api.getDay(date);
-  dayDetailSection.hidden = false;
+  dayModal.hidden = false;
   dayDetailPanel.innerHTML = `
-    <strong>${formatFullDate(date)}</strong>
-    <span>Base: ${detail.baseCode || '-'}</span>
-    <span>Effective: ${detail.effectiveCode || '-'}</span>
+    <strong>${formatKoreanDate(date)}</strong>
+    <span>기본 근무: ${detail.baseCode || '-'}</span>
+    <span>실제 근무: ${detail.effectiveCode || '-'}</span>
     <span>${detail.shiftLabel || ''} · ${detail.timeRange || ''}</span>
-    <small>${[detail.memo, ...(detail.yearlyMemos || [])].filter(Boolean).join(' \u2022 ')}</small>
+    <small>${[detail.memo, detail.anniversaryMemo, ...(detail.yearlyMemos || [])].filter(Boolean).join(' • ')}</small>
   `;
   detailCode.value = detail.effectiveCode || '';
+
+  // 일반 메모와 기념일 메모를 각각 표시
   detailMemo.value = detail.memo || '';
-  repeatYearly.checked = detail.repeatYearly;
+
+  // 기념일 메모: 당일 것이 있으면 우선, 없으면 yearlyMemos에서 첫 번째 것 사용
+  if (detail.anniversaryMemo) {
+    anniversaryMemo.value = detail.anniversaryMemo;
+    repeatYearly.checked = detail.repeatYearly;
+  } else if (detail.yearlyMemos && detail.yearlyMemos.length > 0) {
+    anniversaryMemo.value = detail.yearlyMemos[0];
+    repeatYearly.checked = true; // yearlyMemos에 있다는 것은 반복 설정된 것
+  } else {
+    anniversaryMemo.value = '';
+    repeatYearly.checked = false;
+  }
+
+  // 메모 지우기 버튼 표시 여부
+  clearMemoButton.style.display = detail.memo ? 'block' : 'none';
+
+  // 기념일 지우기 버튼 표시 여부
+  clearAnniversaryButton.style.display = (detail.anniversaryMemo || (detail.yearlyMemos && detail.yearlyMemos.length > 0)) ? 'block' : 'none';
+
+  await loadCalendar(state.year, state.month);
+}
+
+function closeModal() {
+  dayModal.hidden = true;
+  state.selectedDate = null;
+  loadCalendar(state.year, state.month);
 }
 
 async function loadNotificationSettings() {
   const data = await api.getNotificationSettings();
-  notificationMinutesInput.value = data.minutes;
+  const totalMinutes = data.minutes;
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  notificationHoursInput.value = hours;
+  notificationMinutesInput.value = minutes;
 }
+
+settingsMenuButton.addEventListener('click', () => {
+  settingsModal.hidden = false;
+});
+
+settingsModalClose.addEventListener('click', () => {
+  settingsModal.hidden = true;
+});
+
+settingsModal.addEventListener('click', (e) => {
+  if (e.target === settingsModal) {
+    settingsModal.hidden = true;
+  }
+});
+
+modalClose.addEventListener('click', closeModal);
+
+dayModal.addEventListener('click', (e) => {
+  if (e.target === dayModal) {
+    closeModal();
+  }
+});
+
+// 기념일 체크박스는 별도 기능 없음 (매년 반복 여부만 결정)
+
+// 메모 지우기 버튼
+clearMemoButton.addEventListener('click', () => {
+  if (confirm('메모를 삭제하시겠습니까?')) {
+    detailMemo.value = '';
+  }
+});
+
+// 기념일 지우기 버튼
+clearAnniversaryButton.addEventListener('click', async () => {
+  const detail = await api.getDay(state.selectedDate);
+
+  // yearlyMemos가 있고 현재 날짜에 anniversaryMemo가 없으면, 다른 년도에서 반복되는 것
+  const isYearlyFromOtherYear = !detail.anniversaryMemo && detail.yearlyMemos && detail.yearlyMemos.length > 0;
+
+  if (isYearlyFromOtherYear) {
+    // 다른 년도의 반복 기념일인 경우
+    const selectedDate = new Date(state.selectedDate);
+    const currentYear = selectedDate.getFullYear();
+
+    if (confirm(`이 기념일은 다른 년도에 등록된 매년 반복 기념일입니다.\n\n삭제 옵션:\n확인: ${currentYear}년 이후로 더 이상 표시 안 함\n취소: 이 날짜(${currentYear}년)에서만 숨김`)) {
+      // 이 날짜 이후로 반복 중지
+      alert(`원본 기념일이 등록된 년도로 이동하여 "매년 반복"을 해제해야 ${currentYear}년 이후 반복이 중지됩니다.\n\n또는 이 날짜에서 빈 값으로 저장하면 이 날짜에서만 숨겨집니다.`);
+    } else {
+      // 해당 날짜만 숨기기
+      anniversaryMemo.value = '';
+      repeatYearly.checked = false;
+      alert('변경사항을 저장하면 이 날짜에서만 숨겨집니다.');
+    }
+  } else if (repeatYearly.checked) {
+    // 매년 반복이 설정된 기념일 (원본)
+    const selectedDate = new Date(state.selectedDate);
+    const currentYear = selectedDate.getFullYear();
+
+    const choice = confirm(`이 기념일을 삭제하시겠습니까?\n\n확인: ${currentYear}년부터 이후 모든 연도에서 삭제\n취소: ${currentYear}년에만 삭제`);
+
+    anniversaryMemo.value = '';
+    repeatYearly.checked = false;
+
+    if (choice) {
+      alert(`변경사항을 저장하면 ${currentYear}년부터 모든 연도에서 삭제됩니다.\n(${currentYear}년 이전 과거 기록은 유지됩니다)`);
+    } else {
+      alert(`변경사항을 저장하면 ${currentYear}년에서만 삭제됩니다.`);
+    }
+  } else {
+    if (confirm('기념일을 삭제하시겠습니까?')) {
+      anniversaryMemo.value = '';
+      repeatYearly.checked = false;
+    }
+  }
+});
 
 dayDetailForm.addEventListener('submit', async (event) => {
   event.preventDefault();
@@ -107,21 +215,48 @@ dayDetailForm.addEventListener('submit', async (event) => {
     alert('날짜를 먼저 선택하세요.');
     return;
   }
+
+  // 일반 메모와 기념일 메모를 각각 저장
   await api.saveDay(state.selectedDate, {
-    customCode: detailCode.value,
-    memo: detailMemo.value,
+    customCode: detailCode.value || null,
+    memo: detailMemo.value || null,
+    anniversaryMemo: anniversaryMemo.value || null,
     repeatYearly: repeatYearly.checked
   });
-  await Promise.all([loadCalendar(state.year, state.month), selectDay(state.selectedDate)]);
+  await loadCalendar(state.year, state.month);
+  closeModal();
 });
 
 notificationForm.addEventListener('submit', async (event) => {
   event.preventDefault();
-  await api.updateNotificationSettings({ minutes: Number(notificationMinutesInput.value) });
-  alert('Notification settings saved.');
+  const hours = Number(notificationHoursInput.value) || 0;
+  const minutes = Number(notificationMinutesInput.value) || 0;
+  const totalMinutes = hours * 60 + minutes;
+
+  if (totalMinutes < 5) {
+    alert('알림 시간은 최소 5분 이상이어야 합니다.');
+    return;
+  }
+  if (totalMinutes > 240) {
+    alert('알림 시간은 최대 4시간(240분)까지 설정 가능합니다.');
+    return;
+  }
+
+  await api.updateNotificationSettings({ minutes: totalMinutes });
+  alert('알림 설정이 저장되었습니다.');
 });
 
 subscribePushButton.addEventListener('click', () => enablePushSubscription());
+
+resetPatternButton.addEventListener('click', async () => {
+  if (!confirm('근무 패턴을 재설정하시겠습니까?')) return;
+  const settings = await api.getSettings();
+  settingsModal.hidden = true;
+  calendarSection.hidden = true;
+  settingsMenuButton.hidden = true;
+  dayModal.hidden = true;
+  patternManager.show(settings.defaultNotificationMinutes || 60, settings);
+});
 
 prevMonthBtn.addEventListener('click', () => {
   const date = new Date(state.year, state.month - 2, 1);
@@ -133,8 +268,25 @@ nextMonthBtn.addEventListener('click', () => {
   loadCalendar(date.getFullYear(), date.getMonth() + 1);
 });
 
-function formatFullDate(date) {
-  return new Date(date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+legendToggle.addEventListener('click', () => {
+  legendTooltip.hidden = !legendTooltip.hidden;
+});
+
+// 툴팁 외부 클릭시 닫기
+document.addEventListener('click', (e) => {
+  if (!legendTooltip.hidden && !legendToggle.contains(e.target) && !legendTooltip.contains(e.target)) {
+    legendTooltip.hidden = true;
+  }
+});
+
+function formatKoreanDate(date) {
+  const d = new Date(date);
+  const year = d.getFullYear();
+  const month = d.getMonth() + 1;
+  const day = d.getDate();
+  const weekdays = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
+  const weekday = weekdays[d.getDay()];
+  return `${year}년 ${month}월 ${day}일 ${weekday}`;
 }
 
 if ('serviceWorker' in navigator) {

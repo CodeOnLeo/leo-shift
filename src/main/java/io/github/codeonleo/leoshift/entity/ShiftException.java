@@ -29,6 +29,9 @@ public class ShiftException {
     @Column(columnDefinition = "text")
     private String memo;
 
+    @Column(name = "anniversary_memo", columnDefinition = "text")
+    private String anniversaryMemo;
+
     @Column(name = "repeat_yearly")
     private boolean repeatYearly;
 }

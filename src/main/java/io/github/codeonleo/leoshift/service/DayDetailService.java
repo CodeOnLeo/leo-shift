@@ -20,12 +20,12 @@ public class DayDetailService {
     public DayDetailResponse load(LocalDate date) {
         return scheduleService.resolveDay(date)
                 .map(this::toResponse)
-                .orElseGet(() -> new DayDetailResponse(date, null, null, "", "", null, false, List.of()));
+                .orElseGet(() -> new DayDetailResponse(date, null, null, "", "", null, null, false, List.of()));
     }
 
     public DayDetailResponse save(LocalDate date, ExceptionUpdateRequest request) {
         String customCode = normalizeCode(request.customCode());
-        exceptionService.saveOrUpdate(date, customCode, request.memo(), request.repeatYearly());
+        exceptionService.saveOrUpdate(date, customCode, request.memo(), request.anniversaryMemo(), request.repeatYearly());
         return load(date);
     }
 
@@ -38,6 +38,7 @@ public class DayDetailService {
                 definition.label(),
                 definition.timeRangeLabel(),
                 schedule.memo(),
+                schedule.anniversaryMemo(),
                 schedule.repeatYearly(),
                 schedule.yearlyMemos()
         );

@@ -10,6 +10,7 @@ public record DayDetailResponse(
         String shiftLabel,
         String timeRange,
         String memo,
+        String anniversaryMemo,
         boolean repeatYearly,
         List<String> yearlyMemos
 ) {

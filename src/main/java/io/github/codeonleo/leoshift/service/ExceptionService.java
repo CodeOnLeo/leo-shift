@@ -15,13 +15,13 @@ public class ExceptionService {
     private final ShiftExceptionRepository repository;
 
     @Transactional
-    public ShiftException saveOrUpdate(LocalDate date, String customCode, String memo, boolean repeatYearly) {
+    public ShiftException saveOrUpdate(LocalDate date, String customCode, String memo, String anniversaryMemo, boolean repeatYearly) {
         ShiftException entity = repository.findByDate(date).orElseGet(() -> {
             ShiftException ex = new ShiftException();
             ex.setDate(date);
             return ex;
         });
-        boolean hasContent = StringUtils.hasText(customCode) || StringUtils.hasText(memo) || repeatYearly;
+        boolean hasContent = StringUtils.hasText(customCode) || StringUtils.hasText(memo) || StringUtils.hasText(anniversaryMemo) || repeatYearly;
         if (!hasContent) {
             if (entity.getId() != null) {
                 repository.delete(entity);
@@ -30,6 +30,7 @@ public class ExceptionService {
         }
         entity.setCustomCode(StringUtils.hasText(customCode) ? customCode.trim().toUpperCase() : null);
         entity.setMemo(StringUtils.hasText(memo) ? memo.trim() : null);
+        entity.setAnniversaryMemo(StringUtils.hasText(anniversaryMemo) ? anniversaryMemo.trim() : null);
         entity.setRepeatYearly(repeatYearly);
         return repository.save(entity);
     }
