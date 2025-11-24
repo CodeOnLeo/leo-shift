@@ -8,7 +8,12 @@ import io.github.codeonleo.leoshift.repository.PushSubscriptionRepository;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.spec.InvalidKeySpecException;
 import java.time.LocalDate;
+import java.util.concurrent.ExecutionException;
+import org.jose4j.lang.JoseException;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.HashMap;
@@ -143,7 +148,7 @@ public class PushNotificationService {
                 );
                 pushService.send(notification);
                 sent++;
-            } catch (GeneralSecurityException | IOException e) {
+            } catch (GeneralSecurityException | IOException | JoseException | ExecutionException | InterruptedException e) {
                 log.warn("Failed to send push to {}", subscription.getEndpoint(), e);
             }
         }
@@ -152,9 +157,14 @@ public class PushNotificationService {
 
     private PushService buildPushService() {
         PushService pushService = new PushService();
-        pushService.setPublicKey(pushProperties.publicKey());
-        pushService.setPrivateKey(pushProperties.privateKey());
-        pushService.setSubject(pushProperties.subject());
+        try {
+            pushService.setPublicKey(pushProperties.publicKey());
+            pushService.setPrivateKey(pushProperties.privateKey());
+            pushService.setSubject(pushProperties.subject());
+        } catch (NoSuchAlgorithmException | InvalidKeySpecException | NoSuchProviderException e) {
+            log.error("Failed to set VAPID keys", e);
+            throw new RuntimeException("Invalid VAPID keys configuration", e);
+        }
         if (java.security.Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null) {
             java.security.Security.addProvider(new BouncyCastleProvider());
         }

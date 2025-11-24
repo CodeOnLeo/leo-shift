@@ -58,8 +58,9 @@ public class CalendarService {
             }
             String memo = dayException != null ? dayException.getMemo() : null;
             List<String> memos = memo != null && !memo.isBlank() ? List.of(memo) : Collections.emptyList();
+            final LocalDate cursorDate = cursor;
             List<String> yearlyMemos = yearlyByDay.getOrDefault(cursor.getDayOfMonth(), Collections.emptyList()).stream()
-                    .filter(entry -> !entry.getDate().equals(cursor))
+                    .filter(entry -> !entry.getDate().equals(cursorDate))
                     .map(ShiftException::getMemo)
                     .filter(StringUtils::hasText)
                     .map(String::trim)
