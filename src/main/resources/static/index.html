@@ -20,10 +20,55 @@
     <section id="pattern-setup" hidden>
       <h2>근무 패턴 설정</h2>
       <form class="pattern-form" id="patternForm">
-        <label>
-          근무 패턴 (쉼표로 구분)
-          <input type="text" id="patternInput" placeholder="D,A,N,O" required />
-        </label>
+        <div class="pattern-builder">
+          <h3>근무 사이클 설정</h3>
+
+          <div class="shift-group">
+            <label>주간 (D)</label>
+            <div class="shift-input-group">
+              <input type="number" id="dDays" min="0" max="30" value="5" />
+              <span>일 근무</span>
+              <input type="number" id="dOff" min="0" max="10" value="1" />
+              <span>일 휴무</span>
+            </div>
+          </div>
+
+          <div class="shift-group">
+            <label>오후 (A)</label>
+            <div class="shift-input-group">
+              <input type="number" id="aDays" min="0" max="30" value="5" />
+              <span>일 근무</span>
+              <input type="number" id="aOff" min="0" max="10" value="1" />
+              <span>일 휴무</span>
+            </div>
+          </div>
+
+          <div class="shift-group">
+            <label>야간 (N)</label>
+            <div class="shift-input-group">
+              <input type="number" id="nDays" min="0" max="30" value="5" />
+              <span>일 근무</span>
+              <input type="number" id="nOff" min="0" max="10" value="2" />
+              <span>일 휴무</span>
+            </div>
+          </div>
+
+          <div class="pattern-preview" id="patternPreview">
+            <strong>생성된 패턴:</strong>
+            <div id="patternPreviewText"></div>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="pattern-manual">
+          <label>
+            <input type="checkbox" id="useManualPattern" />
+            <span>직접 입력 (고급)</span>
+          </label>
+          <input type="text" id="patternInput" placeholder="D,D,D,A,A,N,N,O" hidden />
+        </div>
+
         <label>
           패턴 시작일
           <input type="date" id="patternStartDate" required />
