@@ -93,6 +93,9 @@ async function request(url, options = {}) {
           })
           .catch(err => {
             throw err;
+          })
+          .finally(() => {
+            loadingHooks.onEnd();
           });
       }
 
