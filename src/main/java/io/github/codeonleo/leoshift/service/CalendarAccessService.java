@@ -92,6 +92,14 @@ public class CalendarAccessService {
         UserSettings settings = settingsService.getOrCreate();
         Calendar defaultCalendar = settings.getDefaultCalendar();
         if (defaultCalendar == null) {
+            // 기존 사용자 중 defaultCalendar가 비어 있는 경우 소유한 첫 캘린더를 기본으로 설정
+            List<Calendar> owned = calendarRepository.findByOwner(currentUser);
+            if (!owned.isEmpty()) {
+                defaultCalendar = owned.getFirst();
+                settingsService.setDefaultCalendar(defaultCalendar);
+            }
+        }
+        if (defaultCalendar == null) {
             throw new IllegalStateException("default_calendar_not_set");
         }
         ensureViewPermission(defaultCalendar, currentUser);
