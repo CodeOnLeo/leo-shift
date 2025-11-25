@@ -102,6 +102,18 @@ public class SecurityConfig {
                         // 모든 다른 요청은 인증 필요 (API Key 인증 포함)
                         .anyRequest().authenticated()
                 )
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            // API 요청인 경우 401 반환, 그 외에는 로그인 페이지로 리다이렉트
+                            if (request.getRequestURI().startsWith("/api/")) {
+                                response.setStatus(401);
+                                response.setContentType("application/json");
+                                response.getWriter().write("{\"error\":\"Unauthorized\"}");
+                            } else {
+                                response.sendRedirect("/login.html");
+                            }
+                        })
+                )
                 .oauth2Login(oauth2 -> oauth2
                         .authorizationEndpoint(authorization -> authorization
                                 .baseUri("/oauth2/authorize")

@@ -58,6 +58,12 @@ async function request(url, options = {}) {
 
   if (!response.ok) {
     if (response.status === 401) {
+      // 토큰이 없으면 바로 로그인 페이지로 이동
+      if (!localStorage.getItem('accessToken')) {
+        window.location.href = '/login.html';
+        return;
+      }
+
       // 401 에러 발생 시 토큰 갱신 시도
       if (isRefreshing) {
         // 이미 토큰 갱신 중이면 대기열에 추가
