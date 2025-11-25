@@ -39,6 +39,7 @@ const sharePermissionSelect = document.getElementById('sharePermission');
 const shareInviteButton = document.getElementById('shareInviteButton');
 const shareList = document.getElementById('shareList');
 const inviteList = document.getElementById('inviteList');
+const patternFields = document.querySelectorAll('[data-pattern="true"]');
 
 const patternManager = initPatternForm({
   sectionEl: document.getElementById('pattern-setup'),
@@ -239,11 +240,13 @@ async function selectDay(date) {
   if (state.usePattern === false) {
     detailCode.value = '';
     detailCode.disabled = true;
+    patternFields.forEach(el => el.setAttribute('disabled', 'true'));
     if (patternDisabledHint) {
       patternDisabledHint.hidden = false;
     }
   } else {
     detailCode.disabled = false;
+    patternFields.forEach(el => el.removeAttribute('disabled'));
     if (patternDisabledHint) {
       patternDisabledHint.hidden = true;
     }
