@@ -2,15 +2,36 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>로그인 - Leo Shift</title>
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#007AFF" />
+  <link rel="icon" type="image/png" href="/icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="/icons/icon-192.png" />
   <link rel="stylesheet" href="/css/styles.css" />
   <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background-color: #f2f2f7;
+    }
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
     .login-container {
       max-width: 400px;
-      margin: 2rem auto;
+      width: 100%;
       padding: 2rem;
       text-align: center;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
     }
     .login-container h1 {
       margin-bottom: 2rem;
@@ -123,7 +144,10 @@
   </div>
 
   <script>
+    console.log('Login page loaded');
+
     function loginWithGoogle() {
+      console.log('Google login initiated');
       window.location.href = '/oauth2/authorize/google';
     }
 
@@ -147,6 +171,7 @@
 
     async function handleEmailLogin(event) {
       event.preventDefault();
+      console.log('Email login initiated');
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
       const errorMessage = document.getElementById('errorMessage');
@@ -160,16 +185,19 @@
 
         if (!response.ok) {
           const error = await response.text();
+          console.error('Login failed:', error);
           errorMessage.textContent = '로그인 실패: ' + error;
           errorMessage.style.display = 'block';
           return;
         }
 
         const data = await response.json();
+        console.log('Login successful');
         localStorage.setItem('accessToken', data.accessToken);
         localStorage.setItem('refreshToken', data.refreshToken);
         window.location.href = '/';
       } catch (error) {
+        console.error('Login error:', error);
         errorMessage.textContent = '로그인 중 오류가 발생했습니다.';
         errorMessage.style.display = 'block';
       }
@@ -177,6 +205,7 @@
 
     async function handleSignup(event) {
       event.preventDefault();
+      console.log('Signup initiated');
       const name = document.getElementById('signupName').value;
       const email = document.getElementById('signupEmail').value;
       const password = document.getElementById('signupPassword').value;
@@ -191,33 +220,42 @@
 
         if (!response.ok) {
           const error = await response.text();
+          console.error('Signup failed:', error);
           errorMessage.textContent = '회원가입 실패: ' + error;
           errorMessage.style.display = 'block';
           return;
         }
 
         const data = await response.json();
+        console.log('Signup successful');
         localStorage.setItem('accessToken', data.accessToken);
         localStorage.setItem('refreshToken', data.refreshToken);
         window.location.href = '/';
       } catch (error) {
+        console.error('Signup error:', error);
         errorMessage.textContent = '회원가입 중 오류가 발생했습니다.';
         errorMessage.style.display = 'block';
       }
     }
 
     // URL 파라미터에서 토큰 확인 (OAuth2 리다이렉트 후)
-    const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get('token');
-    if (token) {
-      localStorage.setItem('accessToken', token);
-      window.location.href = '/';
-    }
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const token = urlParams.get('token');
+      if (token) {
+        console.log('OAuth2 token found in URL');
+        localStorage.setItem('accessToken', token);
+        window.location.href = '/';
+      }
 
-    // 이미 로그인된 경우 메인 페이지로 이동
-    const accessToken = localStorage.getItem('accessToken');
-    if (accessToken) {
-      window.location.href = '/';
+      // 이미 로그인된 경우 메인 페이지로 이동
+      const accessToken = localStorage.getItem('accessToken');
+      if (accessToken) {
+        console.log('Already logged in, redirecting to home');
+        window.location.href = '/';
+      }
+    } catch (error) {
+      console.error('Initialization error:', error);
     }
   </script>
 </body>
