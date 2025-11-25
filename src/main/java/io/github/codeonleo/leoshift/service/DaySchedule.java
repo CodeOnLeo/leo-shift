@@ -1,6 +1,8 @@
 package io.github.codeonleo.leoshift.service;
 
+import io.github.codeonleo.leoshift.dto.AuthorDto;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 
@@ -11,7 +13,9 @@ public record DaySchedule(
         String memo,
         String anniversaryMemo,
         boolean repeatYearly,
-        List<String> yearlyMemos
+        List<String> yearlyMemos,
+        AuthorDto author,
+        LocalDateTime updatedAt
 ) {
 
     public List<String> combinedMemos() {
@@ -29,6 +33,6 @@ public record DaySchedule(
     }
 
     public static DaySchedule empty(LocalDate date) {
-        return new DaySchedule(date, null, null, null, null, false, Collections.emptyList());
+        return new DaySchedule(date, null, null, null, null, false, Collections.emptyList(), null, null);
     }
 }

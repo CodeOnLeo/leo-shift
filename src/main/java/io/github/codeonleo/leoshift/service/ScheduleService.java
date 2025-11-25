@@ -12,6 +12,7 @@ import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+import io.github.codeonleo.leoshift.dto.AuthorDto;
 
 @Service
 @RequiredArgsConstructor
@@ -46,7 +47,10 @@ public class ScheduleService {
                 .filter(StringUtils::hasText)
                 .map(String::trim)
                 .toList();
-        return Optional.of(new DaySchedule(date, baseCode, effective, memo, anniversaryMemo, repeatYearly, yearlyMemos));
+        AuthorDto author = exception != null && exception.getAuthor() != null
+                ? new AuthorDto(exception.getAuthor().getId(), exception.getAuthor().getName())
+                : null;
+        return Optional.of(new DaySchedule(date, baseCode, effective, memo, anniversaryMemo, repeatYearly, yearlyMemos, author, exception != null ? exception.getUpdatedAt() : null));
     }
 
     @Transactional

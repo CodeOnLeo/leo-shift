@@ -2,6 +2,7 @@ package io.github.codeonleo.leoshift.service;
 
 import io.github.codeonleo.leoshift.dto.CalendarDayDto;
 import io.github.codeonleo.leoshift.dto.CalendarResponse;
+import io.github.codeonleo.leoshift.dto.AuthorDto;
 import io.github.codeonleo.leoshift.entity.Calendar;
 import io.github.codeonleo.leoshift.entity.ShiftException;
 import io.github.codeonleo.leoshift.entity.UserSettings;
@@ -87,7 +88,10 @@ public class CalendarService {
                         .map(String::trim)
                         .toList();
             }
-            days.add(new CalendarDayDto(cursor, baseCode, effectiveCode, memos, anniversaryMemos, yearlyMemos, dayException != null));
+            AuthorDto author = dayException != null && dayException.getAuthor() != null
+                    ? new AuthorDto(dayException.getAuthor().getId(), dayException.getAuthor().getName())
+                    : null;
+            days.add(new CalendarDayDto(cursor, baseCode, effectiveCode, memos, anniversaryMemos, yearlyMemos, dayException != null, author, dayException != null ? dayException.getUpdatedAt() : null));
             // summary는 현재 월의 날짜만 카운트
             if (effectiveCode != null && !cursor.isBefore(monthStart) && !cursor.isAfter(monthEnd)) {
                 summary.merge(effectiveCode, 1L, Long::sum);

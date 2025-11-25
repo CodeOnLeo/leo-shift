@@ -21,7 +21,7 @@ public class DayDetailService {
     public DayDetailResponse load(LocalDate date, Calendar calendar) {
         return scheduleService.resolveDay(date, calendar)
                 .map(this::toResponse)
-                .orElseGet(() -> new DayDetailResponse(date, null, null, "", "", null, null, false, List.of()));
+                .orElseGet(() -> new DayDetailResponse(date, null, null, "", "", null, null, false, List.of(), null, null));
     }
 
     public DayDetailResponse save(LocalDate date, ExceptionUpdateRequest request, Calendar calendar) {
@@ -41,7 +41,9 @@ public class DayDetailService {
                 schedule.memo(),
                 schedule.anniversaryMemo(),
                 schedule.repeatYearly(),
-                schedule.yearlyMemos()
+                schedule.yearlyMemos(),
+                schedule.author(),
+                schedule.updatedAt()
         );
     }
 

@@ -2,6 +2,7 @@ package io.github.codeonleo.leoshift.service;
 
 import io.github.codeonleo.leoshift.entity.Calendar;
 import io.github.codeonleo.leoshift.entity.ShiftException;
+import io.github.codeonleo.leoshift.entity.User;
 import io.github.codeonleo.leoshift.repository.ShiftExceptionRepository;
 import jakarta.transaction.Transactional;
 import java.time.LocalDate;
@@ -14,6 +15,7 @@ import org.springframework.util.StringUtils;
 public class ExceptionService {
 
     private final ShiftExceptionRepository repository;
+    private final CalendarAccessService calendarAccessService;
 
     @Transactional
     public ShiftException saveOrUpdate(LocalDate date, String customCode, String memo, String anniversaryMemo, boolean repeatYearly, Calendar calendar) {
@@ -23,6 +25,7 @@ public class ExceptionService {
             ex.setCalendar(calendar);
             return ex;
         });
+        User author = calendarAccessService.getCurrentUser();
         boolean hasContent = StringUtils.hasText(customCode) || StringUtils.hasText(memo) || StringUtils.hasText(anniversaryMemo) || repeatYearly;
         if (!hasContent) {
             if (entity.getId() != null) {
@@ -34,6 +37,7 @@ public class ExceptionService {
         entity.setMemo(StringUtils.hasText(memo) ? memo.trim() : null);
         entity.setAnniversaryMemo(StringUtils.hasText(anniversaryMemo) ? anniversaryMemo.trim() : null);
         entity.setRepeatYearly(repeatYearly);
+        entity.setAuthor(author);
         return repository.save(entity);
     }
 }

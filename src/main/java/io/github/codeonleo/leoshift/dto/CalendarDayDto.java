@@ -1,6 +1,7 @@
 package io.github.codeonleo.leoshift.dto;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 public record CalendarDayDto(
@@ -10,6 +11,8 @@ public record CalendarDayDto(
         List<String> memos,
         List<String> anniversaryMemos,
         List<String> yearlyMemos,
-        boolean hasException
+        boolean hasException,
+        AuthorDto memoAuthor,
+        LocalDateTime updatedAt
 ) {
 }

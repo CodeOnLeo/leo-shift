@@ -7,6 +7,7 @@ import io.github.codeonleo.leoshift.entity.Calendar;
 import io.github.codeonleo.leoshift.entity.CalendarShare;
 import io.github.codeonleo.leoshift.entity.User;
 import io.github.codeonleo.leoshift.entity.UserSettings;
+import io.github.codeonleo.leoshift.repository.CalendarRepository;
 import io.github.codeonleo.leoshift.repository.CalendarShareRepository;
 import io.github.codeonleo.leoshift.repository.UserRepository;
 import jakarta.transaction.Transactional;
@@ -22,6 +23,7 @@ public class CalendarShareService {
 
     private final CalendarShareRepository calendarShareRepository;
     private final CalendarAccessService calendarAccessService;
+    private final CalendarRepository calendarRepository;
     private final UserRepository userRepository;
     private final SettingsService settingsService;
 
@@ -64,13 +66,18 @@ public class CalendarShareService {
 
     @Transactional
     public CalendarShareResponse respond(Long calendarId, ShareDecisionRequest request) {
-        Calendar calendar = calendarAccessService.requireView(calendarId);
+        Calendar calendar = calendarRepository.findById(calendarId)
+                .orElseThrow(() -> new IllegalArgumentException("calendar_not_found"));
         User currentUser = calendarAccessService.getCurrentUser();
         if (request == null) {
             throw new IllegalArgumentException("share_decision_required");
         }
         CalendarShare share = calendarShareRepository.findByCalendarAndUser(calendar, currentUser)
                 .orElseThrow(() -> new IllegalArgumentException("share_not_found"));
+        if (share.getStatus() != CalendarShare.ShareStatus.PENDING && request.accept()) {
+            // 이미 처리된 공유는 중복 수락/거절 불가
+            return toResponse(share);
+        }
         share.setStatus(request.accept() ? CalendarShare.ShareStatus.ACCEPTED : CalendarShare.ShareStatus.REJECTED);
         share.setRespondedAt(LocalDateTime.now());
         share = calendarShareRepository.save(share);

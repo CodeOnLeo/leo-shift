@@ -1,6 +1,7 @@
 package io.github.codeonleo.leoshift.dto;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 public record DayDetailResponse(
@@ -12,6 +13,8 @@ public record DayDetailResponse(
         String memo,
         String anniversaryMemo,
         boolean repeatYearly,
-        List<String> yearlyMemos
+        List<String> yearlyMemos,
+        AuthorDto memoAuthor,
+        LocalDateTime updatedAt
 ) {
 }
