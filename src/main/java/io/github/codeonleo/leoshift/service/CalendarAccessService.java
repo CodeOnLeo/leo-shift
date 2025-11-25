@@ -63,7 +63,8 @@ public class CalendarAccessService {
                     true,
                     CalendarShare.Permission.EDIT,
                     CalendarShare.ShareStatus.ACCEPTED,
-                    true
+                    true,
+                    calendar.isPatternEnabled()
             ));
         }
 
@@ -79,7 +80,8 @@ public class CalendarAccessService {
                     false,
                     share.getPermission(),
                     share.getStatus(),
-                    editable
+                    editable,
+                    calendar.isPatternEnabled()
             ));
         }
         return result;

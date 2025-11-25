@@ -9,6 +9,7 @@ public record CalendarSummaryResponse(
         boolean owned,
         CalendarShare.Permission permission,
         CalendarShare.ShareStatus status,
-        boolean editable
+        boolean editable,
+        boolean patternEnabled
 ) {
 }

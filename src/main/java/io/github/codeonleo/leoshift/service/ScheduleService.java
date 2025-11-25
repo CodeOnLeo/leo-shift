@@ -25,12 +25,14 @@ public class ScheduleService {
     @Transactional
     public Optional<DaySchedule> resolveDay(LocalDate date, Calendar calendar) {
         Optional<UserSettings> maybeSettings = settingsService.findSettings(calendar.getOwner());
-        if (maybeSettings.isEmpty() || !settingsService.isPatternConfigured(maybeSettings.get())) {
+        boolean patternConfigured = maybeSettings.isPresent() && settingsService.isPatternConfigured(maybeSettings.get());
+        boolean usePattern = calendar.isPatternEnabled();
+        if (usePattern && !patternConfigured) {
             return Optional.empty();
         }
-        UserSettings settings = maybeSettings.get();
-        List<String> pattern = settingsService.extractPattern(settings);
-        String baseCode = calculationService.determineCode(pattern, settings.getPatternStartDate(), date);
+        UserSettings settings = maybeSettings.orElse(null);
+        List<String> pattern = usePattern && settings != null ? settingsService.extractPattern(settings) : List.of();
+        String baseCode = usePattern ? calculationService.determineCode(pattern, settings.getPatternStartDate(), date) : null;
         ShiftException exception = exceptionRepository.findByCalendarAndDate(calendar, date).orElse(null);
         String memo = exception != null ? exception.getMemo() : null;
         String anniversaryMemo = exception != null ? exception.getAnniversaryMemo() : null;
@@ -38,6 +40,9 @@ public class ScheduleService {
         String effective = baseCode;
         if (exception != null && StringUtils.hasText(exception.getCustomCode())) {
             effective = exception.getCustomCode().toUpperCase();
+        }
+        if (!usePattern && exception == null) {
+            return Optional.of(DaySchedule.empty(date));
         }
         List<String> yearlyMemos = exceptionRepository.findYearlyEntriesForMonth(calendar, date.getMonthValue()).stream()
                 .filter(e -> e.getDate().getDayOfMonth() == date.getDayOfMonth())

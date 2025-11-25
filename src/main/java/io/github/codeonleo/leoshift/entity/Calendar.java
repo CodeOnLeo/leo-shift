@@ -36,6 +36,10 @@ public class Calendar {
     @Column
     private LocalDateTime updatedAt;
 
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean patternEnabled = true;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();

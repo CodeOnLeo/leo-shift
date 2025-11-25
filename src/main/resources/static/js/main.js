@@ -56,9 +56,12 @@ const state = {
 };
 
 async function bootstrap() {
+  await loadCalendars();
   const settings = await api.getSettings();
-  state.patternConfigured = settings.configured;
-  if (!settings.configured) {
+  const currentCalendar = state.calendars.find((c) => c.id === state.calendarId);
+  const usePattern = currentCalendar ? currentCalendar.patternEnabled !== false : true;
+  state.patternConfigured = usePattern ? settings.configured : true;
+  if (!state.patternConfigured) {
     patternManager.show(settings.defaultNotificationMinutes || 60);
     calendarSection.hidden = true;
     settingsMenuButton.hidden = true;
@@ -69,7 +72,6 @@ async function bootstrap() {
   patternManager.hide();
   calendarSection.hidden = false;
   settingsMenuButton.hidden = false;
-  await loadCalendars();
   await Promise.all([loadCalendar(state.year, state.month), loadNotificationSettings()]);
 }
 

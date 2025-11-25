@@ -29,12 +29,14 @@ public class CalendarService {
 
     public CalendarResponse buildMonthlyCalendar(Calendar calendar, int year, int month) {
         Optional<UserSettings> maybeSettings = settingsService.findSettings(calendar.getOwner());
-        if (maybeSettings.isEmpty() || !settingsService.isPatternConfigured(maybeSettings.get())) {
+        boolean patternConfigured = maybeSettings.isPresent() && settingsService.isPatternConfigured(maybeSettings.get());
+        boolean usePattern = calendar.isPatternEnabled();
+        if (usePattern && !patternConfigured) {
             return new CalendarResponse(false, year, month, Collections.emptyList(), Collections.emptyMap());
         }
-        UserSettings settings = maybeSettings.get();
-        List<String> pattern = settingsService.extractPattern(settings);
-        LocalDate patternStart = settings.getPatternStartDate();
+        UserSettings settings = maybeSettings.orElse(null);
+        List<String> pattern = usePattern && settings != null ? settingsService.extractPattern(settings) : Collections.emptyList();
+        LocalDate patternStart = usePattern && settings != null ? settings.getPatternStartDate() : null;
         LocalDate monthStart = LocalDate.of(year, month, 1);
         LocalDate monthEnd = monthStart.withDayOfMonth(monthStart.lengthOfMonth());
 
