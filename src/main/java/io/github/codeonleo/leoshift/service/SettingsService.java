@@ -4,6 +4,7 @@ import io.github.codeonleo.leoshift.entity.User;
 import io.github.codeonleo.leoshift.entity.UserSettings;
 import io.github.codeonleo.leoshift.repository.UserRepository;
 import io.github.codeonleo.leoshift.repository.UserSettingsRepository;
+import io.github.codeonleo.leoshift.security.UserPrincipal;
 import jakarta.transaction.Transactional;
 import java.time.LocalDate;
 import java.util.Arrays;
@@ -12,6 +13,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -25,14 +28,23 @@ public class SettingsService {
     private final UserSettingsRepository repository;
     private final UserRepository userRepository;
 
+    private Long getCurrentUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof UserPrincipal) {
+            return ((UserPrincipal) authentication.getPrincipal()).getId();
+        }
+        // 인증되지 않은 경우 또는 API 키 인증의 경우 기본값 사용
+        return SINGLE_USER_ID;
+    }
+
     @Transactional
     public UserSettings getOrCreate() {
-        return repository.findById(SINGLE_USER_ID)
+        Long userId = getCurrentUserId();
+        return repository.findById(userId)
                 .orElseGet(() -> {
-                    User user = userRepository.findById(SINGLE_USER_ID)
+                    User user = userRepository.findById(userId)
                             .orElseThrow(() -> new IllegalStateException("user_not_found"));
                     UserSettings created = new UserSettings();
-                    created.setId(SINGLE_USER_ID);
                     created.setUser(user);
                     created.setDefaultNotificationMinutes(DEFAULT_NOTIFICATION_MINUTES);
                     return repository.save(created);
@@ -75,7 +87,7 @@ public class SettingsService {
     }
 
     public Optional<UserSettings> findSettings() {
-        return repository.findById(SINGLE_USER_ID);
+        return repository.findById(getCurrentUserId());
     }
 
     public boolean isPatternConfigured() {
