@@ -74,9 +74,6 @@ public class SecurityConfig {
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
-                .headers(headers -> headers
-                        .frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin)
-                )
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
@@ -92,12 +89,12 @@ public class SecurityConfig {
                                 "/js/**",
                                 "/icons/**",
                                 "/health",
+                                "/api/admin/db-stats",
                                 "/api/auth/signup",
                                 "/api/auth/login",
                                 "/api/auth/refresh",
                                 "/oauth2/**",
-                                "/login/oauth2/**",
-                                "/h2-console/**"
+                                "/login/oauth2/**"
                         ).permitAll()
                         // 모든 다른 요청은 인증 필요 (API Key 인증 포함)
                         .anyRequest().authenticated()

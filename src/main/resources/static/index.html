@@ -13,9 +13,7 @@
   <link rel="stylesheet" href="/css/styles.css" />
 </head>
 <body>
-  <header>
-    <button type="button" onclick="logout()" style="position: absolute; top: 1rem; right: 1rem; padding: 0.5rem 1rem; background: #f0f0f0; border: none; border-radius: 8px; cursor: pointer;">로그아웃</button>
-  </header>
+  <button type="button" id="logoutButton" onclick="logout()" class="logout-button">로그아웃</button>
   <main>
     <section id="pattern-setup" hidden>
       <h2>근무 패턴 설정</h2>
@@ -197,6 +195,10 @@
           <section class="settings-section">
             <h3>패턴 관리</h3>
             <button type="button" id="resetPattern" class="secondary">근무 패턴 재설정</button>
+          </section>
+          <section class="settings-section">
+            <h3>계정</h3>
+            <button type="button" onclick="logout()" class="logout-modal-button">로그아웃</button>
           </section>
         </div>
       </div>

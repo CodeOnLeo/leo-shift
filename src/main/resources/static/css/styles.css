@@ -17,10 +17,35 @@ body {
   padding-bottom: env(safe-area-inset-bottom);
 }
 
-header {
-  background: linear-gradient(135deg, #007AFF, #5856D6);
-  padding: max(0.5rem, env(safe-area-inset-top) + 0.5rem) 0 0.5rem;
-  display: none;
+/* Logout Button */
+.logout-button {
+  position: fixed;
+  top: max(1rem, env(safe-area-inset-top) + 0.5rem);
+  right: 1rem;
+  padding: 0.6rem 1rem;
+  background: rgba(255, 255, 255, 0.95);
+  color: #FF3B30;
+  border: 1px solid #FF3B30;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  z-index: 999;
+  min-height: unset;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: all 0.2s ease;
+}
+
+.logout-button:hover {
+  background: #FF3B30;
+  color: white;
+}
+
+.logout-button:active {
+  transform: scale(0.95);
+  opacity: 1;
 }
 
 main {
@@ -570,6 +595,20 @@ button.secondary {
   background: #8e8e93;
 }
 
+.logout-modal-button {
+  background: #FF3B30;
+  color: white;
+}
+
+.logout-modal-button:hover {
+  background: #D62C21;
+}
+
+.logout-modal-button:active {
+  background: #D62C21;
+  opacity: 0.8;
+}
+
 /* Day Detail Panel */
 .day-detail-panel {
   display: flex;
@@ -608,6 +647,13 @@ button.secondary {
   section {
     padding: 1rem;
     border-radius: 14px;
+  }
+
+  .logout-button {
+    padding: 0.5rem 0.85rem;
+    font-size: 0.85rem;
+    top: max(0.75rem, env(safe-area-inset-top) + 0.5rem);
+    right: 0.75rem;
   }
 
   .calendar-grid {
