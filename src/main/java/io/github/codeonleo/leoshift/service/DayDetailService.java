@@ -2,6 +2,7 @@ package io.github.codeonleo.leoshift.service;
 
 import io.github.codeonleo.leoshift.dto.DayDetailResponse;
 import io.github.codeonleo.leoshift.dto.ExceptionUpdateRequest;
+import io.github.codeonleo.leoshift.entity.Calendar;
 import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -17,16 +18,16 @@ public class DayDetailService {
     private final ScheduleService scheduleService;
     private final ExceptionService exceptionService;
 
-    public DayDetailResponse load(LocalDate date) {
-        return scheduleService.resolveDay(date)
+    public DayDetailResponse load(LocalDate date, Calendar calendar) {
+        return scheduleService.resolveDay(date, calendar)
                 .map(this::toResponse)
                 .orElseGet(() -> new DayDetailResponse(date, null, null, "", "", null, null, false, List.of()));
     }
 
-    public DayDetailResponse save(LocalDate date, ExceptionUpdateRequest request) {
+    public DayDetailResponse save(LocalDate date, ExceptionUpdateRequest request, Calendar calendar) {
         String customCode = normalizeCode(request.customCode());
-        exceptionService.saveOrUpdate(date, customCode, request.memo(), request.anniversaryMemo(), request.repeatYearly());
-        return load(date);
+        exceptionService.saveOrUpdate(date, customCode, request.memo(), request.anniversaryMemo(), request.repeatYearly(), calendar);
+        return load(date, calendar);
     }
 
     private DayDetailResponse toResponse(DaySchedule schedule) {

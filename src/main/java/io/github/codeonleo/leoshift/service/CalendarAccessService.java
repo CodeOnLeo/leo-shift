@@ -1,0 +1,98 @@
+package io.github.codeonleo.leoshift.service;
+
+import io.github.codeonleo.leoshift.entity.Calendar;
+import io.github.codeonleo.leoshift.entity.CalendarShare;
+import io.github.codeonleo.leoshift.entity.User;
+import io.github.codeonleo.leoshift.entity.UserSettings;
+import io.github.codeonleo.leoshift.repository.CalendarRepository;
+import io.github.codeonleo.leoshift.repository.CalendarShareRepository;
+import io.github.codeonleo.leoshift.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
+@Service
+@RequiredArgsConstructor
+public class CalendarAccessService {
+
+    private final SettingsService settingsService;
+    private final CalendarRepository calendarRepository;
+    private final CalendarShareRepository calendarShareRepository;
+    private final UserRepository userRepository;
+
+    public CalendarAccess requireView(Long calendarId) {
+        User currentUser = getCurrentUser();
+        Calendar calendar = resolveCalendar(calendarId, currentUser);
+        ensureViewPermission(calendar, currentUser);
+        return new CalendarAccess(calendar, canEdit(calendar, currentUser));
+    }
+
+    public CalendarAccess requireEdit(Long calendarId) {
+        User currentUser = getCurrentUser();
+        Calendar calendar = resolveCalendar(calendarId, currentUser);
+        ensureEditPermission(calendar, currentUser);
+        return new CalendarAccess(calendar, true);
+    }
+
+    private Calendar resolveCalendar(Long calendarId, User currentUser) {
+        if (calendarId == null) {
+            return resolveDefaultCalendar(currentUser);
+        }
+        return calendarRepository.findById(calendarId)
+                .orElseThrow(() -> new IllegalArgumentException("calendar_not_found"));
+    }
+
+    private Calendar resolveDefaultCalendar(User currentUser) {
+        UserSettings settings = settingsService.getOrCreate();
+        Calendar defaultCalendar = settings.getDefaultCalendar();
+        if (defaultCalendar == null) {
+            throw new IllegalStateException("default_calendar_not_set");
+        }
+        ensureViewPermission(defaultCalendar, currentUser);
+        return defaultCalendar;
+    }
+
+    private void ensureViewPermission(Calendar calendar, User currentUser) {
+        if (isOwner(calendar, currentUser)) {
+            return;
+        }
+        CalendarShare share = calendarShareRepository.findByCalendarAndUser(calendar, currentUser)
+                .orElseThrow(() -> new IllegalArgumentException("calendar_access_denied"));
+        if (share.getStatus() != CalendarShare.ShareStatus.ACCEPTED) {
+            throw new IllegalArgumentException("calendar_access_denied");
+        }
+    }
+
+    private void ensureEditPermission(Calendar calendar, User currentUser) {
+        if (isOwner(calendar, currentUser)) {
+            return;
+        }
+        CalendarShare share = calendarShareRepository.findByCalendarAndUser(calendar, currentUser)
+                .orElseThrow(() -> new IllegalArgumentException("calendar_access_denied"));
+        if (share.getStatus() != CalendarShare.ShareStatus.ACCEPTED || share.getPermission() != CalendarShare.Permission.EDIT) {
+            throw new IllegalArgumentException("calendar_edit_not_allowed");
+        }
+    }
+
+    private boolean canEdit(Calendar calendar, User currentUser) {
+        if (isOwner(calendar, currentUser)) {
+            return true;
+        }
+        return calendarShareRepository.findByCalendarAndUser(calendar, currentUser)
+                .filter(share -> share.getStatus() == CalendarShare.ShareStatus.ACCEPTED)
+                .map(share -> share.getPermission() == CalendarShare.Permission.EDIT)
+                .orElse(false);
+    }
+
+    private boolean isOwner(Calendar calendar, User currentUser) {
+        return calendar.getOwner() != null && calendar.getOwner().getId().equals(currentUser.getId());
+    }
+
+    private User getCurrentUser() {
+        Long currentUserId = settingsService.currentUserId();
+        return userRepository.findById(currentUserId)
+                .orElseThrow(() -> new IllegalArgumentException("user_not_found"));
+    }
+
+    public record CalendarAccess(Calendar calendar, boolean editable) {
+    }
+}

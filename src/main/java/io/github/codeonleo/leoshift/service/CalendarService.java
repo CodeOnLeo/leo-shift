@@ -2,6 +2,7 @@ package io.github.codeonleo.leoshift.service;
 
 import io.github.codeonleo.leoshift.dto.CalendarDayDto;
 import io.github.codeonleo.leoshift.dto.CalendarResponse;
+import io.github.codeonleo.leoshift.entity.Calendar;
 import io.github.codeonleo.leoshift.entity.ShiftException;
 import io.github.codeonleo.leoshift.entity.UserSettings;
 import io.github.codeonleo.leoshift.repository.ShiftExceptionRepository;
@@ -25,8 +26,8 @@ public class CalendarService {
     private final ShiftCalculationService calculationService;
     private final ShiftExceptionRepository exceptionRepository;
 
-    public CalendarResponse buildMonthlyCalendar(int year, int month) {
-        Optional<UserSettings> maybeSettings = settingsService.findSettings();
+    public CalendarResponse buildMonthlyCalendar(Calendar calendar, int year, int month) {
+        Optional<UserSettings> maybeSettings = settingsService.findSettings(calendar.getOwner());
         if (maybeSettings.isEmpty() || !settingsService.isPatternConfigured(maybeSettings.get())) {
             return new CalendarResponse(false, year, month, Collections.emptyList(), Collections.emptyMap());
         }
@@ -42,10 +43,10 @@ public class CalendarService {
         LocalDate calendarEnd = calendarStart.plusDays(41); // 6주 = 42일
 
         // Exception 데이터 조회 범위 확장
-        Map<LocalDate, ShiftException> exceptionByDate = exceptionRepository.findByDateBetween(calendarStart, calendarEnd).stream()
+        Map<LocalDate, ShiftException> exceptionByDate = exceptionRepository.findByCalendarAndDateBetween(calendar, calendarStart, calendarEnd).stream()
                 .collect(Collectors.toMap(ShiftException::getDate, ex -> ex));
 
-        Map<Integer, List<ShiftException>> yearlyByDay = exceptionRepository.findYearlyEntriesForMonth(month).stream()
+        Map<Integer, List<ShiftException>> yearlyByDay = exceptionRepository.findYearlyEntriesForMonth(calendar, month).stream()
                 .collect(Collectors.groupingBy(ex -> ex.getDate().getDayOfMonth()));
 
         List<CalendarDayDto> days = new ArrayList<>();

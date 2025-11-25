@@ -28,7 +28,7 @@ public class SettingsService {
     private final UserSettingsRepository repository;
     private final UserRepository userRepository;
 
-    private Long getCurrentUserId() {
+    public Long currentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.getPrincipal() instanceof UserPrincipal) {
             return ((UserPrincipal) authentication.getPrincipal()).getId();
@@ -39,7 +39,7 @@ public class SettingsService {
 
     @Transactional
     public UserSettings getOrCreate() {
-        Long userId = getCurrentUserId();
+        Long userId = currentUserId();
         return repository.findById(userId)
                 .orElseGet(() -> {
                     User user = userRepository.findById(userId)
@@ -87,7 +87,14 @@ public class SettingsService {
     }
 
     public Optional<UserSettings> findSettings() {
-        return repository.findById(getCurrentUserId());
+        return repository.findById(currentUserId());
+    }
+
+    public Optional<UserSettings> findSettings(User user) {
+        if (user == null || user.getId() == null) {
+            return Optional.empty();
+        }
+        return repository.findById(user.getId());
     }
 
     public boolean isPatternConfigured() {

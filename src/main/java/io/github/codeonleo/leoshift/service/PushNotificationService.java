@@ -4,7 +4,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.codeonleo.leoshift.config.PushProperties;
 import io.github.codeonleo.leoshift.dto.PushSubscriptionRequest;
 import io.github.codeonleo.leoshift.entity.PushSubscription;
+import io.github.codeonleo.leoshift.entity.Calendar;
+import io.github.codeonleo.leoshift.entity.UserSettings;
 import io.github.codeonleo.leoshift.repository.PushSubscriptionRepository;
+import io.github.codeonleo.leoshift.service.SettingsService;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
@@ -36,6 +39,7 @@ public class PushNotificationService {
     private final PushSubscriptionRepository repository;
     private final PushProperties pushProperties;
     private final NotificationPreferenceService preferenceService;
+    private final SettingsService settingsService;
     private final ScheduleService scheduleService;
     private final ObjectMapper objectMapper;
 
@@ -89,10 +93,11 @@ public class PushNotificationService {
     }
 
     public Optional<UpcomingShift> findNextShift(LocalDateTime now) {
+        Calendar calendar = resolveDefaultCalendar();
         LocalDate date = now.toLocalDate();
         for (int i = 0; i <= 14; i++) {
             LocalDate targetDate = date.plusDays(i);
-            Optional<DaySchedule> schedule = scheduleService.resolveDay(targetDate);
+            Optional<DaySchedule> schedule = scheduleService.resolveDay(targetDate, calendar);
             if (schedule.isEmpty()) {
                 continue;
             }
@@ -111,6 +116,15 @@ public class PushNotificationService {
             return Optional.of(new UpcomingShift(targetDate, schedule.get().effectiveCode(), definition, shiftStart));
         }
         return Optional.empty();
+    }
+
+    private Calendar resolveDefaultCalendar() {
+        UserSettings settings = settingsService.getOrCreate();
+        Calendar calendar = settings.getDefaultCalendar();
+        if (calendar == null) {
+            throw new IllegalStateException("default_calendar_not_set");
+        }
+        return calendar;
     }
 
     private String buildPayload(UpcomingShift shift, boolean testMode) {

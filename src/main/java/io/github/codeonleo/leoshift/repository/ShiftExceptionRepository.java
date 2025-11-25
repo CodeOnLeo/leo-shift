@@ -1,5 +1,6 @@
 package io.github.codeonleo.leoshift.repository;
 
+import io.github.codeonleo.leoshift.entity.Calendar;
 import io.github.codeonleo.leoshift.entity.ShiftException;
 import java.time.LocalDate;
 import java.util.List;
@@ -10,13 +11,13 @@ import org.springframework.data.repository.query.Param;
 
 public interface ShiftExceptionRepository extends JpaRepository<ShiftException, Long> {
 
-    Optional<ShiftException> findByDate(LocalDate date);
+    Optional<ShiftException> findByCalendarAndDate(Calendar calendar, LocalDate date);
 
-    List<ShiftException> findByDateBetween(LocalDate start, LocalDate end);
+    List<ShiftException> findByCalendarAndDateBetween(Calendar calendar, LocalDate start, LocalDate end);
 
-    @Query("select e from ShiftException e where e.repeatYearly = true")
-    List<ShiftException> findYearlyRepeating();
+    @Query("select e from ShiftException e where e.calendar = :calendar and e.repeatYearly = true")
+    List<ShiftException> findYearlyRepeating(@Param("calendar") Calendar calendar);
 
-    @Query("select e from ShiftException e where e.repeatYearly = true and MONTH(e.date) = :month")
-    List<ShiftException> findYearlyEntriesForMonth(@Param("month") int month);
+    @Query("select e from ShiftException e where e.calendar = :calendar and e.repeatYearly = true and MONTH(e.date) = :month")
+    List<ShiftException> findYearlyEntriesForMonth(@Param("calendar") Calendar calendar, @Param("month") int month);
 }
