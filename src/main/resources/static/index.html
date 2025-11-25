@@ -13,7 +13,6 @@
   <link rel="stylesheet" href="/css/styles.css" />
 </head>
 <body>
-  <button type="button" id="logoutButton" onclick="logout()" class="logout-button">로그아웃</button>
   <main>
     <section id="pattern-setup" hidden>
       <h2>근무 패턴 설정</h2>
@@ -173,9 +172,15 @@
           <h2>설정</h2>
           <button type="button" class="modal-close" id="settingsModalClose">&times;</button>
         </div>
-        <div class="modal-body">
-          <section class="settings-section">
-            <h3>알림 설정</h3>
+        <div class="modal-body settings-modal-body">
+          <section class="settings-section" data-tone="primary">
+            <div class="settings-section-header">
+              <div class="settings-section-icon" data-color="primary" aria-hidden="true">🔔</div>
+              <div>
+                <h3>알림 설정</h3>
+                <p class="settings-section-description">근무 시작 전 받을 푸시·로컬 알림 시간을 자유롭게 조정하세요.</p>
+              </div>
+            </div>
             <form class="notification-form" id="notificationForm">
               <label>근무 시작 전 알림 시간 (최대 4시간)</label>
               <div class="time-input-group">
@@ -190,15 +195,27 @@
               </div>
               <button type="submit">알림 시간 저장</button>
             </form>
-            <button type="button" id="subscribePush" class="secondary" style="margin-top: 1rem;">푸시 알림 활성화</button>
+            <button type="button" id="subscribePush" class="secondary full-width" style="margin-top: 1rem;">푸시 알림 활성화</button>
           </section>
-          <section class="settings-section">
-            <h3>패턴 관리</h3>
-            <button type="button" id="resetPattern" class="secondary">근무 패턴 재설정</button>
+          <section class="settings-section" data-tone="neutral">
+            <div class="settings-section-header">
+              <div class="settings-section-icon" data-color="neutral" aria-hidden="true">🗓️</div>
+              <div>
+                <h3>패턴 관리</h3>
+                <p class="settings-section-description">패턴이 꼬였을 때 쉽게 초기화하고 처음부터 다시 설정할 수 있어요.</p>
+              </div>
+            </div>
+            <button type="button" id="resetPattern" class="secondary full-width">근무 패턴 재설정</button>
           </section>
-          <section class="settings-section">
-            <h3>계정</h3>
-            <button type="button" onclick="logout()" class="logout-modal-button">로그아웃</button>
+          <section class="settings-section" data-tone="danger">
+            <div class="settings-section-header">
+              <div class="settings-section-icon" data-color="danger" aria-hidden="true">🔒</div>
+              <div>
+                <h3>계정</h3>
+                <p class="settings-section-description">설정을 모두 마쳤다면 여기에서 안전하게 로그아웃할 수 있습니다.</p>
+              </div>
+            </div>
+            <button type="button" onclick="logout()" class="logout-modal-button full-width">로그아웃</button>
           </section>
         </div>
       </div>
