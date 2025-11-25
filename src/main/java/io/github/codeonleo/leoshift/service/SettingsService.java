@@ -1,6 +1,8 @@
 package io.github.codeonleo.leoshift.service;
 
+import io.github.codeonleo.leoshift.entity.User;
 import io.github.codeonleo.leoshift.entity.UserSettings;
+import io.github.codeonleo.leoshift.repository.UserRepository;
 import io.github.codeonleo.leoshift.repository.UserSettingsRepository;
 import jakarta.transaction.Transactional;
 import java.time.LocalDate;
@@ -21,13 +23,17 @@ public class SettingsService {
     private static final int DEFAULT_NOTIFICATION_MINUTES = 60;
 
     private final UserSettingsRepository repository;
+    private final UserRepository userRepository;
 
     @Transactional
     public UserSettings getOrCreate() {
         return repository.findById(SINGLE_USER_ID)
                 .orElseGet(() -> {
+                    User user = userRepository.findById(SINGLE_USER_ID)
+                            .orElseThrow(() -> new IllegalStateException("user_not_found"));
                     UserSettings created = new UserSettings();
                     created.setId(SINGLE_USER_ID);
+                    created.setUser(user);
                     created.setDefaultNotificationMinutes(DEFAULT_NOTIFICATION_MINUTES);
                     return repository.save(created);
                 });
