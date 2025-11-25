@@ -1,16 +1,13 @@
 package io.github.codeonleo.leoshift.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
 @Entity
-@Table(name = "push_subscriptions")
+@Table(name = "push_subscriptions", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"user_id", "endpoint"})
+})
 @Getter
 @Setter
 public class PushSubscription {
@@ -19,7 +16,11 @@ public class PushSubscription {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(columnDefinition = "text", nullable = false, unique = true)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
+    @Column(columnDefinition = "text", nullable = false)
     private String endpoint;
 
     @Column(columnDefinition = "text", nullable = false)

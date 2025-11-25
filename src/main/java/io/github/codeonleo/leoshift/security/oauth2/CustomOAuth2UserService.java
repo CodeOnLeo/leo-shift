@@ -1,7 +1,11 @@
 package io.github.codeonleo.leoshift.security.oauth2;
 
+import io.github.codeonleo.leoshift.entity.Calendar;
 import io.github.codeonleo.leoshift.entity.User;
+import io.github.codeonleo.leoshift.entity.UserSettings;
+import io.github.codeonleo.leoshift.repository.CalendarRepository;
 import io.github.codeonleo.leoshift.repository.UserRepository;
+import io.github.codeonleo.leoshift.repository.UserSettingsRepository;
 import io.github.codeonleo.leoshift.security.UserPrincipal;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +25,8 @@ import java.util.Set;
 public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
     private final UserRepository userRepository;
+    private final CalendarRepository calendarRepository;
+    private final UserSettingsRepository userSettingsRepository;
 
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
@@ -62,7 +68,24 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                 .build();
 
         user.setLastLoginAt(LocalDateTime.now());
-        return userRepository.save(user);
+        user = userRepository.save(user);
+
+        // 기본 캘린더 생성
+        Calendar defaultCalendar = Calendar.builder()
+                .owner(user)
+                .name("내 근무표")
+                .description("기본 근무표")
+                .build();
+        defaultCalendar = calendarRepository.save(defaultCalendar);
+
+        // 사용자 설정 생성
+        UserSettings settings = new UserSettings();
+        settings.setUser(user);
+        settings.setDefaultCalendar(defaultCalendar);
+        settings.setDefaultNotificationMinutes(60);
+        userSettingsRepository.save(settings);
+
+        return user;
     }
 
     private User updateExistingUser(User existingUser, OAuth2UserInfo oAuth2UserInfo) {

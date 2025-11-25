@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>로그인 - Leo Shift</title>
+  <link rel="stylesheet" href="/css/styles.css" />
+  <style>
+    .login-container {
+      max-width: 400px;
+      margin: 2rem auto;
+      padding: 2rem;
+      text-align: center;
+    }
+    .login-container h1 {
+      margin-bottom: 2rem;
+      color: #007AFF;
+    }
+    .login-button {
+      width: 100%;
+      padding: 1rem;
+      margin: 0.5rem 0;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .google-login {
+      background-color: #4285F4;
+      color: white;
+    }
+    .google-login:hover {
+      background-color: #357ae8;
+    }
+    .email-login {
+      background-color: #007AFF;
+      color: white;
+    }
+    .email-login:hover {
+      background-color: #0051D5;
+    }
+    .divider {
+      margin: 2rem 0;
+      text-align: center;
+      color: #666;
+    }
+    .email-form {
+      display: none;
+      text-align: left;
+    }
+    .email-form input {
+      width: 100%;
+      padding: 0.75rem;
+      margin: 0.5rem 0;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 1rem;
+    }
+    .back-button {
+      background-color: #f0f0f0;
+      color: #333;
+    }
+    .back-button:hover {
+      background-color: #e0e0e0;
+    }
+    .error-message {
+      color: #ff3b30;
+      margin: 1rem 0;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <h1>🔄 Leo Shift</h1>
+    <p>교대 근무자를 위한 스마트 근무표</p>
+
+    <div id="loginOptions">
+      <button class="login-button google-login" onclick="loginWithGoogle()">
+        Google로 로그인
+      </button>
+
+      <div class="divider">또는</div>
+
+      <button class="login-button email-login" onclick="showEmailForm()">
+        이메일로 로그인
+      </button>
+    </div>
+
+    <div id="emailForm" class="email-form">
+      <h3>이메일 로그인</h3>
+      <div class="error-message" id="errorMessage"></div>
+      <form onsubmit="handleEmailLogin(event)">
+        <input type="email" id="email" placeholder="이메일" required />
+        <input type="password" id="password" placeholder="비밀번호" required />
+        <button type="submit" class="login-button email-login">로그인</button>
+      </form>
+      <button class="login-button back-button" onclick="showLoginOptions()">
+        돌아가기
+      </button>
+      <p style="margin-top: 1rem; font-size: 0.9rem;">
+        계정이 없으신가요? <a href="#" onclick="showSignupForm(); return false;">회원가입</a>
+      </p>
+    </div>
+
+    <div id="signupForm" class="email-form">
+      <h3>회원가입</h3>
+      <div class="error-message" id="signupErrorMessage"></div>
+      <form onsubmit="handleSignup(event)">
+        <input type="text" id="signupName" placeholder="이름" required />
+        <input type="email" id="signupEmail" placeholder="이메일" required />
+        <input type="password" id="signupPassword" placeholder="비밀번호 (최소 6자)" required minlength="6" />
+        <button type="submit" class="login-button email-login">회원가입</button>
+      </form>
+      <button class="login-button back-button" onclick="showLoginOptions()">
+        돌아가기
+      </button>
+      <p style="margin-top: 1rem; font-size: 0.9rem;">
+        이미 계정이 있으신가요? <a href="#" onclick="showEmailForm(); return false;">로그인</a>
+      </p>
+    </div>
+  </div>
+
+  <script>
+    function loginWithGoogle() {
+      window.location.href = '/oauth2/authorize/google';
+    }
+
+    function showEmailForm() {
+      document.getElementById('loginOptions').style.display = 'none';
+      document.getElementById('emailForm').style.display = 'block';
+      document.getElementById('signupForm').style.display = 'none';
+    }
+
+    function showSignupForm() {
+      document.getElementById('loginOptions').style.display = 'none';
+      document.getElementById('emailForm').style.display = 'none';
+      document.getElementById('signupForm').style.display = 'block';
+    }
+
+    function showLoginOptions() {
+      document.getElementById('loginOptions').style.display = 'block';
+      document.getElementById('emailForm').style.display = 'none';
+      document.getElementById('signupForm').style.display = 'none';
+    }
+
+    async function handleEmailLogin(event) {
+      event.preventDefault();
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const errorMessage = document.getElementById('errorMessage');
+
+      try {
+        const response = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+
+        if (!response.ok) {
+          const error = await response.text();
+          errorMessage.textContent = '로그인 실패: ' + error;
+          errorMessage.style.display = 'block';
+          return;
+        }
+
+        const data = await response.json();
+        localStorage.setItem('accessToken', data.accessToken);
+        localStorage.setItem('refreshToken', data.refreshToken);
+        window.location.href = '/';
+      } catch (error) {
+        errorMessage.textContent = '로그인 중 오류가 발생했습니다.';
+        errorMessage.style.display = 'block';
+      }
+    }
+
+    async function handleSignup(event) {
+      event.preventDefault();
+      const name = document.getElementById('signupName').value;
+      const email = document.getElementById('signupEmail').value;
+      const password = document.getElementById('signupPassword').value;
+      const errorMessage = document.getElementById('signupErrorMessage');
+
+      try {
+        const response = await fetch('/api/auth/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, password })
+        });
+
+        if (!response.ok) {
+          const error = await response.text();
+          errorMessage.textContent = '회원가입 실패: ' + error;
+          errorMessage.style.display = 'block';
+          return;
+        }
+
+        const data = await response.json();
+        localStorage.setItem('accessToken', data.accessToken);
+        localStorage.setItem('refreshToken', data.refreshToken);
+        window.location.href = '/';
+      } catch (error) {
+        errorMessage.textContent = '회원가입 중 오류가 발생했습니다.';
+        errorMessage.style.display = 'block';
+      }
+    }
+
+    // URL 파라미터에서 토큰 확인 (OAuth2 리다이렉트 후)
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    if (token) {
+      localStorage.setItem('accessToken', token);
+      window.location.href = '/';
+    }
+
+    // 이미 로그인된 경우 메인 페이지로 이동
+    const accessToken = localStorage.getItem('accessToken');
+    if (accessToken) {
+      window.location.href = '/';
+    }
+  </script>
+</body>
+</html>

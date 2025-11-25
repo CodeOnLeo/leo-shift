@@ -289,8 +289,29 @@ function formatKoreanDate(date) {
   return `${year}년 ${month}월 ${day}일 ${weekday}`;
 }
 
+// 인증 체크
+function checkAuth() {
+  const token = localStorage.getItem('accessToken');
+  if (!token) {
+    window.location.href = '/login.html';
+    return false;
+  }
+  return true;
+}
+
+// 로그아웃 함수
+window.logout = function() {
+  if (confirm('로그아웃 하시겠습니까?')) {
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    window.location.href = '/login.html';
+  }
+};
+
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js');
 }
 
-bootstrap();
+if (checkAuth()) {
+  bootstrap();
+}

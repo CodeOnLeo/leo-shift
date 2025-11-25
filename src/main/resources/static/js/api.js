@@ -1,14 +1,30 @@
-const headers = {
-  'Content-Type': 'application/json'
-};
+function getHeaders() {
+  const headers = {
+    'Content-Type': 'application/json'
+  };
+
+  const token = localStorage.getItem('accessToken');
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  return headers;
+}
 
 async function request(url, options = {}) {
   const response = await fetch(url, {
-    headers,
+    headers: getHeaders(),
     credentials: 'same-origin',
     ...options
   });
   if (!response.ok) {
+    if (response.status === 401) {
+      // 인증 실패 시 로그인 페이지로 이동
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      window.location.href = '/login.html';
+      return;
+    }
     const message = await response.text();
     throw new Error(message || 'Request failed');
   }

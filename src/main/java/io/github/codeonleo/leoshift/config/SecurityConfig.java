@@ -76,14 +76,17 @@ public class SecurityConfig {
                         // 공개 엔드포인트
                         .requestMatchers(
                                 "/",
+                                "/login.html",
                                 "/index.html",
                                 "/manifest.json",
-                                "/service-worker.js",
-                                "/assets/**",
+                                "/sw.js",
+                                "/css/**",
+                                "/js/**",
                                 "/icons/**",
                                 "/health",
                                 "/api/auth/**",
                                 "/oauth2/**",
+                                "/login/oauth2/**",
                                 "/h2-console/**"
                         ).permitAll()
                         // GitHub Actions 푸시 알림 엔드포인트 - API 키 인증 필요

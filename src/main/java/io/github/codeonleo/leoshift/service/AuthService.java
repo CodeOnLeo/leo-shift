@@ -3,8 +3,12 @@ package io.github.codeonleo.leoshift.service;
 import io.github.codeonleo.leoshift.dto.AuthRequest;
 import io.github.codeonleo.leoshift.dto.AuthResponse;
 import io.github.codeonleo.leoshift.dto.SignupRequest;
+import io.github.codeonleo.leoshift.entity.Calendar;
 import io.github.codeonleo.leoshift.entity.User;
+import io.github.codeonleo.leoshift.entity.UserSettings;
+import io.github.codeonleo.leoshift.repository.CalendarRepository;
 import io.github.codeonleo.leoshift.repository.UserRepository;
+import io.github.codeonleo.leoshift.repository.UserSettingsRepository;
 import io.github.codeonleo.leoshift.security.JwtTokenProvider;
 import io.github.codeonleo.leoshift.security.UserPrincipal;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +27,8 @@ import java.util.Set;
 public class AuthService {
 
     private final UserRepository userRepository;
+    private final CalendarRepository calendarRepository;
+    private final UserSettingsRepository userSettingsRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
@@ -44,6 +50,21 @@ public class AuthService {
 
         user.setLastLoginAt(LocalDateTime.now());
         user = userRepository.save(user);
+
+        // 기본 캘린더 생성
+        Calendar defaultCalendar = Calendar.builder()
+                .owner(user)
+                .name("내 근무표")
+                .description("기본 근무표")
+                .build();
+        defaultCalendar = calendarRepository.save(defaultCalendar);
+
+        // 사용자 설정 생성
+        UserSettings settings = new UserSettings();
+        settings.setUser(user);
+        settings.setDefaultCalendar(defaultCalendar);
+        settings.setDefaultNotificationMinutes(60);
+        userSettingsRepository.save(settings);
 
         // JWT 토큰 생성을 위한 Authentication 객체 생성
         Authentication authentication = new UsernamePasswordAuthenticationToken(
