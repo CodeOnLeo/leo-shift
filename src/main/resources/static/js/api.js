@@ -71,6 +71,7 @@ async function request(url, options = {}) {
     if (response.status === 401) {
       // 토큰이 없으면 바로 로그인 페이지로 이동
       if (!localStorage.getItem('accessToken')) {
+        loadingHooks.onEnd();
         window.location.href = '/login.html';
         return;
       }
@@ -111,6 +112,7 @@ async function request(url, options = {}) {
         });
 
         if (retryResponse.ok) {
+          loadingHooks.onEnd();
           if (retryResponse.status === 204) {
             return null;
           }
@@ -125,6 +127,7 @@ async function request(url, options = {}) {
       } catch (error) {
         processQueue(error, null);
         isRefreshing = false;
+        loadingHooks.onEnd();
         // 토큰 갱신 실패 시 로그인 페이지로 이동
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
