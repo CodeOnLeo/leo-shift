@@ -107,6 +107,15 @@ public class SettingsService {
         repository.save(settings);
     }
 
+    @Transactional
+    public void updateColorTag(String color) {
+        Long userId = currentUserId();
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalStateException("user_not_found"));
+        user.setColorTag(color != null ? color.toUpperCase() : null);
+        userRepository.save(user);
+    }
+
     public boolean isPatternConfigured() {
         return findSettings().map(this::isPatternConfigured).orElse(false);
     }

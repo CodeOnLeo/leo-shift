@@ -4,6 +4,7 @@ import io.github.codeonleo.leoshift.dto.NotificationSettingsRequest;
 import io.github.codeonleo.leoshift.dto.NotificationSettingsResponse;
 import io.github.codeonleo.leoshift.dto.PatternSettingsRequest;
 import io.github.codeonleo.leoshift.dto.PatternSettingsResponse;
+import io.github.codeonleo.leoshift.dto.ColorUpdateRequest;
 import io.github.codeonleo.leoshift.entity.UserSettings;
 import io.github.codeonleo.leoshift.service.NotificationPreferenceService;
 import io.github.codeonleo.leoshift.service.SettingsService;
@@ -71,6 +72,12 @@ public class SettingsController {
     @PutMapping("/notifications")
     public NotificationSettingsResponse updateNotifications(@Valid @RequestBody NotificationSettingsRequest request) {
         return new NotificationSettingsResponse(preferenceService.updateMinutes(request.minutes()));
+    }
+
+    @PutMapping("/color")
+    public ResponseEntity<Void> updateColor(@Valid @RequestBody ColorUpdateRequest request) {
+        settingsService.updateColorTag(request.color());
+        return ResponseEntity.noContent().build();
     }
 
     private void validatePattern(List<String> pattern) {

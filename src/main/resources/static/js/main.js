@@ -42,6 +42,8 @@ const shareInviteButton = document.getElementById('shareInviteButton');
 const shareList = document.getElementById('shareList');
 const inviteList = document.getElementById('inviteList');
 const patternFields = document.querySelectorAll('[data-pattern="true"]');
+const colorPicker = document.getElementById('colorPicker');
+const saveColorButton = document.getElementById('saveColorButton');
 
 const patternManager = initPatternForm({
   sectionEl: document.getElementById('pattern-setup'),
@@ -321,6 +323,19 @@ if (shareInviteButton) {
       await loadShares();
     } catch (e) {
       showToast('초대 전송 실패: ' + (e.message || '오류'));
+    }
+  });
+}
+
+if (saveColorButton && colorPicker) {
+  saveColorButton.addEventListener('click', async () => {
+    const color = colorPicker.value;
+    try {
+      await api.updateColor({ color });
+      showToast('색상이 저장되었습니다.');
+      await loadCalendar(state.year, state.month);
+    } catch (e) {
+      showToast('색상 저장 실패: ' + (e.message || '오류'));
     }
   });
 }
