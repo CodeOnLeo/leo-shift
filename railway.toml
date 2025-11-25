@@ -5,6 +5,11 @@ dockerfilePath = "Dockerfile"
 [deploy]
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
+# 유료 버전: Always On - 슬립 모드 비활성화
+sleepModeEnabled = false
+# 헬스체크 설정 - GitHub Actions 요청 시 서비스 유지
+healthcheckPath = "/health"
+healthcheckTimeout = 300
 
 # Volume mount for persistent database storage
 [[deploy.volumes]]

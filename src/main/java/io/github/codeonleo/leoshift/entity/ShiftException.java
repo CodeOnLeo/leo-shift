@@ -1,17 +1,14 @@
 package io.github.codeonleo.leoshift.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import java.time.LocalDate;
 import lombok.Getter;
 import lombok.Setter;
 
 @Entity
-@Table(name = "exceptions")
+@Table(name = "exceptions", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"calendar_id", "date"})
+})
 @Getter
 @Setter
 public class ShiftException {
@@ -20,7 +17,11 @@ public class ShiftException {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "calendar_id", nullable = false)
+    private Calendar calendar;
+
+    @Column(nullable = false)
     private LocalDate date;
 
     @Column(name = "custom_code")

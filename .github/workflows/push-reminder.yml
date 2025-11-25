@@ -17,9 +17,10 @@ jobs:
       - name: Send Push Notification
         run: |
           # Railway 배포 URL로 푸시 알림 트리거
-          # Railway에 배포 후 실제 URL로 변경 필요
+          # API 키 인증 포함
           RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
             -H "Content-Type: application/json" \
+            -H "X-API-Key: ${{ secrets.API_KEY }}" \
             ${{ secrets.RAILWAY_APP_URL }}/api/push/send-scheduled-reminder)
 
           HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
