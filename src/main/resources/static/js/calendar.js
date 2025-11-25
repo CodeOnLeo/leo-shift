@@ -1,5 +1,23 @@
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+function initials(name) {
+  if (!name) return '';
+  const parts = name.trim().split(' ').filter(Boolean);
+  if (parts.length === 1) {
+    return parts[0].slice(0, 2).toUpperCase();
+  }
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+function formatDate(dateTimeString) {
+  try {
+    const d = new Date(dateTimeString);
+    return `${d.getMonth() + 1}/${d.getDate()}`;
+  } catch (e) {
+    return '';
+  }
+}
+
 export function renderCalendar({
   gridEl,
   summaryEl,
@@ -70,6 +88,15 @@ export function renderCalendar({
       memo.className = 'memo-regular';
       memo.textContent = day.memos.join(' \u2022 ');
       cell.append(memo);
+    }
+
+    // 작성자 태그
+    if (day.memoAuthor) {
+      const tag = document.createElement('div');
+      tag.className = 'memo-author-tag';
+      tag.textContent = initials(day.memoAuthor.name || '');
+      tag.title = `${day.memoAuthor.name || '작성자'}${day.updatedAt ? ` · ${formatDate(day.updatedAt)}` : ''}`;
+      cell.append(tag);
     }
 
     cell.addEventListener('click', () => onSelectDay(day.date));

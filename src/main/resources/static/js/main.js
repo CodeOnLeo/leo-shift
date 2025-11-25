@@ -29,6 +29,9 @@ const notificationHoursInput = document.getElementById('notificationHours');
 const notificationMinutesInput = document.getElementById('notificationMinutes');
 const subscribePushButton = document.getElementById('subscribePush');
 const resetPatternButton = document.getElementById('resetPattern');
+const calendarSelector = document.getElementById('calendarSelector');
+const calendarSelectorButton = document.getElementById('calendarSelectorButton');
+const calendarSelectorList = document.getElementById('calendarSelectorList');
 
 const patternManager = initPatternForm({
   sectionEl: document.getElementById('pattern-setup'),
@@ -47,7 +50,9 @@ const state = {
   year: new Date().getFullYear(),
   month: new Date().getMonth() + 1,
   patternConfigured: false,
-  selectedDate: null
+  selectedDate: null,
+  calendarId: null,
+  calendars: []
 };
 
 async function bootstrap() {
@@ -64,11 +69,42 @@ async function bootstrap() {
   patternManager.hide();
   calendarSection.hidden = false;
   settingsMenuButton.hidden = false;
+  await loadCalendars();
   await Promise.all([loadCalendar(state.year, state.month), loadNotificationSettings()]);
 }
 
+async function loadCalendars() {
+  const res = await api.listCalendars();
+  state.calendars = res.calendars || [];
+  state.calendarId = res.defaultCalendarId || (state.calendars[0] ? state.calendars[0].id : null);
+  renderCalendarSelector();
+}
+
+function renderCalendarSelector() {
+  if (!calendarSelector || !calendarSelectorList) return;
+  calendarSelectorList.innerHTML = '';
+  state.calendars.forEach((cal) => {
+    const item = document.createElement('button');
+    item.type = 'button';
+    item.className = 'calendar-selector-item';
+    if (cal.id === state.calendarId) {
+      item.classList.add('active');
+    }
+    const label = `${cal.name}${cal.owned ? '' : ` · ${cal.ownerName || ''}`}`;
+    item.textContent = label;
+    item.addEventListener('click', async () => {
+      state.calendarId = cal.id;
+      calendarSelectorList.hidden = true;
+      await loadCalendar(state.year, state.month);
+      renderCalendarSelector();
+    });
+    calendarSelectorList.appendChild(item);
+  });
+  calendarSelectorButton.textContent = state.calendars.find(c => c.id === state.calendarId)?.name || '캘린더 선택';
+}
+
 async function loadCalendar(year, month) {
-  const data = await api.getCalendar(year, month);
+  const data = await api.getCalendar(year, month, state.calendarId);
   state.year = data.year;
   state.month = data.month;
   calendarTitle.textContent = `${data.year}년 ${data.month}월`;
@@ -84,7 +120,7 @@ async function loadCalendar(year, month) {
 
 async function selectDay(date) {
   state.selectedDate = date;
-  const detail = await api.getDay(date);
+  const detail = await api.getDay(date, state.calendarId);
   dayModal.hidden = false;
   dayDetailPanel.innerHTML = `
     <strong>${formatKoreanDate(date)}</strong>
@@ -92,6 +128,7 @@ async function selectDay(date) {
     <span>실제 근무: ${detail.effectiveCode || '-'}</span>
     <span>${detail.shiftLabel || ''} · ${detail.timeRange || ''}</span>
     <small>${[detail.memo, detail.anniversaryMemo, ...(detail.yearlyMemos || [])].filter(Boolean).join(' • ')}</small>
+    ${detail.memoAuthor ? `<div class="memo-author-line">작성: ${detail.memoAuthor.name}${detail.updatedAt ? ` · ${formatDateTime(detail.updatedAt)}` : ''}</div>` : ''}
   `;
   detailCode.value = detail.effectiveCode || '';
 
@@ -141,6 +178,12 @@ settingsMenuButton.addEventListener('click', () => {
 settingsModalClose.addEventListener('click', () => {
   settingsModal.hidden = true;
 });
+
+if (calendarSelectorButton) {
+  calendarSelectorButton.addEventListener('click', () => {
+    calendarSelectorList.hidden = !calendarSelectorList.hidden;
+  });
+}
 
 settingsModal.addEventListener('click', (e) => {
   if (e.target === settingsModal) {
@@ -278,6 +321,17 @@ document.addEventListener('click', (e) => {
     legendTooltip.hidden = true;
   }
 });
+
+function formatDateTime(isoString) {
+  try {
+    const d = new Date(isoString);
+    const hours = String(d.getHours()).padStart(2, '0');
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    return `${d.getMonth() + 1}/${d.getDate()} ${hours}:${minutes}`;
+  } catch (e) {
+    return '';
+  }
+}
 
 function formatKoreanDate(date) {
   const d = new Date(date);

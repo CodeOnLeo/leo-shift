@@ -140,14 +140,19 @@ async function request(url, options = {}) {
 export const api = {
   getSettings: () => request('/api/settings'),
   saveSettings: (payload) => request('/api/settings', { method: 'PUT', body: JSON.stringify(payload) }),
-  getToday: () => request('/api/today'),
-  getCalendar: (year, month) => request(`/api/calendar?year=${year}&month=${month}`),
-  getDay: (date) => request(`/api/days/${date}`),
-  saveDay: (date, payload) => request(`/api/days/${date}`, { method: 'PUT', body: JSON.stringify(payload) }),
+  getToday: (calendarId) => request(`/api/today${calendarId ? `?calendarId=${calendarId}` : ''}`),
+  getCalendar: (year, month, calendarId) => request(`/api/calendar?year=${year}&month=${month}${calendarId ? `&calendarId=${calendarId}` : ''}`),
+  getDay: (date, calendarId) => request(`/api/days/${date}${calendarId ? `?calendarId=${calendarId}` : ''}`),
+  saveDay: (date, payload, calendarId) => request(`/api/days/${date}${calendarId ? `?calendarId=${calendarId}` : ''}`, { method: 'PUT', body: JSON.stringify(payload) }),
   getNotificationSettings: () => request('/api/settings/notifications'),
   updateNotificationSettings: (payload) => request('/api/settings/notifications', { method: 'PUT', body: JSON.stringify(payload) }),
   saveSubscription: (payload) => request('/api/push/subscriptions', { method: 'POST', body: JSON.stringify(payload) }),
   getPublicKey: () => request('/api/push/public-key'),
   sendTestReminder: () => request('/api/push/test-reminder', { method: 'POST' }),
-  logout: () => request('/api/auth/logout', { method: 'POST' })
+  logout: () => request('/api/auth/logout', { method: 'POST' }),
+  listCalendars: () => request('/api/calendars'),
+  setDefaultCalendar: (calendarId) => request(`/api/calendars/${calendarId}/default`, { method: 'PUT' }),
+  shareCalendar: (calendarId, payload) => request(`/api/calendars/${calendarId}/share`, { method: 'POST', body: JSON.stringify(payload) }),
+  respondShare: (calendarId, payload) => request(`/api/calendars/${calendarId}/shares/respond`, { method: 'POST', body: JSON.stringify(payload) }),
+  listShares: (calendarId) => request(`/api/calendars/${calendarId}/shares`)
 };
