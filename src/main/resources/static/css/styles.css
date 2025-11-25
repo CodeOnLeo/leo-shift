@@ -494,6 +494,23 @@ section h2 {
   color: #666;
 }
 
+.day-detail-form select,
+.day-detail-form textarea,
+.day-detail-form input[type="text"],
+.day-detail-form input[type="email"] {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #e5e5ea;
+  border-radius: 10px;
+}
+
+.hint {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.85rem;
+  color: #8e8e93;
+}
+
 .memo-field-group {
   display: flex;
   flex-direction: column;

@@ -24,6 +24,7 @@ const repeatYearly = document.getElementById('repeatYearly');
 const anniversaryMemo = document.getElementById('anniversaryMemo');
 const clearMemoButton = document.getElementById('clearMemo');
 const clearAnniversaryButton = document.getElementById('clearAnniversary');
+const patternDisabledHint = document.getElementById('patternDisabledHint');
 const notificationForm = document.getElementById('notificationForm');
 const notificationHoursInput = document.getElementById('notificationHours');
 const notificationMinutesInput = document.getElementById('notificationMinutes');
@@ -66,6 +67,7 @@ async function bootstrap() {
   const currentCalendar = state.calendars.find((c) => c.id === state.calendarId);
   const usePattern = currentCalendar ? currentCalendar.patternEnabled !== false : true;
   state.patternConfigured = usePattern ? settings.configured : true;
+  state.usePattern = usePattern;
   if (!state.patternConfigured) {
     patternManager.show(settings.defaultNotificationMinutes || 60);
     calendarSection.hidden = true;
@@ -101,6 +103,7 @@ function renderCalendarSelector() {
     item.textContent = label;
     item.addEventListener('click', async () => {
       state.calendarId = cal.id;
+      state.usePattern = cal.patternEnabled !== false;
       calendarSelectorList.hidden = true;
       await loadCalendar(state.year, state.month);
       renderCalendarSelector();
@@ -184,6 +187,20 @@ async function selectDay(date) {
 
   // 기념일 지우기 버튼 표시 여부
   clearAnniversaryButton.style.display = (detail.anniversaryMemo || (detail.yearlyMemos && detail.yearlyMemos.length > 0)) ? 'block' : 'none';
+
+  // 패턴 사용 안 하는 캘린더면 코드 선택 비활성
+  if (state.usePattern === false) {
+    detailCode.value = '';
+    detailCode.disabled = true;
+    if (patternDisabledHint) {
+      patternDisabledHint.hidden = false;
+    }
+  } else {
+    detailCode.disabled = false;
+    if (patternDisabledHint) {
+      patternDisabledHint.hidden = true;
+    }
+  }
 
   await loadCalendar(state.year, state.month);
 }
