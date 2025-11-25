@@ -49,7 +49,18 @@ async function refreshAccessToken() {
   return data.accessToken;
 }
 
+let loadingHooks = {
+  onStart: () => {},
+  onEnd: () => {}
+};
+
+export function setLoadingHooks({ onStart, onEnd }) {
+  loadingHooks.onStart = typeof onStart === 'function' ? onStart : () => {};
+  loadingHooks.onEnd = typeof onEnd === 'function' ? onEnd : () => {};
+}
+
 async function request(url, options = {}) {
+  loadingHooks.onStart();
   const response = await fetch(url, {
     headers: getHeaders(),
     credentials: 'same-origin',
@@ -123,18 +134,24 @@ async function request(url, options = {}) {
     }
 
     const message = await response.text();
+    loadingHooks.onEnd();
     throw new Error(message || 'Request failed');
   }
 
   if (response.status === 204) {
+    loadingHooks.onEnd();
     return null;
   }
 
   const contentType = response.headers.get('content-type') || '';
   if (contentType.includes('application/json')) {
-    return response.json();
+    const data = await response.json();
+    loadingHooks.onEnd();
+    return data;
   }
-  return response.text();
+  const text = await response.text();
+  loadingHooks.onEnd();
+  return text;
 }
 
 export const api = {

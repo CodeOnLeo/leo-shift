@@ -2,6 +2,7 @@ import { api } from './api.js';
 import { renderCalendar } from './calendar.js';
 import { initPatternForm } from './pattern.js';
 import { enablePushSubscription } from './notifications.js';
+import { setLoadingHooks } from './api.js';
 
 const calendarSection = document.getElementById('calendar-section');
 const calendarTitle = document.getElementById('calendarTitle');
@@ -27,6 +28,8 @@ const clearAnniversaryButton = document.getElementById('clearAnniversary');
 const patternDisabledHint = document.getElementById('patternDisabledHint');
 const toast = document.getElementById('toast');
 let toastTimer = null;
+let loadingCounter = 0;
+const loadingOverlay = document.getElementById('loadingOverlay');
 const notificationForm = document.getElementById('notificationForm');
 const notificationHoursInput = document.getElementById('notificationHours');
 const notificationMinutesInput = document.getElementById('notificationMinutes');
@@ -553,3 +556,18 @@ function showToast(message) {
     toast.hidden = true;
   }, 3000);
 }
+
+setLoadingHooks({
+  onStart: () => {
+    loadingCounter++;
+    if (loadingOverlay) {
+      loadingOverlay.hidden = false;
+    }
+  },
+  onEnd: () => {
+    loadingCounter = Math.max(loadingCounter - 1, 0);
+    if (loadingCounter === 0 && loadingOverlay) {
+      loadingOverlay.hidden = true;
+    }
+  }
+});
