@@ -30,7 +30,11 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
-    implementation 'org.flywaydb:flyway-core'
+
+    def flywayVersion = '10.20.1'
+    implementation "org.flywaydb:flyway-core:${flywayVersion}"
+    implementation "org.flywaydb:flyway-database-postgresql:${flywayVersion}"
+    implementation "org.flywaydb:flyway-database-h2:${flywayVersion}"
 
     // JWT
     implementation 'io.jsonwebtoken:jjwt-api:0.12.5'
