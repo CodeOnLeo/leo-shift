@@ -863,6 +863,51 @@ button.secondary {
   color: #b42318;
 }
 
+.invite-list {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.invite-list.empty {
+  color: #8e8e93;
+  font-size: 0.9rem;
+}
+
+.invite-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  border: 1px solid #e5e5ea;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.invite-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.invite-actions button {
+  border: none;
+  border-radius: 8px;
+  padding: 0.45rem 0.8rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.invite-actions .success {
+  background: #e7f5e8;
+  color: #12773f;
+}
+
+.invite-actions .danger {
+  background: #fde8e8;
+  color: #b42318;
+}
+
 .time-input-group {
   display: flex;
   gap: 1rem;

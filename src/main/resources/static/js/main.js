@@ -38,6 +38,7 @@ const shareEmailInput = document.getElementById('shareEmail');
 const sharePermissionSelect = document.getElementById('sharePermission');
 const shareInviteButton = document.getElementById('shareInviteButton');
 const shareList = document.getElementById('shareList');
+const inviteList = document.getElementById('inviteList');
 
 const patternManager = initPatternForm({
   sectionEl: document.getElementById('pattern-setup'),
@@ -87,6 +88,7 @@ async function loadCalendars() {
   state.calendars = res.calendars || [];
   state.calendarId = res.defaultCalendarId || (state.calendars[0] ? state.calendars[0].id : null);
   renderCalendarSelector();
+  renderInvites();
 }
 
 function renderCalendarSelector() {
@@ -135,6 +137,51 @@ async function loadShares() {
     badges.append(perm, status);
     item.append(meta, badges);
     shareList.appendChild(item);
+  });
+}
+
+function renderInvites() {
+  if (!inviteList) return;
+  inviteList.innerHTML = '';
+  const pending = state.calendars.filter(c => !c.owned && c.status === 'PENDING');
+  if (pending.length === 0) {
+    inviteList.textContent = '받은 초대가 없습니다.';
+    inviteList.className = 'invite-list empty';
+    return;
+  }
+  inviteList.className = 'invite-list';
+  pending.forEach((cal) => {
+    const item = document.createElement('div');
+    item.className = 'invite-item';
+    item.innerHTML = `
+      <div class="meta">
+        <strong>${cal.name}</strong>
+        <span>${cal.ownerName || ''}</span>
+      </div>
+    `;
+    const actions = document.createElement('div');
+    actions.className = 'invite-actions';
+    const acceptBtn = document.createElement('button');
+    acceptBtn.type = 'button';
+    acceptBtn.className = 'success';
+    acceptBtn.textContent = '수락';
+    acceptBtn.addEventListener('click', async () => {
+      await api.respondShare(cal.id, { accept: true });
+      await loadCalendars();
+      await loadShares();
+    });
+    const rejectBtn = document.createElement('button');
+    rejectBtn.type = 'button';
+    rejectBtn.className = 'danger';
+    rejectBtn.textContent = '거절';
+    rejectBtn.addEventListener('click', async () => {
+      await api.respondShare(cal.id, { accept: false });
+      await loadCalendars();
+      await loadShares();
+    });
+    actions.append(acceptBtn, rejectBtn);
+    item.appendChild(actions);
+    inviteList.appendChild(item);
   });
 }
 
