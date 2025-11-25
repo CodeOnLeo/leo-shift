@@ -53,7 +53,7 @@ public class ScheduleService {
                 .map(String::trim)
                 .toList();
         AuthorDto author = exception != null && exception.getAuthor() != null
-                ? new AuthorDto(exception.getAuthor().getId(), exception.getAuthor().getName())
+                ? new AuthorDto(exception.getAuthor().getId(), exception.getAuthor().getName(), exception.getAuthor().getColorTag())
                 : null;
         return Optional.of(new DaySchedule(date, baseCode, effective, memo, anniversaryMemo, repeatYearly, yearlyMemos, author, exception != null ? exception.getUpdatedAt() : null));
     }

@@ -58,6 +58,9 @@ public class User {
     @Builder.Default
     private boolean enabled = true;
 
+    @Column(name = "color_tag")
+    private String colorTag;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();

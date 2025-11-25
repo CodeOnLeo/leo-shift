@@ -91,7 +91,7 @@ public class CalendarService {
                         .toList();
             }
             AuthorDto author = dayException != null && dayException.getAuthor() != null
-                    ? new AuthorDto(dayException.getAuthor().getId(), dayException.getAuthor().getName())
+                    ? new AuthorDto(dayException.getAuthor().getId(), dayException.getAuthor().getName(), dayException.getAuthor().getColorTag())
                     : null;
             days.add(new CalendarDayDto(cursor, baseCode, effectiveCode, memos, anniversaryMemos, yearlyMemos, dayException != null, author, dayException != null ? dayException.getUpdatedAt() : null));
             // summary는 현재 월의 날짜만 카운트

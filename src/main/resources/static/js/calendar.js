@@ -96,6 +96,10 @@ export function renderCalendar({
       tag.className = 'memo-author-tag';
       tag.textContent = initials(day.memoAuthor.name || '');
       tag.title = `${day.memoAuthor.name || '작성자'}${day.updatedAt ? ` · ${formatDate(day.updatedAt)}` : ''}`;
+      if (day.memoAuthor.color) {
+        tag.style.backgroundColor = day.memoAuthor.color;
+        tag.style.color = '#fff';
+      }
       cell.append(tag);
     }
 
