@@ -34,7 +34,6 @@ dependencies {
     def flywayVersion = '10.20.1'
     implementation "org.flywaydb:flyway-core:${flywayVersion}"
     implementation "org.flywaydb:flyway-database-postgresql:${flywayVersion}"
-    implementation "org.flywaydb:flyway-database-h2:${flywayVersion}"
 
     // JWT
     implementation 'io.jsonwebtoken:jjwt-api:0.12.5'
@@ -48,6 +47,7 @@ dependencies {
 
     // Database
     runtimeOnly 'org.postgresql:postgresql'
+    testRuntimeOnly 'com.h2database:h2'
 
     compileOnly 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
