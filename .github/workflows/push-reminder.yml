@@ -18,7 +18,7 @@ jobs:
         run: |
           # Railway 배포 URL로 푸시 알림 트리거
           # API 키 인증 포함
-          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+          RESPONSE=$(curl -s -L -w "\n%{http_code}" -X POST \
             -H "Content-Type: application/json" \
             -H "X-API-Key: ${{ secrets.API_KEY }}" \
             ${{ secrets.RAILWAY_APP_URL }}/api/push/send-scheduled-reminder)
