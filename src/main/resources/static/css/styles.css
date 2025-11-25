@@ -908,6 +908,22 @@ button.secondary {
   color: #b42318;
 }
 
+.toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.85);
+  color: #fff;
+  padding: 0.85rem 1.2rem;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  z-index: 9999;
+  min-width: 220px;
+  text-align: center;
+}
+
 .time-input-group {
   display: flex;
   gap: 1rem;

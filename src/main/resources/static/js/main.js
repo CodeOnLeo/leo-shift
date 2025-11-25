@@ -25,6 +25,8 @@ const anniversaryMemo = document.getElementById('anniversaryMemo');
 const clearMemoButton = document.getElementById('clearMemo');
 const clearAnniversaryButton = document.getElementById('clearAnniversary');
 const patternDisabledHint = document.getElementById('patternDisabledHint');
+const toast = document.getElementById('toast');
+let toastTimer = null;
 const notificationForm = document.getElementById('notificationForm');
 const notificationHoursInput = document.getElementById('notificationHours');
 const notificationMinutesInput = document.getElementById('notificationMinutes');
@@ -167,18 +169,28 @@ function renderInvites() {
     acceptBtn.className = 'success';
     acceptBtn.textContent = '수락';
     acceptBtn.addEventListener('click', async () => {
-      await api.respondShare(cal.id, { accept: true });
-      await loadCalendars();
-      await loadShares();
+      try {
+        await api.respondShare(cal.id, { accept: true });
+        showToast('초대를 수락했습니다.');
+        await loadCalendars();
+        await loadShares();
+      } catch (e) {
+        showToast('수락 실패: ' + (e.message || '오류'));
+      }
     });
     const rejectBtn = document.createElement('button');
     rejectBtn.type = 'button';
     rejectBtn.className = 'danger';
     rejectBtn.textContent = '거절';
     rejectBtn.addEventListener('click', async () => {
-      await api.respondShare(cal.id, { accept: false });
-      await loadCalendars();
-      await loadShares();
+      try {
+        await api.respondShare(cal.id, { accept: false });
+        showToast('초대를 거절했습니다.');
+        await loadCalendars();
+        await loadShares();
+      } catch (e) {
+        showToast('거절 실패: ' + (e.message || '오류'));
+      }
     });
     actions.append(acceptBtn, rejectBtn);
     item.appendChild(actions);
@@ -302,9 +314,14 @@ if (shareInviteButton) {
       alert('이메일을 입력하세요.');
       return;
     }
-    await api.shareCalendar(state.calendarId, { email, permission });
-    shareEmailInput.value = '';
-    await loadShares();
+    try {
+      await api.shareCalendar(state.calendarId, { email, permission });
+      shareEmailInput.value = '';
+      showToast('초대가 전송되었습니다.');
+      await loadShares();
+    } catch (e) {
+      showToast('초대 전송 실패: ' + (e.message || '오류'));
+    }
   });
 }
 
@@ -493,4 +510,16 @@ if ('serviceWorker' in navigator) {
 
 if (checkAuth()) {
   bootstrap();
+}
+
+function showToast(message) {
+  if (!toast) return;
+  toast.textContent = message;
+  toast.hidden = false;
+  if (toastTimer) {
+    clearTimeout(toastTimer);
+  }
+  toastTimer = setTimeout(() => {
+    toast.hidden = true;
+  }, 3000);
 }
