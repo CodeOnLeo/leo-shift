@@ -87,6 +87,7 @@ public class AuthService {
                         .email(user.getEmail())
                         .name(user.getName())
                         .profileImageUrl(user.getProfileImageUrl())
+                        .colorTag(user.getColorTag())
                         .build())
                 .build();
     }
@@ -119,6 +120,7 @@ public class AuthService {
                         .email(userPrincipal.getEmail())
                         .name(userPrincipal.getName())
                         .profileImageUrl(user.getProfileImageUrl())
+                        .colorTag(user.getColorTag())
                         .build())
                 .build();
     }
@@ -174,6 +176,7 @@ public class AuthService {
                         .email(user.getEmail())
                         .name(user.getName())
                         .profileImageUrl(user.getProfileImageUrl())
+                        .colorTag(user.getColorTag())
                         .build())
                 .build();
     }

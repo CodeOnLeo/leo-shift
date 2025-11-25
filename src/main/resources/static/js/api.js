@@ -155,5 +155,6 @@ export const api = {
   shareCalendar: (calendarId, payload) => request(`/api/calendars/${calendarId}/share`, { method: 'POST', body: JSON.stringify(payload) }),
   respondShare: (calendarId, payload) => request(`/api/calendars/${calendarId}/shares/respond`, { method: 'POST', body: JSON.stringify(payload) }),
   listShares: (calendarId) => request(`/api/calendars/${calendarId}/shares`),
-  updateColor: (payload) => request('/api/settings/color', { method: 'PUT', body: JSON.stringify(payload) })
+  updateColor: (payload) => request('/api/settings/color', { method: 'PUT', body: JSON.stringify(payload) }),
+  me: () => request('/api/auth/me')
 };

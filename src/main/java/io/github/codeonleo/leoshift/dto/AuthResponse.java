@@ -25,5 +25,6 @@ public class AuthResponse {
         private String email;
         private String name;
         private String profileImageUrl;
+        private String colorTag;
     }
 }

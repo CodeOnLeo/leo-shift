@@ -64,11 +64,13 @@ const state = {
   patternConfigured: false,
   selectedDate: null,
   calendarId: null,
-  calendars: []
+  calendars: [],
+  me: null
 };
 
 async function bootstrap() {
   await loadCalendars();
+  await loadMeColor();
   const settings = await api.getSettings();
   const currentCalendar = state.calendars.find((c) => c.id === state.calendarId);
   const usePattern = currentCalendar ? currentCalendar.patternEnabled !== false : true;
@@ -94,6 +96,19 @@ async function loadCalendars() {
   state.calendarId = res.defaultCalendarId || (state.calendars[0] ? state.calendars[0].id : null);
   renderCalendarSelector();
   renderInvites();
+}
+
+async function loadMeColor() {
+  if (!colorPicker) return;
+  try {
+    const me = await api.me();
+    state.me = me;
+    if (me && me.colorTag) {
+      colorPicker.value = me.colorTag;
+    }
+  } catch (e) {
+    // ignore
+  }
 }
 
 function renderCalendarSelector() {
