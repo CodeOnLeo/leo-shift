@@ -86,7 +86,8 @@ section h2 {
 }
 
 .calendar-selector {
-  position: relative;
+  position: absolute;
+  right: 50px;
 }
 
 .calendar-selector button.secondary {
@@ -95,6 +96,8 @@ section h2 {
   color: #1c1c1e;
   padding: 0.4rem 0.8rem;
   border-radius: 10px;
+  font-size: 0.9rem;
+  min-height: 36px;
 }
 
 .calendar-selector-list {
@@ -697,6 +700,26 @@ button.secondary {
   section {
     padding: 1rem;
     border-radius: 14px;
+  }
+
+  .calendar-header {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .calendar-selector {
+    position: static;
+    order: 10;
+    width: 100%;
+    margin-top: 0.5rem;
+  }
+
+  .calendar-selector button.secondary {
+    width: 100%;
+  }
+
+  .settings-icon-button {
+    right: 0 !important;
   }
 
   .calendar-grid {
