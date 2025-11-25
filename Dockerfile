@@ -17,17 +17,13 @@ RUN ./gradlew bootJar --no-daemon -x test
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
-# Create volume directory for H2 database
-RUN mkdir -p /app/data
-
 # Copy the built jar from build stage
 COPY --from=build /app/build/libs/*.jar app.jar
+COPY docker-entrypoint.sh ./docker-entrypoint.sh
+RUN chmod +x docker-entrypoint.sh
 
 # Set default port (Railway will provide PORT via environment)
 ENV PORT=8080
 
-# Set environment variable for database location
-ENV SPRING_DATASOURCE_URL=jdbc:h2:file:/app/data/leoshift;MODE=PostgreSQL
-
-# Run the application with proper memory settings
-CMD java -Xmx512m -Xms256m -Dserver.port=$PORT -jar /app/app.jar
+# Use custom entrypoint to normalize database variables before boot
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
