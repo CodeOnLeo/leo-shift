@@ -7,7 +7,6 @@ import io.github.codeonleo.leoshift.entity.PushSubscription;
 import io.github.codeonleo.leoshift.entity.Calendar;
 import io.github.codeonleo.leoshift.entity.UserSettings;
 import io.github.codeonleo.leoshift.repository.PushSubscriptionRepository;
-import io.github.codeonleo.leoshift.service.SettingsService;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;

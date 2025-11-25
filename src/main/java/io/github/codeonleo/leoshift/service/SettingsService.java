@@ -97,6 +97,16 @@ public class SettingsService {
         return repository.findById(user.getId());
     }
 
+    @Transactional
+    public void setDefaultCalendar(io.github.codeonleo.leoshift.entity.Calendar calendar) {
+        if (calendar == null) {
+            throw new IllegalArgumentException("calendar_required");
+        }
+        UserSettings settings = getOrCreate();
+        settings.setDefaultCalendar(calendar);
+        repository.save(settings);
+    }
+
     public boolean isPatternConfigured() {
         return findSettings().map(this::isPatternConfigured).orElse(false);
     }

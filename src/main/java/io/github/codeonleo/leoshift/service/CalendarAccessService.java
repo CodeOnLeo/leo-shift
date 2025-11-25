@@ -1,5 +1,6 @@
 package io.github.codeonleo.leoshift.service;
 
+import io.github.codeonleo.leoshift.dto.CalendarSummaryResponse;
 import io.github.codeonleo.leoshift.entity.Calendar;
 import io.github.codeonleo.leoshift.entity.CalendarShare;
 import io.github.codeonleo.leoshift.entity.User;
@@ -9,6 +10,8 @@ import io.github.codeonleo.leoshift.repository.CalendarShareRepository;
 import io.github.codeonleo.leoshift.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -31,6 +34,50 @@ public class CalendarAccessService {
         Calendar calendar = resolveCalendar(calendarId, currentUser);
         ensureEditPermission(calendar, currentUser);
         return new CalendarAccess(calendar, true);
+    }
+
+    public Calendar requireOwner(Long calendarId) {
+        User currentUser = getCurrentUser();
+        Calendar calendar = resolveCalendar(calendarId, currentUser);
+        if (!isOwner(calendar, currentUser)) {
+            throw new IllegalArgumentException("calendar_owner_only");
+        }
+        return calendar;
+    }
+
+    public List<CalendarSummaryResponse> listAccessible() {
+        User currentUser = getCurrentUser();
+        List<CalendarSummaryResponse> result = new ArrayList<>();
+
+        // 내가 소유한 캘린더
+        for (Calendar calendar : calendarRepository.findByOwner(currentUser)) {
+            result.add(new CalendarSummaryResponse(
+                    calendar.getId(),
+                    calendar.getName(),
+                    currentUser.getName(),
+                    true,
+                    CalendarShare.Permission.EDIT,
+                    CalendarShare.ShareStatus.ACCEPTED,
+                    true
+            ));
+        }
+
+        // 초대 받은 캘린더
+        for (CalendarShare share : calendarShareRepository.findByUser(currentUser)) {
+            Calendar calendar = share.getCalendar();
+            boolean editable = share.getStatus() == CalendarShare.ShareStatus.ACCEPTED
+                    && share.getPermission() == CalendarShare.Permission.EDIT;
+            result.add(new CalendarSummaryResponse(
+                    calendar.getId(),
+                    calendar.getName(),
+                    calendar.getOwner().getName(),
+                    false,
+                    share.getPermission(),
+                    share.getStatus(),
+                    editable
+            ));
+        }
+        return result;
     }
 
     private Calendar resolveCalendar(Long calendarId, User currentUser) {
@@ -87,7 +134,7 @@ public class CalendarAccessService {
         return calendar.getOwner() != null && calendar.getOwner().getId().equals(currentUser.getId());
     }
 
-    private User getCurrentUser() {
+    public User getCurrentUser() {
         Long currentUserId = settingsService.currentUserId();
         return userRepository.findById(currentUserId)
                 .orElseThrow(() -> new IllegalArgumentException("user_not_found"));

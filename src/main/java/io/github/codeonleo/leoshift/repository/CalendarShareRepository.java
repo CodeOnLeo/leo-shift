@@ -15,6 +15,8 @@ public interface CalendarShareRepository extends JpaRepository<CalendarShare, Lo
 
     List<CalendarShare> findByUserAndStatus(User user, CalendarShare.ShareStatus status);
 
+    List<CalendarShare> findByUser(User user);
+
     List<CalendarShare> findByCalendar(Calendar calendar);
 
     Optional<CalendarShare> findByCalendarAndUser(Calendar calendar, User user);
