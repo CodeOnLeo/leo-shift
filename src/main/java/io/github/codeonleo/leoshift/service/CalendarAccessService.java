@@ -10,6 +10,7 @@ import io.github.codeonleo.leoshift.repository.CalendarShareRepository;
 import io.github.codeonleo.leoshift.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,6 +23,7 @@ public class CalendarAccessService {
     private final CalendarShareRepository calendarShareRepository;
     private final UserRepository userRepository;
 
+    @Transactional
     public CalendarAccess requireView(Long calendarId) {
         User currentUser = getCurrentUser();
         Calendar calendar = resolveCalendar(calendarId, currentUser);
@@ -29,6 +31,7 @@ public class CalendarAccessService {
         return new CalendarAccess(calendar, canEdit(calendar, currentUser));
     }
 
+    @Transactional
     public CalendarAccess requireEdit(Long calendarId) {
         User currentUser = getCurrentUser();
         Calendar calendar = resolveCalendar(calendarId, currentUser);
@@ -36,6 +39,7 @@ public class CalendarAccessService {
         return new CalendarAccess(calendar, true);
     }
 
+    @Transactional
     public Calendar requireOwner(Long calendarId) {
         User currentUser = getCurrentUser();
         Calendar calendar = resolveCalendar(calendarId, currentUser);
@@ -45,6 +49,7 @@ public class CalendarAccessService {
         return calendar;
     }
 
+    @Transactional(readOnly = true)
     public List<CalendarSummaryResponse> listAccessible() {
         User currentUser = getCurrentUser();
         List<CalendarSummaryResponse> result = new ArrayList<>();
@@ -84,8 +89,13 @@ public class CalendarAccessService {
         if (calendarId == null) {
             return resolveDefaultCalendar(currentUser);
         }
-        return calendarRepository.findById(calendarId)
+        Calendar calendar = calendarRepository.findById(calendarId)
                 .orElseThrow(() -> new IllegalArgumentException("calendar_not_found"));
+        // Ensure owner is initialized within transaction
+        if (calendar.getOwner() != null) {
+            calendar.getOwner().getId();
+        }
+        return calendar;
     }
 
     private Calendar resolveDefaultCalendar(User currentUser) {
@@ -101,6 +111,9 @@ public class CalendarAccessService {
         }
         if (defaultCalendar == null) {
             throw new IllegalStateException("default_calendar_not_set");
+        }
+        if (defaultCalendar.getOwner() != null) {
+            defaultCalendar.getOwner().getId();
         }
         ensureViewPermission(defaultCalendar, currentUser);
         return defaultCalendar;
