@@ -32,6 +32,11 @@ const resetPatternButton = document.getElementById('resetPattern');
 const calendarSelector = document.getElementById('calendarSelector');
 const calendarSelectorButton = document.getElementById('calendarSelectorButton');
 const calendarSelectorList = document.getElementById('calendarSelectorList');
+const shareSection = document.getElementById('shareSection');
+const shareEmailInput = document.getElementById('shareEmail');
+const sharePermissionSelect = document.getElementById('sharePermission');
+const shareInviteButton = document.getElementById('shareInviteButton');
+const shareList = document.getElementById('shareList');
 
 const patternManager = initPatternForm({
   sectionEl: document.getElementById('pattern-setup'),
@@ -72,7 +77,7 @@ async function bootstrap() {
   patternManager.hide();
   calendarSection.hidden = false;
   settingsMenuButton.hidden = false;
-  await Promise.all([loadCalendar(state.year, state.month), loadNotificationSettings()]);
+  await Promise.all([loadCalendar(state.year, state.month), loadNotificationSettings(), loadShares()]);
 }
 
 async function loadCalendars() {
@@ -103,6 +108,31 @@ function renderCalendarSelector() {
     calendarSelectorList.appendChild(item);
   });
   calendarSelectorButton.textContent = state.calendars.find(c => c.id === state.calendarId)?.name || '캘린더 선택';
+}
+
+async function loadShares() {
+  if (!shareList || !state.calendarId) return;
+  const shares = await api.listShares(state.calendarId);
+  shareList.innerHTML = '';
+  shares.forEach((s) => {
+    const item = document.createElement('div');
+    item.className = 'share-item';
+    const meta = document.createElement('div');
+    meta.className = 'meta';
+    meta.innerHTML = `<strong>${s.userName}</strong><span>${s.userEmail}</span>`;
+    const badges = document.createElement('div');
+    badges.className = 'badges';
+    const perm = document.createElement('span');
+    perm.className = 'badge';
+    perm.textContent = s.permission === 'EDIT' ? '편집' : '보기';
+    const status = document.createElement('span');
+    status.className = 'badge';
+    status.dataset.tone = s.status === 'ACCEPTED' ? 'success' : s.status === 'PENDING' ? 'warning' : 'danger';
+    status.textContent = s.status === 'ACCEPTED' ? '수락됨' : s.status === 'PENDING' ? '대기' : '거절';
+    badges.append(perm, status);
+    item.append(meta, badges);
+    shareList.appendChild(item);
+  });
 }
 
 async function loadCalendar(year, month) {
@@ -192,6 +222,24 @@ settingsModal.addEventListener('click', (e) => {
     settingsModal.hidden = true;
   }
 });
+
+if (shareInviteButton) {
+  shareInviteButton.addEventListener('click', async () => {
+    if (!state.calendarId) {
+      alert('캘린더를 먼저 선택하세요.');
+      return;
+    }
+    const email = (shareEmailInput.value || '').trim();
+    const permission = sharePermissionSelect.value;
+    if (!email) {
+      alert('이메일을 입력하세요.');
+      return;
+    }
+    await api.shareCalendar(state.calendarId, { email, permission });
+    shareEmailInput.value = '';
+    await loadShares();
+  });
+}
 
 modalClose.addEventListener('click', closeModal);
 

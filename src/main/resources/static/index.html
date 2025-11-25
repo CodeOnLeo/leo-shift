@@ -201,6 +201,24 @@
             </form>
             <button type="button" id="subscribePush" class="secondary full-width" style="margin-top: 1rem;">푸시 알림 활성화</button>
           </section>
+          <section class="settings-section" data-tone="neutral" id="shareSection">
+            <div class="settings-section-header">
+              <div class="settings-section-icon" data-color="neutral" aria-hidden="true">🤝</div>
+              <div>
+                <h3>캘린더 공유</h3>
+                <p class="settings-section-description">이메일로 초대하고 보기/편집 권한을 설정하세요.</p>
+              </div>
+            </div>
+            <div class="share-form">
+              <input type="email" id="shareEmail" placeholder="이메일 입력" />
+              <select id="sharePermission">
+                <option value="VIEW">보기</option>
+                <option value="EDIT">편집</option>
+              </select>
+              <button type="button" id="shareInviteButton">초대 보내기</button>
+            </div>
+            <div class="share-list" id="shareList"></div>
+          </section>
           <section class="settings-section" data-tone="neutral">
             <div class="settings-section-header">
               <div class="settings-section-icon" data-color="neutral" aria-hidden="true">🗓️</div>

@@ -3,6 +3,7 @@ package io.github.codeonleo.leoshift.controller;
 import io.github.codeonleo.leoshift.dto.CalendarListResponse;
 import io.github.codeonleo.leoshift.dto.CalendarShareRequest;
 import io.github.codeonleo.leoshift.dto.CalendarShareResponse;
+import io.github.codeonleo.leoshift.dto.CalendarShareInvitationRequest;
 import io.github.codeonleo.leoshift.dto.ShareDecisionRequest;
 import io.github.codeonleo.leoshift.service.CalendarAccessService;
 import io.github.codeonleo.leoshift.service.CalendarShareService;
