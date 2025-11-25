@@ -7,6 +7,7 @@ import io.github.codeonleo.leoshift.security.oauth2.CustomOAuth2UserService;
 import io.github.codeonleo.leoshift.security.oauth2.OAuth2AuthenticationFailureHandler;
 import io.github.codeonleo.leoshift.security.oauth2.OAuth2AuthenticationSuccessHandler;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -26,6 +27,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -41,6 +43,12 @@ public class SecurityConfig {
     private final CustomOAuth2UserService customOAuth2UserService;
     private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
     private final OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler;
+
+    @Value("${app.frontend-url:http://localhost:8080}")
+    private String frontendUrl;
+
+    @Value("${app.backend-url:http://localhost:8080}")
+    private String backendUrl;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -84,14 +92,14 @@ public class SecurityConfig {
                                 "/js/**",
                                 "/icons/**",
                                 "/health",
-                                "/api/auth/**",
+                                "/api/auth/signup",
+                                "/api/auth/login",
+                                "/api/auth/refresh",
                                 "/oauth2/**",
                                 "/login/oauth2/**",
                                 "/h2-console/**"
                         ).permitAll()
-                        // GitHub Actions 푸시 알림 엔드포인트 - API 키 인증 필요
-                        .requestMatchers("/api/push/send-scheduled-reminder").permitAll()
-                        // 모든 다른 요청은 인증 필요
+                        // 모든 다른 요청은 인증 필요 (API Key 인증 포함)
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2
@@ -117,7 +125,28 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(List.of("*"));
+
+        // 환경변수로 지정된 URL만 허용
+        List<String> allowedOrigins = new ArrayList<>();
+
+        // 프론트엔드 URL 추가
+        if (frontendUrl != null && !frontendUrl.isEmpty()) {
+            allowedOrigins.add(frontendUrl);
+        }
+
+        // 백엔드 URL 추가 (같은 도메인에서 요청하는 경우)
+        if (backendUrl != null && !backendUrl.isEmpty() && !allowedOrigins.contains(backendUrl)) {
+            allowedOrigins.add(backendUrl);
+        }
+
+        // 로컬 개발 환경 지원
+        if (allowedOrigins.isEmpty() || frontendUrl.contains("localhost")) {
+            allowedOrigins.add("http://localhost:8080");
+            allowedOrigins.add("http://localhost:3000");
+            allowedOrigins.add("http://127.0.0.1:8080");
+        }
+
+        configuration.setAllowedOrigins(allowedOrigins);
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);

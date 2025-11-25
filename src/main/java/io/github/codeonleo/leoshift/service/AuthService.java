@@ -132,4 +132,46 @@ public class AuthService {
                 .profileImageUrl(user.getProfileImageUrl())
                 .build();
     }
+
+    @Transactional(readOnly = true)
+    public AuthResponse refreshToken(String refreshToken) {
+        // Refresh Token 검증
+        if (!jwtTokenProvider.validateToken(refreshToken)) {
+            throw new IllegalArgumentException("유효하지 않은 리프레시 토큰입니다");
+        }
+
+        // Refresh Token에서 userId 추출
+        Long userId = jwtTokenProvider.getUserIdFromToken(refreshToken);
+
+        // 사용자 조회
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다"));
+
+        // 사용자가 비활성화되었는지 확인
+        if (!user.isEnabled()) {
+            throw new IllegalArgumentException("비활성화된 사용자입니다");
+        }
+
+        // 새로운 Access Token 생성을 위한 Authentication 객체 생성
+        Authentication authentication = new UsernamePasswordAuthenticationToken(
+                UserPrincipal.create(user),
+                null,
+                UserPrincipal.create(user).getAuthorities()
+        );
+
+        // 새로운 토큰 발급
+        String newAccessToken = jwtTokenProvider.generateAccessToken(authentication);
+        String newRefreshToken = jwtTokenProvider.generateRefreshToken(userId);
+
+        return AuthResponse.builder()
+                .accessToken(newAccessToken)
+                .refreshToken(newRefreshToken)
+                .user(AuthResponse.UserInfo.builder()
+                        .id(user.getId())
+                        .email(user.getEmail())
+                        .name(user.getName())
+                        .profileImageUrl(user.getProfileImageUrl())
+                        .build())
+                .build();
+    }
 }

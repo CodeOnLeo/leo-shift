@@ -300,11 +300,19 @@ function checkAuth() {
 }
 
 // 로그아웃 함수
-window.logout = function() {
+window.logout = async function() {
   if (confirm('로그아웃 하시겠습니까?')) {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    window.location.href = '/login.html';
+    try {
+      // 서버에 로그아웃 요청
+      await api.logout();
+    } catch (error) {
+      console.error('로그아웃 요청 실패:', error);
+    } finally {
+      // 로컬 스토리지 정리 및 로그인 페이지로 이동
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      window.location.href = '/login.html';
+    }
   }
 };
 
