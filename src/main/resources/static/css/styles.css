@@ -489,6 +489,11 @@ section h2 {
   gap: 1rem;
 }
 
+.memo-author-line {
+  font-size: 0.85rem;
+  color: #666;
+}
+
 .memo-field-group {
   display: flex;
   flex-direction: column;

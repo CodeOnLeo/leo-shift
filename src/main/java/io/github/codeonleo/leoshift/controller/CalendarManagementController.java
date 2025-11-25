@@ -2,6 +2,7 @@ package io.github.codeonleo.leoshift.controller;
 
 import io.github.codeonleo.leoshift.dto.CalendarListResponse;
 import io.github.codeonleo.leoshift.dto.CalendarShareRequest;
+import io.github.codeonleo.leoshift.dto.CalendarShareInvitationRequest;
 import io.github.codeonleo.leoshift.dto.CalendarShareResponse;
 import io.github.codeonleo.leoshift.dto.CalendarShareInvitationRequest;
 import io.github.codeonleo.leoshift.dto.ShareDecisionRequest;
@@ -49,8 +50,8 @@ public class CalendarManagementController {
     }
 
     @PostMapping("/{calendarId}/share")
-    public CalendarShareResponse share(@PathVariable Long calendarId, @Valid @RequestBody CalendarShareRequest request) {
-        return calendarShareService.invite(calendarId, request);
+    public CalendarShareResponse share(@PathVariable Long calendarId, @Valid @RequestBody CalendarShareInvitationRequest request) {
+        return calendarShareService.invite(calendarId, new CalendarShareRequest(request.email(), request.permission()));
     }
 
     @GetMapping("/{calendarId}/shares")
