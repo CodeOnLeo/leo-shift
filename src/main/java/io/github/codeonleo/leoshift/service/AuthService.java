@@ -46,7 +46,10 @@ public class AuthService {
                 .provider(User.AuthProvider.LOCAL)
                 .roles(Set.of(User.Role.USER))
                 .enabled(true)
+                .colorTag(null)
                 .build();
+
+        user.setColorTag(io.github.codeonleo.leoshift.util.ColorTagUtil.resolve(user));
 
         user.setLastLoginAt(LocalDateTime.now());
         user = userRepository.save(user);

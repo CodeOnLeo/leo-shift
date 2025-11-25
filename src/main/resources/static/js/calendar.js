@@ -99,6 +99,7 @@ export function renderCalendar({
       if (day.memoAuthor.color) {
         tag.style.backgroundColor = day.memoAuthor.color;
         tag.style.color = '#fff';
+        tag.style.border = '1px solid rgba(0,0,0,0.08)';
       }
       cell.append(tag);
     }

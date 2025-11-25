@@ -7,6 +7,7 @@ import io.github.codeonleo.leoshift.entity.Calendar;
 import io.github.codeonleo.leoshift.entity.ShiftException;
 import io.github.codeonleo.leoshift.entity.UserSettings;
 import io.github.codeonleo.leoshift.repository.ShiftExceptionRepository;
+import io.github.codeonleo.leoshift.util.ColorTagUtil;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -90,9 +91,14 @@ public class CalendarService {
                         .map(String::trim)
                         .toList();
             }
-            AuthorDto author = dayException != null && dayException.getAuthor() != null
-                    ? new AuthorDto(dayException.getAuthor().getId(), dayException.getAuthor().getName(), dayException.getAuthor().getColorTag())
-                    : null;
+            AuthorDto author = null;
+            if (dayException != null && dayException.getAuthor() != null) {
+                author = new AuthorDto(
+                        dayException.getAuthor().getId(),
+                        dayException.getAuthor().getName(),
+                        ColorTagUtil.resolve(dayException.getAuthor())
+                );
+            }
             days.add(new CalendarDayDto(cursor, baseCode, effectiveCode, memos, anniversaryMemos, yearlyMemos, dayException != null, author, dayException != null ? dayException.getUpdatedAt() : null));
             // summary는 현재 월의 날짜만 카운트
             if (effectiveCode != null && !cursor.isBefore(monthStart) && !cursor.isAfter(monthEnd)) {

@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import io.github.codeonleo.leoshift.dto.AuthorDto;
+import io.github.codeonleo.leoshift.util.ColorTagUtil;
 
 @Service
 @RequiredArgsConstructor
@@ -52,9 +53,14 @@ public class ScheduleService {
                 .filter(StringUtils::hasText)
                 .map(String::trim)
                 .toList();
-        AuthorDto author = exception != null && exception.getAuthor() != null
-                ? new AuthorDto(exception.getAuthor().getId(), exception.getAuthor().getName(), exception.getAuthor().getColorTag())
-                : null;
+        AuthorDto author = null;
+        if (exception != null && exception.getAuthor() != null) {
+            author = new AuthorDto(
+                    exception.getAuthor().getId(),
+                    exception.getAuthor().getName(),
+                    ColorTagUtil.resolve(exception.getAuthor())
+            );
+        }
         return Optional.of(new DaySchedule(date, baseCode, effective, memo, anniversaryMemo, repeatYearly, yearlyMemos, author, exception != null ? exception.getUpdatedAt() : null));
     }
 
