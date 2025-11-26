@@ -93,6 +93,7 @@ public class SecurityConfig {
                                 "/api/auth/signup",
                                 "/api/auth/login",
                                 "/api/auth/refresh",
+                                "/api/push/send-scheduled-reminder",
                                 "/oauth2/**",
                                 "/login/oauth2/**"
                         ).permitAll()

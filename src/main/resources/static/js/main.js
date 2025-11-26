@@ -559,14 +559,15 @@ function showToast(message) {
 
 setLoadingHooks({
   onStart: () => {
-    loadingCounter++;
+    // 임시 조치: 로그인 이후 로딩이 멈추지 않는 현상이 있어 캘린더 진입 시 오버레이 비활성화
+    loadingCounter = 0;
     if (loadingOverlay) {
-      loadingOverlay.hidden = false;
+      loadingOverlay.hidden = true;
     }
   },
   onEnd: () => {
-    loadingCounter = Math.max(loadingCounter - 1, 0);
-    if (loadingCounter === 0 && loadingOverlay) {
+    loadingCounter = 0;
+    if (loadingOverlay) {
       loadingOverlay.hidden = true;
     }
   }
