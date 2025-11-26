@@ -52,6 +52,20 @@ public class SettingsService {
     }
 
     @Transactional
+    public UserSettings getOrCreateWithCalendar() {
+        Long userId = currentUserId();
+        return repository.findByIdWithCalendar(userId)
+                .orElseGet(() -> {
+                    User user = userRepository.findById(userId)
+                            .orElseThrow(() -> new IllegalStateException("user_not_found"));
+                    UserSettings created = new UserSettings();
+                    created.setUser(user);
+                    created.setDefaultNotificationMinutes(DEFAULT_NOTIFICATION_MINUTES);
+                    return repository.save(created);
+                });
+    }
+
+    @Transactional
     public UserSettings upsertPattern(List<String> pattern, LocalDate startDate, Integer defaultMinutes) {
         UserSettings settings = getOrCreate();
         settings.setPatternCodes(String.join(",", normalizePattern(pattern)));

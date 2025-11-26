@@ -118,7 +118,7 @@ public class PushNotificationService {
     }
 
     private Calendar resolveDefaultCalendar() {
-        UserSettings settings = settingsService.getOrCreate();
+        UserSettings settings = settingsService.getOrCreateWithCalendar();
         Calendar calendar = settings.getDefaultCalendar();
         if (calendar == null) {
             throw new IllegalStateException("default_calendar_not_set");
