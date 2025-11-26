@@ -60,7 +60,8 @@ export function setLoadingHooks({ onStart, onEnd }) {
 }
 
 async function request(url, options = {}) {
-  loadingHooks.onStart();
+  // 임시 조치: 로딩 기능 비활성화
+  // loadingHooks.onStart();
   try {
     const response = await fetch(url, {
       headers: getHeaders(),
@@ -150,7 +151,8 @@ async function request(url, options = {}) {
     const text = await response.text();
     return text;
   } finally {
-    loadingHooks.onEnd();
+    // 임시 조치: 로딩 기능 비활성화
+    // loadingHooks.onEnd();
   }
 }
 
