@@ -1,5 +1,6 @@
 package io.github.codeonleo.leoshift.controller;
 
+import io.github.codeonleo.leoshift.dto.CalendarCreateRequest;
 import io.github.codeonleo.leoshift.dto.CalendarListResponse;
 import io.github.codeonleo.leoshift.dto.CalendarShareRequest;
 import io.github.codeonleo.leoshift.dto.CalendarShareInvitationRequest;
@@ -7,6 +8,7 @@ import io.github.codeonleo.leoshift.dto.CalendarShareResponse;
 import io.github.codeonleo.leoshift.dto.CalendarShareInvitationRequest;
 import io.github.codeonleo.leoshift.dto.ShareDecisionRequest;
 import io.github.codeonleo.leoshift.service.CalendarAccessService;
+import io.github.codeonleo.leoshift.service.CalendarManagementService;
 import io.github.codeonleo.leoshift.service.CalendarShareService;
 import io.github.codeonleo.leoshift.service.SettingsService;
 import jakarta.validation.Valid;
@@ -25,18 +27,29 @@ public class CalendarManagementController {
 
     private final CalendarAccessService calendarAccessService;
     private final CalendarShareService calendarShareService;
+    private final CalendarManagementService calendarManagementService;
     private final SettingsService settingsService;
 
     public CalendarManagementController(CalendarAccessService calendarAccessService,
                                         CalendarShareService calendarShareService,
+                                        CalendarManagementService calendarManagementService,
                                         SettingsService settingsService) {
         this.calendarAccessService = calendarAccessService;
         this.calendarShareService = calendarShareService;
+        this.calendarManagementService = calendarManagementService;
         this.settingsService = settingsService;
     }
 
     @GetMapping
     public CalendarListResponse listMyCalendars() {
+        var settings = settingsService.getOrCreate();
+        Long defaultCalendarId = settings.getDefaultCalendar() != null ? settings.getDefaultCalendar().getId() : null;
+        return new CalendarListResponse(calendarAccessService.listAccessible(), defaultCalendarId);
+    }
+
+    @PostMapping
+    public CalendarListResponse createCalendar(@Valid @RequestBody CalendarCreateRequest request) {
+        calendarManagementService.createCalendar(request);
         var settings = settingsService.getOrCreate();
         Long defaultCalendarId = settings.getDefaultCalendar() != null ? settings.getDefaultCalendar().getId() : null;
         return new CalendarListResponse(calendarAccessService.listAccessible(), defaultCalendarId);

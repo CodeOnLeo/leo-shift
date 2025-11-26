@@ -47,6 +47,9 @@ const inviteList = document.getElementById('inviteList');
 const patternFields = document.querySelectorAll('[data-pattern="true"]');
 const colorPicker = document.getElementById('colorPicker');
 const saveColorButton = document.getElementById('saveColorButton');
+const createCalendarForm = document.getElementById('createCalendarForm');
+const newCalendarNameInput = document.getElementById('newCalendarName');
+const newCalendarPatternEnabledInput = document.getElementById('newCalendarPatternEnabled');
 
 const patternManager = initPatternForm({
   sectionEl: document.getElementById('pattern-setup'),
@@ -311,10 +314,18 @@ settingsModalClose.addEventListener('click', () => {
 });
 
 if (calendarSelectorButton) {
-  calendarSelectorButton.addEventListener('click', () => {
+  calendarSelectorButton.addEventListener('click', (e) => {
+    e.stopPropagation();
     calendarSelectorList.hidden = !calendarSelectorList.hidden;
   });
 }
+
+// 캘린더 선택 드롭다운 외부 클릭 시 닫기
+document.addEventListener('click', (e) => {
+  if (!calendarSelector.contains(e.target) && calendarSelectorList && !calendarSelectorList.hidden) {
+    calendarSelectorList.hidden = true;
+  }
+});
 
 settingsModal.addEventListener('click', (e) => {
   if (e.target === settingsModal) {
@@ -354,6 +365,28 @@ if (saveColorButton && colorPicker) {
       await loadCalendar(state.year, state.month);
     } catch (e) {
       showToast('색상 저장 실패: ' + (e.message || '오류'));
+    }
+  });
+}
+
+if (createCalendarForm) {
+  createCalendarForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const name = (newCalendarNameInput.value || '').trim();
+    if (!name) {
+      alert('캘린더 이름을 입력하세요.');
+      return;
+    }
+    const patternEnabled = newCalendarPatternEnabledInput.checked;
+    try {
+      await api.createCalendar({ name, patternEnabled });
+      newCalendarNameInput.value = '';
+      newCalendarPatternEnabledInput.checked = true;
+      showToast('캘린더가 생성되었습니다.');
+      await loadCalendars();
+      await loadCalendar(state.year, state.month);
+    } catch (e) {
+      showToast('캘린더 생성 실패: ' + (e.message || '오류'));
     }
   });
 }

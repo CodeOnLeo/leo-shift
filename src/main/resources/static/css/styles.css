@@ -132,11 +132,15 @@ section h2 {
   border: 1px solid #e5e5ea;
   border-radius: 12px;
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
-  display: flex;
+  display: none;
   flex-direction: column;
   gap: 4px;
   padding: 8px;
   z-index: 5;
+}
+
+.calendar-selector-list:not([hidden]) {
+  display: flex;
 }
 
 .calendar-selector-item {

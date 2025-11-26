@@ -170,6 +170,7 @@ export const api = {
   sendTestReminder: () => request('/api/push/test-reminder', { method: 'POST' }),
   logout: () => request('/api/auth/logout', { method: 'POST' }),
   listCalendars: () => request('/api/calendars'),
+  createCalendar: (payload) => request('/api/calendars', { method: 'POST', body: JSON.stringify(payload) }),
   setDefaultCalendar: (calendarId) => request(`/api/calendars/${calendarId}/default`, { method: 'PUT' }),
   shareCalendar: (calendarId, payload) => request(`/api/calendars/${calendarId}/share`, { method: 'POST', body: JSON.stringify(payload) }),
   respondShare: (calendarId, payload) => request(`/api/calendars/${calendarId}/shares/respond`, { method: 'POST', body: JSON.stringify(payload) }),

@@ -206,6 +206,26 @@
             </form>
             <button type="button" id="subscribePush" class="secondary full-width" style="margin-top: 1rem;">푸시 알림 활성화</button>
           </section>
+          <section class="settings-section" data-tone="primary">
+            <div class="settings-section-header">
+              <div class="settings-section-icon" data-color="primary" aria-hidden="true">➕</div>
+              <div>
+                <h3>새 캘린더 만들기</h3>
+                <p class="settings-section-description">업무용, 개인용 등 용도별로 캘린더를 추가하세요.</p>
+              </div>
+            </div>
+            <form id="createCalendarForm">
+              <label>
+                캘린더 이름
+                <input type="text" id="newCalendarName" placeholder="예: 개인 일정" maxlength="100" required />
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" id="newCalendarPatternEnabled" checked />
+                <span>근무 패턴 사용</span>
+              </label>
+              <button type="submit" class="full-width">캘린더 만들기</button>
+            </form>
+          </section>
           <section class="settings-section" data-tone="neutral" id="shareSection">
             <div class="settings-section-header">
               <div class="settings-section-icon" data-color="neutral" aria-hidden="true">🤝</div>
