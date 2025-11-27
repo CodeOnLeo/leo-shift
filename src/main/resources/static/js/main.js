@@ -322,7 +322,7 @@ if (calendarSelectorButton) {
 
 // 캘린더 선택 드롭다운 외부 클릭 시 닫기
 document.addEventListener('click', (e) => {
-  if (!calendarSelector.contains(e.target) && calendarSelectorList && !calendarSelectorList.hidden) {
+  if (calendarSelector && calendarSelectorList && !calendarSelector.contains(e.target) && !calendarSelectorList.hidden) {
     calendarSelectorList.hidden = true;
   }
 });
@@ -462,15 +462,37 @@ dayDetailForm.addEventListener('submit', async (event) => {
     return;
   }
 
-  // 일반 메모와 기념일 메모를 각각 저장
-  await api.saveDay(state.selectedDate, {
-    customCode: detailCode.value || null,
-    memo: detailMemo.value || null,
-    anniversaryMemo: anniversaryMemo.value || null,
-    repeatYearly: repeatYearly.checked
-  });
-  await loadCalendar(state.year, state.month);
-  closeModal();
+  try {
+    // 일반 메모와 기념일 메모를 각각 저장
+    await api.saveDay(state.selectedDate, {
+      customCode: detailCode.value || null,
+      memo: detailMemo.value || null,
+      anniversaryMemo: anniversaryMemo.value || null,
+      repeatYearly: repeatYearly.checked
+    }, state.calendarId);
+
+    // 캘린더 그리드 즉시 업데이트
+    await loadCalendar(state.year, state.month);
+
+    // 모달 내용도 즉시 업데이트 (저장된 내용 다시 로드)
+    const detail = await api.getDay(state.selectedDate, state.calendarId);
+    dayDetailPanel.innerHTML = `
+      <strong>${formatKoreanDate(state.selectedDate)}</strong>
+      <span>기본 근무: ${detail.baseCode || '-'}</span>
+      <span>실제 근무: ${detail.effectiveCode || '-'}</span>
+      <span>${detail.shiftLabel || ''} · ${detail.timeRange || ''}</span>
+      <small>${[detail.memo, detail.anniversaryMemo, ...(detail.yearlyMemos || [])].filter(Boolean).join(' • ')}</small>
+      ${detail.memoAuthor ? `<div class="memo-author-line">작성: ${detail.memoAuthor.name}${detail.updatedAt ? ` · ${formatDateTime(detail.updatedAt)}` : ''}</div>` : ''}
+    `;
+
+    // 메모 지우기 버튼 표시 여부 업데이트
+    clearMemoButton.style.display = detail.memo ? 'block' : 'none';
+    clearAnniversaryButton.style.display = (detail.anniversaryMemo || (detail.yearlyMemos && detail.yearlyMemos.length > 0)) ? 'block' : 'none';
+
+    showToast('저장되었습니다.');
+  } catch (e) {
+    showToast('저장 실패: ' + (e.message || '오류'));
+  }
 });
 
 notificationForm.addEventListener('submit', async (event) => {
