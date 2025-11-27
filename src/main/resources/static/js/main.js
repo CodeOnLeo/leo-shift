@@ -165,9 +165,12 @@ function debounce(fn, delay = 200) {
 async function bootstrap() {
   // 병렬로 실행 가능한 API들을 동시에 호출
   const calendarsResult = await loadCalendars();
-  const [meColorResult, settingsResult] = await Promise.all([
+  const [meColorResult, settingsResult, notificationResult, calendarResult, sharesResult] = await Promise.all([
     loadMeColor(),
-    loadPatternSettings({ force: true })
+    loadPatternSettings({ force: true }),
+    loadNotificationSettings().catch(() => null),
+    loadCalendar(state.year, state.month, { force: true }).catch(() => null),
+    loadShares({ force: true }).catch(() => null)
   ]);
   const settings = settingsResult;
 
@@ -182,11 +185,6 @@ async function bootstrap() {
   patternManager.hide();
   calendarSection.hidden = false;
   settingsMenuButton.hidden = false;
-  await Promise.all([
-    loadCalendar(state.year, state.month, { force: true }),
-    loadNotificationSettings(),
-    loadShares({ force: true })
-  ]);
 }
 
 async function loadCalendars() {
@@ -281,8 +279,10 @@ function renderCalendarSelector() {
       patternManager.hide();
       calendarSection.hidden = false;
       settingsMenuButton.hidden = false;
-      await loadCalendar(state.year, state.month);
-      await loadShares();
+      await Promise.all([
+        loadCalendar(state.year, state.month),
+        loadShares()
+      ]);
       renderCalendarSelector();
     });
     calendarSelectorList.appendChild(item);
@@ -352,6 +352,7 @@ function renderInvites() {
         showToast('초대를 수락했습니다.');
         await loadCalendars();
         invalidateCache('shares', cal.id);
+        invalidateCache('shares', state.calendarId);
         await loadShares({ force: true });
       } catch (e) {
         showToast('수락 실패: ' + (e.message || '오류'));
@@ -367,6 +368,7 @@ function renderInvites() {
         showToast('초대를 거절했습니다.');
         await loadCalendars();
         invalidateCache('shares', cal.id);
+        invalidateCache('shares', state.calendarId);
         await loadShares({ force: true });
       } catch (e) {
         showToast('거절 실패: ' + (e.message || '오류'));
@@ -405,10 +407,12 @@ async function fetchCalendar(year, month, { calendarId = state.calendarId, force
 function prefetchAdjacentMonths(year, month, calendarId = state.calendarId) {
   const prevDate = new Date(year, month - 2, 1);
   const nextDate = new Date(year, month, 1);
-  [prevDate, nextDate].forEach((date) => {
-    fetchCalendar(date.getFullYear(), date.getMonth() + 1, { calendarId }).catch(() => {
-      // 사전 로드 실패는 무시
-    });
+  // 이전/다음 달을 병렬로 사전 로드
+  Promise.all([
+    fetchCalendar(prevDate.getFullYear(), prevDate.getMonth() + 1, { calendarId }),
+    fetchCalendar(nextDate.getFullYear(), nextDate.getMonth() + 1, { calendarId })
+  ]).catch(() => {
+    // 사전 로드 실패는 무시
   });
 }
 
@@ -620,8 +624,10 @@ if (createCalendarForm) {
       patternManager.hide();
       calendarSection.hidden = false;
       settingsMenuButton.hidden = false;
-      await loadCalendar(state.year, state.month, { force: true });
-      await loadShares({ force: true });
+      await Promise.all([
+        loadCalendar(state.year, state.month, { force: true }),
+        loadShares({ force: true })
+      ]);
     } catch (e) {
       showToast('캘린더 생성 실패: ' + (e.message || '오류'));
     }
@@ -668,8 +674,10 @@ if (editCalendarForm) {
       patternManager.hide();
       calendarSection.hidden = false;
       settingsMenuButton.hidden = false;
-      await loadCalendar(state.year, state.month, { force: true });
-      await loadShares({ force: true });
+      await Promise.all([
+        loadCalendar(state.year, state.month, { force: true }),
+        loadShares({ force: true })
+      ]);
     } catch (e) {
       showToast('캘린더 수정 실패: ' + (e.message || '오류'));
     }
@@ -710,8 +718,10 @@ if (deleteCalendarButton) {
           patternManager.hide();
           calendarSection.hidden = false;
           settingsMenuButton.hidden = false;
-          await loadCalendar(state.year, state.month, { force: true });
-          await loadShares({ force: true });
+          await Promise.all([
+            loadCalendar(state.year, state.month, { force: true }),
+            loadShares({ force: true })
+          ]);
         }
       } else {
         calendarGrid.innerHTML = '';
@@ -979,18 +989,28 @@ const settingsViews = {
   main: document.getElementById('settingsMainView'),
   notifications: document.getElementById('settingsNotificationsView'),
   calendar: document.getElementById('settingsCalendarView'),
+  'calendar-create': document.getElementById('settingsCalendarCreateView'),
+  'calendar-edit': document.getElementById('settingsCalendarEditView'),
+  'calendar-pattern': document.getElementById('settingsCalendarPatternView'),
   share: document.getElementById('settingsShareView'),
-  personal: document.getElementById('settingsPersonalView'),
-  account: document.getElementById('settingsAccountView')
+  personal: document.getElementById('settingsPersonalView')
 };
 
 const viewTitles = {
   main: '설정',
   notifications: '알림 설정',
   calendar: '캘린더 관리',
+  'calendar-create': '새 캘린더 만들기',
+  'calendar-edit': '캘린더 수정',
+  'calendar-pattern': '패턴 관리',
   share: '공유 관리',
-  personal: '개인 설정',
-  account: '계정'
+  personal: '개인 설정'
+};
+
+const viewParents = {
+  'calendar-create': 'calendar',
+  'calendar-edit': 'calendar',
+  'calendar-pattern': 'calendar'
 };
 
 let currentSettingsView = 'main';
@@ -1065,7 +1085,9 @@ menuItems.forEach(item => {
 // 뒤로가기 버튼 클릭 이벤트
 if (settingsBackButton) {
   settingsBackButton.addEventListener('click', () => {
-    showSettingsView('main');
+    // 부모 뷰가 있으면 부모로, 없으면 메인으로
+    const parentView = viewParents[currentSettingsView];
+    showSettingsView(parentView || 'main');
   });
 }
 

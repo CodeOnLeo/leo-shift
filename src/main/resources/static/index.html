@@ -226,16 +226,9 @@
             </div>
             <div class="settings-menu-arrow">›</div>
           </button>
-
-          <button type="button" class="settings-menu-item" data-view="account">
-            <div class="settings-menu-icon">🔒</div>
-            <div class="settings-menu-content">
-              <div class="settings-menu-title">계정</div>
-              <div class="settings-menu-description">로그아웃</div>
-            </div>
-            <div class="settings-menu-arrow">›</div>
-          </button>
         </div>
+
+        <button type="button" onclick="logout()" class="logout-modal-button full-width" style="margin-top: 1rem;">로그아웃</button>
       </div>
 
       <!-- 알림 설정 화면 -->
@@ -266,8 +259,40 @@
         </section>
       </div>
 
-      <!-- 캘린더 관리 화면 -->
+      <!-- 캘린더 관리 메인 화면 -->
       <div id="settingsCalendarView" class="settings-view" hidden>
+        <div class="settings-menu-list">
+          <button type="button" class="settings-menu-item" data-view="calendar-create">
+            <div class="settings-menu-icon">➕</div>
+            <div class="settings-menu-content">
+              <div class="settings-menu-title">새 캘린더 만들기</div>
+              <div class="settings-menu-description">업무용, 개인용 등 용도별로 캘린더 추가</div>
+            </div>
+            <div class="settings-menu-arrow">›</div>
+          </button>
+
+          <button type="button" class="settings-menu-item" data-view="calendar-edit">
+            <div class="settings-menu-icon">✏️</div>
+            <div class="settings-menu-content">
+              <div class="settings-menu-title">캘린더 수정</div>
+              <div class="settings-menu-description">이름, 패턴 설정 변경 및 삭제</div>
+            </div>
+            <div class="settings-menu-arrow">›</div>
+          </button>
+
+          <button type="button" class="settings-menu-item" data-view="calendar-pattern">
+            <div class="settings-menu-icon">🗓️</div>
+            <div class="settings-menu-content">
+              <div class="settings-menu-title">패턴 관리</div>
+              <div class="settings-menu-description">근무 패턴 재설정</div>
+            </div>
+            <div class="settings-menu-arrow">›</div>
+          </button>
+        </div>
+      </div>
+
+      <!-- 새 캘린더 만들기 화면 -->
+      <div id="settingsCalendarCreateView" class="settings-view" hidden>
         <section class="settings-section" data-tone="primary">
           <div class="settings-section-header">
             <div class="settings-section-icon" data-color="primary" aria-hidden="true">➕</div>
@@ -288,7 +313,10 @@
             <button type="submit" class="full-width">캘린더 만들기</button>
           </form>
         </section>
+      </div>
 
+      <!-- 캘린더 수정 화면 -->
+      <div id="settingsCalendarEditView" class="settings-view" hidden>
         <section class="settings-section" data-tone="neutral">
           <div class="settings-section-header">
             <div class="settings-section-icon" data-color="neutral" aria-hidden="true">✏️</div>
@@ -311,7 +339,10 @@
           </form>
           <button type="button" id="deleteCalendarButton" class="logout-modal-button full-width">캘린더 삭제</button>
         </section>
+      </div>
 
+      <!-- 패턴 관리 화면 -->
+      <div id="settingsCalendarPatternView" class="settings-view" hidden>
         <section class="settings-section" data-tone="neutral">
           <div class="settings-section-header">
             <div class="settings-section-icon" data-color="neutral" aria-hidden="true">🗓️</div>
@@ -389,20 +420,6 @@
             <input type="color" id="colorPicker" value="#0A84FF" />
             <button type="button" id="saveColorButton">색상 저장</button>
           </div>
-        </section>
-      </div>
-
-      <!-- 계정 화면 -->
-      <div id="settingsAccountView" class="settings-view" hidden>
-        <section class="settings-section" data-tone="danger">
-          <div class="settings-section-header">
-            <div class="settings-section-icon" data-color="danger" aria-hidden="true">🔒</div>
-            <div>
-              <h3>계정</h3>
-              <p class="settings-section-description">설정을 모두 마쳤다면 여기에서 안전하게 로그아웃할 수 있습니다.</p>
-            </div>
-          </div>
-          <button type="button" onclick="logout()" class="logout-modal-button full-width">로그아웃</button>
         </section>
       </div>
     </div>
