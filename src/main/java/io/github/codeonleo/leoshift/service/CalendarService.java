@@ -33,7 +33,6 @@ public class CalendarService {
         if (usePattern && !patternConfigured) {
             return new CalendarResponse(false, year, month, Collections.emptyList(), Collections.emptyMap());
         }
-        List<CalendarPattern> patterns = usePattern ? calendarPatternService.findAll(calendar) : Collections.emptyList();
         LocalDate monthStart = LocalDate.of(year, month, 1);
         LocalDate monthEnd = monthStart.withDayOfMonth(monthStart.lengthOfMonth());
 
@@ -61,17 +60,12 @@ public class CalendarService {
             ShiftException dayException = exceptionByDate.get(cursor);
             String baseCode = null;
             if (usePattern) {
-                CalendarPattern effective = null;
-                for (int i = patterns.size() - 1; i >= 0; i--) {
-                    if (!patterns.get(i).getPatternStartDate().isAfter(cursor)) {
-                        effective = patterns.get(i);
-                        break;
-                    }
-                }
-                if (effective != null) {
+                var resolved = calendarPatternService.findEffective(calendar, cursor);
+                if (resolved.isPresent()) {
+                    var pattern = resolved.get();
                     baseCode = calculationService.determineCode(
-                            calendarPatternService.extractPattern(effective),
-                            effective.getPatternStartDate(),
+                            pattern.codes(),
+                            pattern.startDate(),
                             cursor
                     );
                 }

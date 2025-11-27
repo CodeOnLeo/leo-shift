@@ -32,12 +32,12 @@ public class ScheduleService {
         }
         String baseCode = null;
         if (usePattern) {
-            Optional<CalendarPattern> effective = calendarPatternService.findEffective(calendar, date);
+            Optional<CalendarPatternService.ResolvedPattern> effective = calendarPatternService.findEffective(calendar, date);
             if (effective.isPresent()) {
-                CalendarPattern pattern = effective.get();
+                var pattern = effective.get();
                 baseCode = calculationService.determineCode(
-                        calendarPatternService.extractPattern(pattern),
-                        pattern.getPatternStartDate(),
+                        pattern.codes(),
+                        pattern.startDate(),
                         date
                 );
             }

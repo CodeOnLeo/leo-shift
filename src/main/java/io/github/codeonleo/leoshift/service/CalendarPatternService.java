@@ -2,6 +2,7 @@ package io.github.codeonleo.leoshift.service;
 
 import io.github.codeonleo.leoshift.entity.Calendar;
 import io.github.codeonleo.leoshift.entity.CalendarPattern;
+import io.github.codeonleo.leoshift.entity.UserSettings;
 import io.github.codeonleo.leoshift.repository.CalendarPatternRepository;
 import jakarta.transaction.Transactional;
 import java.time.LocalDate;
@@ -20,13 +21,27 @@ public class CalendarPatternService {
     private static final List<String> ALLOWED_CODES = List.of("D", "A", "N", "V", "O");
 
     private final CalendarPatternRepository repository;
+    private final SettingsService settingsService;
 
-    public Optional<CalendarPattern> findLatest(Calendar calendar) {
-        return repository.findTopByCalendarOrderByPatternStartDateDesc(calendar);
+    public record ResolvedPattern(List<String> codes, LocalDate startDate) {
     }
 
-    public Optional<CalendarPattern> findEffective(Calendar calendar, LocalDate date) {
-        return repository.findTopByCalendarAndPatternStartDateLessThanEqualOrderByPatternStartDateDesc(calendar, date);
+    public Optional<ResolvedPattern> findLatest(Calendar calendar) {
+        Optional<CalendarPattern> latest = repository.findTopByCalendarOrderByPatternStartDateDesc(calendar);
+        if (latest.isPresent()) {
+            CalendarPattern pattern = latest.get();
+            return Optional.of(new ResolvedPattern(extractPattern(pattern), pattern.getPatternStartDate()));
+        }
+        return fallbackFromSettings(calendar);
+    }
+
+    public Optional<ResolvedPattern> findEffective(Calendar calendar, LocalDate date) {
+        Optional<CalendarPattern> effective = repository.findTopByCalendarAndPatternStartDateLessThanEqualOrderByPatternStartDateDesc(calendar, date);
+        if (effective.isPresent()) {
+            CalendarPattern pattern = effective.get();
+            return Optional.of(new ResolvedPattern(extractPattern(pattern), pattern.getPatternStartDate()));
+        }
+        return fallbackFromSettings(calendar);
     }
 
     public List<CalendarPattern> findAll(Calendar calendar) {
@@ -86,5 +101,21 @@ public class CalendarPatternService {
                     }
                 })
                 .collect(Collectors.toList());
+    }
+
+    private Optional<ResolvedPattern> fallbackFromSettings(Calendar calendar) {
+        if (calendar == null || calendar.getOwner() == null) {
+            return Optional.empty();
+        }
+        Optional<UserSettings> settingsOpt = settingsService.findSettings(calendar.getOwner());
+        if (settingsOpt.isEmpty() || !settingsService.isPatternConfigured(settingsOpt.get())) {
+            return Optional.empty();
+        }
+        UserSettings settings = settingsOpt.get();
+        List<String> codes = settingsService.extractPattern(settings);
+        if (codes.isEmpty() || settings.getPatternStartDate() == null) {
+            return Optional.empty();
+        }
+        return Optional.of(new ResolvedPattern(codes, settings.getPatternStartDate()));
     }
 }
