@@ -71,6 +71,8 @@ const patternManager = initPatternForm({
       return;
     }
     await api.saveSettings(payload, state.calendarId);
+    invalidateCache('settings', state.calendarId);
+    invalidateCache('calendar');
     await bootstrap();
   }
 });
@@ -82,15 +84,90 @@ const state = {
   selectedDate: null,
   calendarId: null,
   calendars: [],
-  me: null
+  me: null,
+  calendarData: null
 };
+
+const CACHE_TTL_MS = 3 * 60 * 1000; // 3분 캐시
+const cacheStores = {
+  settings: new Map(),
+  shares: new Map(),
+  calendar: new Map(),
+  day: new Map()
+};
+const inflightStores = {
+  settings: new Map(),
+  shares: new Map(),
+  calendar: new Map(),
+  day: new Map()
+};
+
+let calendarRequestSeq = 0;
+
+function calendarCacheKey(calendarId, year, month) {
+  return `${calendarId || 'default'}:${year}-${month}`;
+}
+
+function dayCacheKey(calendarId, date) {
+  return `${calendarId || 'default'}:${date}`;
+}
+
+function isFresh(entry) {
+  return entry && Date.now() - entry.fetchedAt < CACHE_TTL_MS;
+}
+
+function invalidateCache(kind, key) {
+  if (key === undefined) {
+    cacheStores[kind].clear();
+    inflightStores[kind].clear();
+    return;
+  }
+  cacheStores[kind].delete(key);
+  inflightStores[kind].delete(key);
+}
+
+async function fetchWithCache(kind, key, fetcher, { force = false } = {}) {
+  const store = cacheStores[kind];
+  const inflight = inflightStores[kind];
+  const cached = store.get(key);
+
+  if (!force && isFresh(cached)) {
+    return cached.data;
+  }
+
+  if (inflight.has(key)) {
+    return inflight.get(key);
+  }
+
+  const promise = fetcher()
+    .then((data) => {
+      store.set(key, { data, fetchedAt: Date.now() });
+      inflight.delete(key);
+      return data;
+    })
+    .catch((err) => {
+      inflight.delete(key);
+      throw err;
+    });
+
+  inflight.set(key, promise);
+  return promise;
+}
+
+function debounce(fn, delay = 200) {
+  let timer = null;
+  return (...args) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn(...args), delay);
+  };
+}
 
 async function bootstrap() {
   // 병렬로 실행 가능한 API들을 동시에 호출
-  const [calendarsResult, meColorResult, settingsResult] = await Promise.all([
-    loadCalendars(),
+  const calendarsResult = await loadCalendars();
+  const [meColorResult, settingsResult] = await Promise.all([
     loadMeColor(),
-    loadPatternSettings()
+    loadPatternSettings({ force: true })
   ]);
   const settings = settingsResult;
 
@@ -105,13 +182,19 @@ async function bootstrap() {
   patternManager.hide();
   calendarSection.hidden = false;
   settingsMenuButton.hidden = false;
-  await Promise.all([loadCalendar(state.year, state.month), loadNotificationSettings(), loadShares()]);
+  await Promise.all([
+    loadCalendar(state.year, state.month, { force: true }),
+    loadNotificationSettings(),
+    loadShares({ force: true })
+  ]);
 }
 
 async function loadCalendars() {
   const res = await api.listCalendars();
   state.calendars = res.calendars || [];
   state.calendarId = res.defaultCalendarId || (state.calendars[0] ? state.calendars[0].id : null);
+  state.selectedDate = null;
+  state.calendarData = null;
   renderCalendarSelector();
   renderInvites();
   return res;
@@ -132,11 +215,13 @@ async function loadMeColor() {
   }
 }
 
-async function loadPatternSettings() {
-  const settings = await api.getSettings(state.calendarId);
+async function loadPatternSettings({ force = false } = {}) {
+  if (!state.calendarId) return {};
+  const key = state.calendarId;
+  const settings = await fetchWithCache('settings', key, () => api.getSettings(state.calendarId), { force });
   const currentCalendar = state.calendars.find((c) => c.id === state.calendarId);
   const usePattern = currentCalendar ? currentCalendar.patternEnabled !== false : true;
-  state.patternConfigured = usePattern ? settings.configured : true;
+  state.patternConfigured = usePattern ? !!settings.configured : true;
   state.usePattern = usePattern;
   return settings;
 }
@@ -210,9 +295,10 @@ function renderCalendarSelector() {
   syncCalendarEditForm();
 }
 
-async function loadShares() {
+async function loadShares({ force = false } = {}) {
   if (!shareList || !state.calendarId) return;
-  const shares = await api.listShares(state.calendarId);
+  const key = state.calendarId;
+  const shares = await fetchWithCache('shares', key, () => api.listShares(state.calendarId), { force });
   shareList.innerHTML = '';
   shares.forEach((s) => {
     const item = document.createElement('div');
@@ -265,7 +351,8 @@ function renderInvites() {
         await api.respondShare(cal.id, { accept: true });
         showToast('초대를 수락했습니다.');
         await loadCalendars();
-        await loadShares();
+        invalidateCache('shares', cal.id);
+        await loadShares({ force: true });
       } catch (e) {
         showToast('수락 실패: ' + (e.message || '오류'));
       }
@@ -279,7 +366,8 @@ function renderInvites() {
         await api.respondShare(cal.id, { accept: false });
         showToast('초대를 거절했습니다.');
         await loadCalendars();
-        await loadShares();
+        invalidateCache('shares', cal.id);
+        await loadShares({ force: true });
       } catch (e) {
         showToast('거절 실패: ' + (e.message || '오류'));
       }
@@ -290,10 +378,50 @@ function renderInvites() {
   });
 }
 
-async function loadCalendar(year, month) {
-  const data = await api.getCalendar(year, month, state.calendarId);
+async function fetchDay(date, { calendarId = state.calendarId, force = false } = {}) {
+  const targetCalendarId = calendarId ?? state.calendarId;
+  const key = dayCacheKey(targetCalendarId, date);
+  return fetchWithCache('day', key, () => api.getDay(date, targetCalendarId), { force });
+}
+
+function getCachedCalendarData(year, month, calendarId = state.calendarId) {
+  const targetCalendarId = calendarId ?? state.calendarId;
+  if (state.calendarData && state.calendarData.year === year && state.calendarData.month === month && state.calendarData.calendarId === targetCalendarId) {
+    return state.calendarData;
+  }
+  const key = calendarCacheKey(targetCalendarId, year, month);
+  const cached = cacheStores.calendar.get(key);
+  return isFresh(cached) ? cached.data : null;
+}
+
+async function fetchCalendar(year, month, { calendarId = state.calendarId, force = false } = {}) {
+  const targetCalendarId = calendarId ?? state.calendarId;
+  const key = calendarCacheKey(targetCalendarId, year, month);
+  const data = await fetchWithCache('calendar', key, () => api.getCalendar(year, month, targetCalendarId), { force });
+  data.calendarId = targetCalendarId;
+  return data;
+}
+
+function prefetchAdjacentMonths(year, month, calendarId = state.calendarId) {
+  const prevDate = new Date(year, month - 2, 1);
+  const nextDate = new Date(year, month, 1);
+  [prevDate, nextDate].forEach((date) => {
+    fetchCalendar(date.getFullYear(), date.getMonth() + 1, { calendarId }).catch(() => {
+      // 사전 로드 실패는 무시
+    });
+  });
+}
+
+async function loadCalendar(year, month, { calendarId = state.calendarId, force = false } = {}) {
+  if (!calendarId) return null;
+  const requestId = ++calendarRequestSeq;
+  const data = await fetchCalendar(year, month, { calendarId, force });
+  if (requestId !== calendarRequestSeq) {
+    return data; // 더 최신 요청이 있으면 렌더링 생략
+  }
   state.year = data.year;
   state.month = data.month;
+  state.calendarData = data;
   calendarTitle.textContent = `${data.year}년 ${data.month}월`;
   renderCalendar({
     gridEl: calendarGrid,
@@ -303,18 +431,25 @@ async function loadCalendar(year, month) {
     selectedDate: state.selectedDate,
     onSelectDay: (date) => selectDay(date)
   });
+
+  prefetchAdjacentMonths(data.year, data.month, calendarId);
+
+  return data;
 }
 
 async function selectDay(date) {
   state.selectedDate = date;
+  const activeCalendarId = state.calendarId;
 
   // 날짜 상세 조회와 캘린더 데이터를 병렬로 가져오기
+  const cachedCalendar = getCachedCalendarData(state.year, state.month);
   const [detail, calendarData] = await Promise.all([
-    api.getDay(date, state.calendarId),
-    api.getCalendar(state.year, state.month, state.calendarId)
+    fetchDay(date, { calendarId: activeCalendarId }),
+    cachedCalendar ? Promise.resolve(cachedCalendar) : fetchCalendar(state.year, state.month, { calendarId: activeCalendarId })
   ]);
 
   dayModal.hidden = false;
+  state.calendarData = calendarData;
   const hasMemo = detail.memo || detail.anniversaryMemo || (detail.yearlyMemos && detail.yearlyMemos.length > 0);
   dayDetailPanel.innerHTML = `
     <strong>${formatKoreanDate(date)}</strong>
@@ -433,7 +568,8 @@ if (shareInviteButton) {
       await api.shareCalendar(state.calendarId, { email, permission });
       shareEmailInput.value = '';
       showToast('초대가 전송되었습니다.');
-      await loadShares();
+      invalidateCache('shares', state.calendarId);
+      await loadShares({ force: true });
     } catch (e) {
       showToast('초대 전송 실패: ' + (e.message || '오류'));
     }
@@ -466,12 +602,15 @@ if (createCalendarForm) {
       const res = await api.createCalendar({ name, patternEnabled });
       state.calendars = res.calendars || [];
       state.calendarId = res.defaultCalendarId || (state.calendars[0] ? state.calendars[0].id : null);
+      invalidateCache('settings');
+      invalidateCache('calendar');
+      invalidateCache('shares');
       renderCalendarSelector();
       renderInvites();
       newCalendarNameInput.value = '';
       newCalendarPatternEnabledInput.checked = true;
       showToast('캘린더가 생성되었습니다.');
-      const settings = await loadPatternSettings();
+      const settings = await loadPatternSettings({ force: true });
       if (!state.patternConfigured) {
         patternManager.show(settings.defaultNotificationMinutes || 60, settings);
         calendarSection.hidden = true;
@@ -481,8 +620,8 @@ if (createCalendarForm) {
       patternManager.hide();
       calendarSection.hidden = false;
       settingsMenuButton.hidden = false;
-      await loadCalendar(state.year, state.month);
-      await loadShares();
+      await loadCalendar(state.year, state.month, { force: true });
+      await loadShares({ force: true });
     } catch (e) {
       showToast('캘린더 생성 실패: ' + (e.message || '오류'));
     }
@@ -514,10 +653,12 @@ if (editCalendarForm) {
       if (!stillExists) {
         state.calendarId = res.defaultCalendarId || (state.calendars[0] ? state.calendars[0].id : null);
       }
+      invalidateCache('settings', state.calendarId);
+      invalidateCache('calendar');
       renderCalendarSelector();
       renderInvites();
       showToast('캘린더가 수정되었습니다.');
-      const settings = await loadPatternSettings();
+      const settings = await loadPatternSettings({ force: true });
       if (!state.patternConfigured) {
         patternManager.show(settings.defaultNotificationMinutes || 60, settings);
         calendarSection.hidden = true;
@@ -527,8 +668,8 @@ if (editCalendarForm) {
       patternManager.hide();
       calendarSection.hidden = false;
       settingsMenuButton.hidden = false;
-      await loadCalendar(state.year, state.month);
-      await loadShares();
+      await loadCalendar(state.year, state.month, { force: true });
+      await loadShares({ force: true });
     } catch (e) {
       showToast('캘린더 수정 실패: ' + (e.message || '오류'));
     }
@@ -553,11 +694,14 @@ if (deleteCalendarButton) {
       const res = await api.deleteCalendar(state.calendarId);
       state.calendars = res.calendars || [];
       state.calendarId = res.defaultCalendarId || (state.calendars[0] ? state.calendars[0].id : null);
+      invalidateCache('settings');
+      invalidateCache('calendar');
+      invalidateCache('shares');
       renderCalendarSelector();
       renderInvites();
       showToast('캘린더가 삭제되었습니다.');
       if (state.calendarId) {
-        const settings = await loadPatternSettings();
+        const settings = await loadPatternSettings({ force: true });
         if (!state.patternConfigured) {
           patternManager.show(settings.defaultNotificationMinutes || 60, settings);
           calendarSection.hidden = true;
@@ -566,8 +710,8 @@ if (deleteCalendarButton) {
           patternManager.hide();
           calendarSection.hidden = false;
           settingsMenuButton.hidden = false;
-          await loadCalendar(state.year, state.month);
-          await loadShares();
+          await loadCalendar(state.year, state.month, { force: true });
+          await loadShares({ force: true });
         }
       } else {
         calendarGrid.innerHTML = '';
@@ -599,7 +743,7 @@ clearMemoButton.addEventListener('click', () => {
 
 // 기념일 지우기 버튼
 clearAnniversaryButton.addEventListener('click', async () => {
-  const detail = await api.getDay(state.selectedDate);
+  const detail = await fetchDay(state.selectedDate, { calendarId: state.calendarId });
 
   // yearlyMemos가 있고 현재 날짜에 anniversaryMemo가 없으면, 다른 년도에서 반복되는 것
   const isYearlyFromOtherYear = !detail.anniversaryMemo && detail.yearlyMemos && detail.yearlyMemos.length > 0;
@@ -650,7 +794,7 @@ dayDetailForm.addEventListener('submit', async (event) => {
 
   try {
     // 일반 메모와 기념일 메모를 각각 저장
-    await api.saveDay(state.selectedDate, {
+    const savedDetail = await api.saveDay(state.selectedDate, {
       customCode: detailCode.value || null,
       memo: detailMemo.value || null,
       anniversaryMemo: anniversaryMemo.value || null,
@@ -658,23 +802,14 @@ dayDetailForm.addEventListener('submit', async (event) => {
     }, state.calendarId);
 
     // 캘린더 그리드와 모달 내용 병렬 업데이트
-    const [calendarData, detail] = await Promise.all([
-      api.getCalendar(state.year, state.month, state.calendarId),
-      api.getDay(state.selectedDate, state.calendarId)
+    const [calendarData] = await Promise.all([
+      loadCalendar(state.year, state.month, { force: true })
     ]);
 
-    // 캘린더 그리드 업데이트
-    state.year = calendarData.year;
-    state.month = calendarData.month;
-    calendarTitle.textContent = `${calendarData.year}년 ${calendarData.month}월`;
-    renderCalendar({
-      gridEl: calendarGrid,
-      summaryEl: summaryList,
-      data: calendarData,
-      today: new Date().toISOString().split('T')[0],
-      selectedDate: state.selectedDate,
-      onSelectDay: (date) => selectDay(date)
-    });
+    const detail = savedDetail || await fetchDay(state.selectedDate, { calendarId: state.calendarId, force: true });
+    // 저장 결과를 캐시에 반영
+    const dayKey = dayCacheKey(state.calendarId, state.selectedDate);
+    cacheStores.day.set(dayKey, { data: detail, fetchedAt: Date.now() });
 
     // 모달 내용 업데이트
     const hasMemo = detail.memo || detail.anniversaryMemo || (detail.yearlyMemos && detail.yearlyMemos.length > 0);
@@ -728,14 +863,18 @@ resetPatternButton.addEventListener('click', async () => {
   patternManager.show(settings.defaultNotificationMinutes || 60, settings);
 });
 
+const navigateMonth = debounce((year, month) => {
+  loadCalendar(year, month);
+}, 150);
+
 prevMonthBtn.addEventListener('click', () => {
   const date = new Date(state.year, state.month - 2, 1);
-  loadCalendar(date.getFullYear(), date.getMonth() + 1);
+  navigateMonth(date.getFullYear(), date.getMonth() + 1);
 });
 
 nextMonthBtn.addEventListener('click', () => {
   const date = new Date(state.year, state.month, 1);
-  loadCalendar(date.getFullYear(), date.getMonth() + 1);
+  navigateMonth(date.getFullYear(), date.getMonth() + 1);
 });
 
 legendToggle.addEventListener('click', () => {
