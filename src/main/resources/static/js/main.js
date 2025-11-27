@@ -379,11 +379,14 @@ if (createCalendarForm) {
     }
     const patternEnabled = newCalendarPatternEnabledInput.checked;
     try {
-      await api.createCalendar({ name, patternEnabled });
+      const res = await api.createCalendar({ name, patternEnabled });
+      state.calendars = res.calendars || [];
+      state.calendarId = res.defaultCalendarId || (state.calendars[0] ? state.calendars[0].id : null);
+      renderCalendarSelector();
+      renderInvites();
       newCalendarNameInput.value = '';
       newCalendarPatternEnabledInput.checked = true;
       showToast('캘린더가 생성되었습니다.');
-      await loadCalendars();
       await loadCalendar(state.year, state.month);
     } catch (e) {
       showToast('캘린더 생성 실패: ' + (e.message || '오류'));
