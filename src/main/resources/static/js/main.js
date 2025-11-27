@@ -221,7 +221,90 @@ function scheduleIdle(task) {
 async function bootstrap() {
   const endLoading = startGlobalLoading();
   try {
-    // 필수 데이터만 먼저: 캘린더, 사용자, 설정, 현재 달
+    // 우선 서버에서 한 번에 내려주는 bootstrap API 시도
+    try {
+      const bootstrapData = await api.bootstrap({
+        year: state.year,
+        month: state.month,
+        calendarId: state.calendarId
+      });
+
+      // 캘린더 목록/기본 캘린더
+      const calendarsRes = bootstrapData.calendars || {};
+      state.calendars = calendarsRes.calendars || [];
+      state.calendarId = state.calendarId
+        || calendarsRes.defaultCalendarId
+        || (state.calendars[0] ? state.calendars[0].id : null);
+      renderCalendarSelector();
+      renderInvites();
+
+      // 사용자
+      if (bootstrapData.me) {
+        state.me = bootstrapData.me;
+        if (colorPicker && bootstrapData.me.colorTag) {
+          colorPicker.value = bootstrapData.me.colorTag;
+        }
+      }
+
+      // 설정
+      const settings = bootstrapData.settings || {};
+      state.patternConfigured = settings.configured || false;
+      state.usePattern = true;
+      if (!state.patternConfigured) {
+        patternManager.show(settings.defaultNotificationMinutes || 60, settings);
+        calendarSection.hidden = true;
+        settingsMenuButton.hidden = true;
+        dayModal.hidden = true;
+        settingsModal.hidden = true;
+        // 알림 설정만 적용
+        applyNotificationSettings(bootstrapData.notificationSettings);
+        return;
+      }
+
+      // 달력 데이터
+      if (bootstrapData.calendar) {
+        const calData = bootstrapData.calendar;
+        state.year = calData.year;
+        state.month = calData.month;
+        calData.calendarId = state.calendarId;
+        state.calendarData = calData;
+        cacheStores.calendar.set(calendarCacheKey(state.calendarId, calData.year, calData.month), {
+          data: calData,
+          fetchedAt: Date.now()
+        });
+        renderCalendar({
+          gridEl: calendarGrid,
+          summaryEl: summaryList,
+          data: calData,
+          today: new Date().toISOString().split('T')[0],
+          selectedDate: state.selectedDate,
+          onSelectDay: (date) => selectDay(date)
+        });
+      }
+
+      // 공유 목록/캐시
+      if (bootstrapData.shares && state.calendarId) {
+        cacheStores.shares.set(state.calendarId, { data: bootstrapData.shares, fetchedAt: Date.now() });
+        renderCalendarSelector();
+        renderInvites();
+        await loadShares();
+      }
+
+      applyNotificationSettings(bootstrapData.notificationSettings);
+      patternManager.hide();
+      calendarSection.hidden = false;
+      settingsMenuButton.hidden = false;
+
+      scheduleIdle(() => {
+        prefetchAdjacentMonths(state.year, state.month, state.calendarId);
+      });
+      return;
+    } catch (bootstrapError) {
+      // fallback to 기존 로직
+      console.warn('bootstrap API failed, fallback to individual calls', bootstrapError);
+    }
+
+    // fallback 경로: 필수 데이터만 먼저
     await loadCalendars();
     const [settings] = await Promise.all([
       loadPatternSettings({ force: true }),
@@ -588,11 +671,16 @@ function closeModal() {
 
 async function loadNotificationSettings() {
   const data = await api.getNotificationSettings();
+  applyNotificationSettings(data);
+}
+
+function applyNotificationSettings(data) {
+  if (!data) return;
   const totalMinutes = data.minutes;
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
-  notificationHoursInput.value = hours;
-  notificationMinutesInput.value = minutes;
+  if (notificationHoursInput) notificationHoursInput.value = hours;
+  if (notificationMinutesInput) notificationMinutesInput.value = minutes;
 }
 
 settingsMenuButton.addEventListener('click', () => {

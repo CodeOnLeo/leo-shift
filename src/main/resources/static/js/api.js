@@ -186,5 +186,13 @@ export const api = {
   listShares: (calendarId) => request(`/api/calendars/${calendarId}/shares`),
   updateColor: (payload) => request('/api/settings/color', { method: 'PUT', body: JSON.stringify(payload) }),
   me: () => request('/api/auth/me'),
-  updateProfile: (payload) => request('/api/auth/profile', { method: 'PUT', body: JSON.stringify(payload) })
+  updateProfile: (payload) => request('/api/auth/profile', { method: 'PUT', body: JSON.stringify(payload) }),
+  bootstrap: ({ year, month, calendarId } = {}) => {
+    const params = new URLSearchParams();
+    if (year) params.append('year', year);
+    if (month) params.append('month', month);
+    if (calendarId) params.append('calendarId', calendarId);
+    const query = params.toString();
+    return request(`/api/bootstrap${query ? `?${query}` : ''}`);
+  }
 };
