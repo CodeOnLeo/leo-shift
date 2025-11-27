@@ -733,13 +733,14 @@ button.secondary {
   }
 
   .calendar-selector {
-    grid-column: 1 / 4;
+    grid-column: 1 / 3;
     grid-row: 2;
   }
 
   .settings-icon-button {
     grid-column: 3;
-    grid-row: 3;
+    grid-row: 2;
+    justify-self: end;
   }
 
   .share-form {
