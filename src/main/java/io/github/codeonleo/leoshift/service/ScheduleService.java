@@ -66,6 +66,7 @@ public class ScheduleService {
             author = new AuthorDto(
                     exception.getAuthor().getId(),
                     exception.getAuthor().getName(),
+                    exception.getAuthor().getNickname(),
                     ColorTagUtil.resolve(exception.getAuthor())
             );
         }

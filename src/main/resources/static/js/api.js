@@ -178,5 +178,6 @@ export const api = {
   respondShare: (calendarId, payload) => request(`/api/calendars/${calendarId}/shares/respond`, { method: 'POST', body: JSON.stringify(payload) }),
   listShares: (calendarId) => request(`/api/calendars/${calendarId}/shares`),
   updateColor: (payload) => request('/api/settings/color', { method: 'PUT', body: JSON.stringify(payload) }),
-  me: () => request('/api/auth/me')
+  me: () => request('/api/auth/me'),
+  updateProfile: (payload) => request('/api/auth/profile', { method: 'PUT', body: JSON.stringify(payload) })
 };

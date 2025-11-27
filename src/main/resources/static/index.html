@@ -204,7 +204,7 @@
             <div class="settings-menu-icon">📅</div>
             <div class="settings-menu-content">
               <div class="settings-menu-title">캘린더 관리</div>
-              <div class="settings-menu-description">캘린더 생성, 수정, 삭제</div>
+              <div class="settings-menu-description">캘린더 및 패턴 관리</div>
             </div>
             <div class="settings-menu-arrow">›</div>
           </button>
@@ -219,10 +219,10 @@
           </button>
 
           <button type="button" class="settings-menu-item" data-view="personal">
-            <div class="settings-menu-icon">🎨</div>
+            <div class="settings-menu-icon">👤</div>
             <div class="settings-menu-content">
               <div class="settings-menu-title">개인 설정</div>
-              <div class="settings-menu-description">색상, 패턴 관리</div>
+              <div class="settings-menu-description">프로필 및 색상</div>
             </div>
             <div class="settings-menu-arrow">›</div>
           </button>
@@ -311,6 +311,17 @@
           </form>
           <button type="button" id="deleteCalendarButton" class="logout-modal-button full-width">캘린더 삭제</button>
         </section>
+
+        <section class="settings-section" data-tone="neutral">
+          <div class="settings-section-header">
+            <div class="settings-section-icon" data-color="neutral" aria-hidden="true">🗓️</div>
+            <div>
+              <h3>패턴 관리</h3>
+              <p class="settings-section-description">패턴이 꼬였을 때 쉽게 초기화하고 처음부터 다시 설정할 수 있어요.</p>
+            </div>
+          </div>
+          <button type="button" id="resetPattern" class="secondary full-width">근무 패턴 재설정</button>
+        </section>
       </div>
 
       <!-- 공유 관리 화면 -->
@@ -340,6 +351,34 @@
       <div id="settingsPersonalView" class="settings-view" hidden>
         <section class="settings-section" data-tone="primary">
           <div class="settings-section-header">
+            <div class="settings-section-icon" data-color="primary" aria-hidden="true">👤</div>
+            <div>
+              <h3>프로필 정보</h3>
+              <p class="settings-section-description">앱에서 사용할 닉네임을 설정하세요.</p>
+            </div>
+          </div>
+          <form id="updateProfileForm">
+            <div class="profile-info">
+              <div class="profile-item">
+                <label>이름</label>
+                <div id="profileName" class="profile-value">-</div>
+              </div>
+              <div class="profile-item">
+                <label>이메일</label>
+                <div id="profileEmail" class="profile-value">-</div>
+              </div>
+              <div class="profile-item">
+                <label>닉네임</label>
+                <input type="text" id="profileNickname" placeholder="닉네임 입력" maxlength="50" required />
+              </div>
+            </div>
+            <button type="submit" class="full-width">닉네임 저장</button>
+          </form>
+          <small class="hint" id="profileProviderHint" hidden>구글 로그인의 경우 이름과 이메일은 수정할 수 없습니다.</small>
+        </section>
+
+        <section class="settings-section" data-tone="primary">
+          <div class="settings-section-header">
             <div class="settings-section-icon" data-color="primary" aria-hidden="true">🎨</div>
             <div>
               <h3>작성자 색상</h3>
@@ -350,17 +389,6 @@
             <input type="color" id="colorPicker" value="#0A84FF" />
             <button type="button" id="saveColorButton">색상 저장</button>
           </div>
-        </section>
-
-        <section class="settings-section" data-tone="neutral">
-          <div class="settings-section-header">
-            <div class="settings-section-icon" data-color="neutral" aria-hidden="true">🗓️</div>
-            <div>
-              <h3>패턴 관리</h3>
-              <p class="settings-section-description">패턴이 꼬였을 때 쉽게 초기화하고 처음부터 다시 설정할 수 있어요.</p>
-            </div>
-          </div>
-          <button type="button" id="resetPattern" class="secondary full-width">근무 패턴 재설정</button>
         </section>
       </div>
 

@@ -4,6 +4,7 @@ import io.github.codeonleo.leoshift.dto.AuthRequest;
 import io.github.codeonleo.leoshift.dto.AuthResponse;
 import io.github.codeonleo.leoshift.dto.RefreshTokenRequest;
 import io.github.codeonleo.leoshift.dto.SignupRequest;
+import io.github.codeonleo.leoshift.dto.UpdateProfileRequest;
 import io.github.codeonleo.leoshift.security.UserPrincipal;
 import io.github.codeonleo.leoshift.service.AuthService;
 import jakarta.validation.Valid;
@@ -49,5 +50,15 @@ public class AuthController {
         // 현재는 클라이언트 측에서 토큰 삭제
         // 향후 Redis 기반 토큰 블랙리스트 구현 가능
         return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/profile")
+    public ResponseEntity<AuthResponse.UserInfo> updateProfile(
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
+            @Valid @RequestBody UpdateProfileRequest request) {
+        AuthResponse.UserInfo userInfo = authService.updateProfile(
+                userPrincipal.getId(),
+                request.getNickname());
+        return ResponseEntity.ok(userInfo);
     }
 }

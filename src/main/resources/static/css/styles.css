@@ -767,7 +767,6 @@ button.secondary {
   }
 
   .share-form {
-    grid-template-columns: 1fr;
     gap: 0.75rem;
   }
 
@@ -776,6 +775,16 @@ button.secondary {
   .share-form button {
     min-height: 48px;
     font-size: 1rem;
+  }
+
+  .share-form input[type="email"] {
+    flex: 1 1 100%;
+  }
+
+  .share-form select,
+  .share-form button {
+    flex: 1;
+    min-width: 0;
   }
 
   .calendar-grid {
@@ -881,15 +890,25 @@ button.secondary {
 }
 
 .share-form {
-  display: grid;
-  grid-template-columns: 1fr 120px 120px;
+  display: flex;
+  flex-wrap: wrap;
   gap: 0.6rem;
   margin-bottom: 0.75rem;
 }
 
-.share-form input,
+.share-form input[type="email"] {
+  flex: 1 1 100%;
+  min-width: 100%;
+}
+
 .share-form select {
-  width: 100%;
+  flex: 1 1 auto;
+  min-width: 120px;
+}
+
+.share-form button {
+  flex: 1 1 auto;
+  min-width: 120px;
 }
 
 .share-list {
@@ -1287,4 +1306,52 @@ button.secondary {
   font-size: 1.5rem;
   color: #c7c7cc;
   font-weight: 300;
+}
+
+/* 프로필 정보 */
+.profile-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.profile-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.profile-item label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #8e8e93;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0;
+}
+
+.profile-value {
+  font-size: 1rem;
+  color: #1c1c1e;
+  padding: 0.75rem 1rem;
+  background: #f5f5f7;
+  border-radius: 8px;
+  border: 1px solid #e5e5ea;
+}
+
+.profile-item input[type="text"] {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  border: 1px solid #d1d1d6;
+  border-radius: 8px;
+  background: white;
+  margin: 0;
+}
+
+.profile-item input[type="text"]:focus {
+  outline: none;
+  border-color: #007AFF;
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
 }

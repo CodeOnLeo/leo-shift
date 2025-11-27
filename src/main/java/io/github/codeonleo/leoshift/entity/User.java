@@ -28,6 +28,9 @@ public class User {
     @Column(nullable = false)
     private String name;
 
+    @Column(length = 50)
+    private String nickname; // 앱 내에서 사용할 닉네임
+
     @Column
     private String password; // OAuth2 사용자는 null
 

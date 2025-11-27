@@ -24,7 +24,9 @@ public class AuthResponse {
         private Long id;
         private String email;
         private String name;
+        private String nickname;
         private String profileImageUrl;
         private String colorTag;
+        private String provider;
     }
 }

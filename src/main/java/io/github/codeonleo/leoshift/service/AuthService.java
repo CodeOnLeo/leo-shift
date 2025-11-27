@@ -42,6 +42,7 @@ public class AuthService {
         User user = User.builder()
                 .email(request.getEmail())
                 .name(request.getName())
+                .nickname(request.getName()) // 초기 닉네임은 이름과 동일
                 .password(passwordEncoder.encode(request.getPassword()))
                 .provider(User.AuthProvider.LOCAL)
                 .roles(Set.of(User.Role.USER))
@@ -86,8 +87,10 @@ public class AuthService {
                         .id(user.getId())
                         .email(user.getEmail())
                         .name(user.getName())
+                        .nickname(user.getNickname())
                         .profileImageUrl(user.getProfileImageUrl())
                         .colorTag(user.getColorTag())
+                        .provider(user.getProvider().name())
                         .build())
                 .build();
     }
@@ -119,8 +122,10 @@ public class AuthService {
                         .id(userPrincipal.getId())
                         .email(userPrincipal.getEmail())
                         .name(userPrincipal.getName())
+                        .nickname(user.getNickname())
                         .profileImageUrl(user.getProfileImageUrl())
                         .colorTag(user.getColorTag())
+                        .provider(user.getProvider().name())
                         .build())
                 .build();
     }
@@ -134,7 +139,29 @@ public class AuthService {
                 .id(user.getId())
                 .email(user.getEmail())
                 .name(user.getName())
+                .nickname(user.getNickname())
                 .profileImageUrl(user.getProfileImageUrl())
+                .colorTag(user.getColorTag())
+                .provider(user.getProvider().name())
+                .build();
+    }
+
+    @Transactional
+    public AuthResponse.UserInfo updateProfile(Long userId, String nickname) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다"));
+
+        user.setNickname(nickname);
+        userRepository.save(user);
+
+        return AuthResponse.UserInfo.builder()
+                .id(user.getId())
+                .email(user.getEmail())
+                .name(user.getName())
+                .nickname(user.getNickname())
+                .profileImageUrl(user.getProfileImageUrl())
+                .colorTag(user.getColorTag())
+                .provider(user.getProvider().name())
                 .build();
     }
 
@@ -175,8 +202,10 @@ public class AuthService {
                         .id(user.getId())
                         .email(user.getEmail())
                         .name(user.getName())
+                        .nickname(user.getNickname())
                         .profileImageUrl(user.getProfileImageUrl())
                         .colorTag(user.getColorTag())
+                        .provider(user.getProvider().name())
                         .build())
                 .build();
     }

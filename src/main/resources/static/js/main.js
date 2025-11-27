@@ -322,7 +322,7 @@ async function selectDay(date) {
     <span>실제 근무: ${detail.effectiveCode || '-'}</span>
     <span>${detail.shiftLabel || ''} · ${detail.timeRange || ''}</span>
     <small>${[detail.memo, detail.anniversaryMemo, ...(detail.yearlyMemos || [])].filter(Boolean).join(' • ')}</small>
-    ${hasMemo && detail.memoAuthor ? `<div class="memo-author-line">작성: ${detail.memoAuthor.name}${detail.updatedAt ? ` · ${formatDateTime(detail.updatedAt)}` : ''}</div>` : ''}
+    ${hasMemo && detail.memoAuthor ? `<div class="memo-author-line">작성: ${detail.memoAuthor.nickname || detail.memoAuthor.name}${detail.updatedAt ? ` · ${formatDateTime(detail.updatedAt)}` : ''}</div>` : ''}
   `;
   detailCode.value = detail.effectiveCode || '';
 
@@ -684,7 +684,7 @@ dayDetailForm.addEventListener('submit', async (event) => {
       <span>실제 근무: ${detail.effectiveCode || '-'}</span>
       <span>${detail.shiftLabel || ''} · ${detail.timeRange || ''}</span>
       <small>${[detail.memo, detail.anniversaryMemo, ...(detail.yearlyMemos || [])].filter(Boolean).join(' • ')}</small>
-      ${hasMemo && detail.memoAuthor ? `<div class="memo-author-line">작성: ${detail.memoAuthor.name}${detail.updatedAt ? ` · ${formatDateTime(detail.updatedAt)}` : ''}</div>` : ''}
+      ${hasMemo && detail.memoAuthor ? `<div class="memo-author-line">작성: ${detail.memoAuthor.nickname || detail.memoAuthor.name}${detail.updatedAt ? ` · ${formatDateTime(detail.updatedAt)}` : ''}</div>` : ''}
     `;
 
     // 메모 지우기 버튼 표시 여부 업데이트
@@ -877,7 +877,39 @@ function showSettingsView(viewName) {
     settingsBackButton.hidden = viewName === 'main';
   }
 
+  // 개인 설정 뷰로 이동 시 프로필 정보 로드
+  if (viewName === 'personal') {
+    loadProfileInfo();
+  }
+
   currentSettingsView = viewName;
+}
+
+async function loadProfileInfo() {
+  try {
+    const me = await api.me();
+    const profileName = document.getElementById('profileName');
+    const profileEmail = document.getElementById('profileEmail');
+    const profileNickname = document.getElementById('profileNickname');
+    const profileProviderHint = document.getElementById('profileProviderHint');
+
+    if (profileName && me) {
+      profileName.textContent = me.name || '-';
+    }
+    if (profileEmail && me) {
+      profileEmail.textContent = me.email || '-';
+    }
+    if (profileNickname && me) {
+      profileNickname.value = me.nickname || me.name || '';
+    }
+    if (profileProviderHint && me && me.provider === 'GOOGLE') {
+      profileProviderHint.hidden = false;
+    }
+    // 현재 사용자 정보 저장
+    state.me = me;
+  } catch (e) {
+    console.error('Failed to load profile info:', e);
+  }
 }
 
 // 메뉴 항목 클릭 이벤트
@@ -903,5 +935,25 @@ const originalSettingsMenuButtonClick = settingsMenuButton ? settingsMenuButton.
 if (settingsMenuButton) {
   settingsMenuButton.addEventListener('click', () => {
     showSettingsView('main');
+  });
+}
+
+// 프로필 업데이트 폼
+const updateProfileForm = document.getElementById('updateProfileForm');
+if (updateProfileForm) {
+  updateProfileForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const nickname = document.getElementById('profileNickname').value.trim();
+    if (!nickname) {
+      showToast('닉네임을 입력하세요');
+      return;
+    }
+    try {
+      const updatedUser = await api.updateProfile({ nickname });
+      state.me = updatedUser;
+      showToast('닉네임이 저장되었습니다');
+    } catch (e) {
+      showToast('저장 실패: ' + (e.message || '오류'));
+    }
   });
 }

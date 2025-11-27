@@ -110,6 +110,7 @@ public class CalendarService {
                 author = new AuthorDto(
                         dayException.getAuthor().getId(),
                         dayException.getAuthor().getName(),
+                        dayException.getAuthor().getNickname(),
                         ColorTagUtil.resolve(dayException.getAuthor())
                 );
             }

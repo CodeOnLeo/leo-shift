@@ -60,6 +60,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         User user = User.builder()
                 .email(oAuth2UserInfo.getEmail())
                 .name(oAuth2UserInfo.getName())
+                .nickname(oAuth2UserInfo.getName()) // 초기 닉네임은 이름과 동일
                 .profileImageUrl(oAuth2UserInfo.getImageUrl())
                 .provider(User.AuthProvider.valueOf(registrationId.toUpperCase()))
                 .providerId(oAuth2UserInfo.getId())
@@ -92,6 +93,10 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         existingUser.setName(oAuth2UserInfo.getName());
         existingUser.setProfileImageUrl(oAuth2UserInfo.getImageUrl());
         existingUser.setLastLoginAt(LocalDateTime.now());
+        // nickname이 없으면 name으로 초기화
+        if (existingUser.getNickname() == null || existingUser.getNickname().isEmpty()) {
+            existingUser.setNickname(oAuth2UserInfo.getName());
+        }
         return userRepository.save(existingUser);
     }
 }
