@@ -19,7 +19,8 @@ public interface CalendarShareRepository extends JpaRepository<CalendarShare, Lo
     @Query("SELECT cs FROM CalendarShare cs LEFT JOIN FETCH cs.calendar c LEFT JOIN FETCH c.owner WHERE cs.user = :user")
     List<CalendarShare> findByUser(@Param("user") User user);
 
-    List<CalendarShare> findByCalendar(Calendar calendar);
+    @Query("SELECT cs FROM CalendarShare cs LEFT JOIN FETCH cs.user WHERE cs.calendar = :calendar")
+    List<CalendarShare> findByCalendar(@Param("calendar") Calendar calendar);
 
     void deleteByCalendar(Calendar calendar);
 

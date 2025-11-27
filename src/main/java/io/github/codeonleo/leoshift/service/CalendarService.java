@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 @Service
@@ -27,6 +28,7 @@ public class CalendarService {
     private final ShiftCalculationService calculationService;
     private final ShiftExceptionRepository exceptionRepository;
 
+    @Transactional(readOnly = true)
     public CalendarResponse buildMonthlyCalendar(Calendar calendar, int year, int month) {
         boolean usePattern = calendar.isPatternEnabled();
         boolean patternConfigured = usePattern && calendarPatternService.hasPattern(calendar);

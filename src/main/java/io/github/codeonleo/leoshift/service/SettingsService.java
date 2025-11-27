@@ -5,7 +5,7 @@ import io.github.codeonleo.leoshift.entity.UserSettings;
 import io.github.codeonleo.leoshift.repository.UserRepository;
 import io.github.codeonleo.leoshift.repository.UserSettingsRepository;
 import io.github.codeonleo.leoshift.security.UserPrincipal;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.Collections;
@@ -100,10 +100,12 @@ public class SettingsService {
         }
     }
 
+    @Transactional(readOnly = true)
     public Optional<UserSettings> findSettings() {
         return repository.findById(currentUserId());
     }
 
+    @Transactional(readOnly = true)
     public Optional<UserSettings> findSettings(User user) {
         if (user == null || user.getId() == null) {
             return Optional.empty();

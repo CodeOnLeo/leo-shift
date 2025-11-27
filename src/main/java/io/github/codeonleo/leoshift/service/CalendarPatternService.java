@@ -4,7 +4,7 @@ import io.github.codeonleo.leoshift.entity.Calendar;
 import io.github.codeonleo.leoshift.entity.CalendarPattern;
 import io.github.codeonleo.leoshift.entity.UserSettings;
 import io.github.codeonleo.leoshift.repository.CalendarPatternRepository;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
@@ -26,6 +26,7 @@ public class CalendarPatternService {
     public record ResolvedPattern(List<String> codes, LocalDate startDate) {
     }
 
+    @Transactional(readOnly = true)
     public Optional<ResolvedPattern> findLatest(Calendar calendar) {
         Optional<CalendarPattern> latest = repository.findTopByCalendarOrderByPatternStartDateDesc(calendar);
         if (latest.isPresent()) {
@@ -35,6 +36,7 @@ public class CalendarPatternService {
         return fallbackFromSettings(calendar);
     }
 
+    @Transactional(readOnly = true)
     public Optional<ResolvedPattern> findEffective(Calendar calendar, LocalDate date) {
         Optional<CalendarPattern> effective = repository.findTopByCalendarAndPatternStartDateLessThanEqualOrderByPatternStartDateDesc(calendar, date);
         if (effective.isPresent()) {

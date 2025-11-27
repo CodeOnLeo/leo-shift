@@ -213,15 +213,18 @@ function finishGlobalLoading(force = false) {
 async function bootstrap() {
   const endLoading = startGlobalLoading();
   try {
-    // 캘린더를 먼저 로드해 기본 calendarId 확보
-    await loadCalendars();
-    // calendarId 확보 후 가능한 한 병렬로 API 호출
+    // calendarId가 필요 없는 API는 loadCalendars()와 병렬로 실행
+    const [calendarsResult] = await Promise.all([
+      loadCalendars(),
+      loadMeColor().catch(() => null),
+      loadNotificationSettings().catch(() => null)
+    ]);
+
+    // calendarId 확보 후 나머지 API 병렬 호출
     const [settings] = await Promise.all([
       loadPatternSettings({ force: true }),
       loadCalendar(state.year, state.month, { force: true }).catch(() => null),
-      loadShares({ force: true }).catch(() => null),
-      loadMeColor(),
-      loadNotificationSettings().catch(() => null)
+      loadShares({ force: true }).catch(() => null)
     ]);
 
     if (!state.patternConfigured) {
