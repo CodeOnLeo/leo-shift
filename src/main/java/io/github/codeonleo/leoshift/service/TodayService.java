@@ -3,7 +3,6 @@ package io.github.codeonleo.leoshift.service;
 import io.github.codeonleo.leoshift.dto.SimpleDayDto;
 import io.github.codeonleo.leoshift.dto.TodayResponse;
 import io.github.codeonleo.leoshift.entity.Calendar;
-import io.github.codeonleo.leoshift.entity.UserSettings;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -16,15 +15,13 @@ import org.springframework.stereotype.Service;
 public class TodayService {
 
     private final ScheduleService scheduleService;
-    private final SettingsService settingsService;
+    private final CalendarPatternService calendarPatternService;
     private final CalendarAccessService calendarAccessService;
 
     public TodayResponse buildTodayView(Long calendarId) {
         CalendarAccessService.CalendarAccess access = calendarAccessService.requireView(calendarId);
         Calendar calendar = access.calendar();
-        UserSettings ownerSettings = settingsService.findSettings(calendar.getOwner())
-                .orElse(null);
-        boolean configured = ownerSettings != null && settingsService.isPatternConfigured(ownerSettings);
+        boolean configured = calendarPatternService.hasPattern(calendar);
         if (!configured) {
             return new TodayResponse(false, null, List.of());
         }

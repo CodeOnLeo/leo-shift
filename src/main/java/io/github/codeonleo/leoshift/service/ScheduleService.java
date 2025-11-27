@@ -1,8 +1,9 @@
 package io.github.codeonleo.leoshift.service;
 
+import io.github.codeonleo.leoshift.dto.AuthorDto;
 import io.github.codeonleo.leoshift.entity.Calendar;
+import io.github.codeonleo.leoshift.entity.CalendarPattern;
 import io.github.codeonleo.leoshift.entity.ShiftException;
-import io.github.codeonleo.leoshift.entity.UserSettings;
 import io.github.codeonleo.leoshift.repository.ShiftExceptionRepository;
 import jakarta.transaction.Transactional;
 import java.time.LocalDate;
@@ -12,28 +13,35 @@ import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
-import io.github.codeonleo.leoshift.dto.AuthorDto;
 import io.github.codeonleo.leoshift.util.ColorTagUtil;
 
 @Service
 @RequiredArgsConstructor
 public class ScheduleService {
 
-    private final SettingsService settingsService;
+    private final CalendarPatternService calendarPatternService;
     private final ShiftCalculationService calculationService;
     private final ShiftExceptionRepository exceptionRepository;
 
     @Transactional
     public Optional<DaySchedule> resolveDay(LocalDate date, Calendar calendar) {
-        Optional<UserSettings> maybeSettings = settingsService.findSettings(calendar.getOwner());
-        boolean patternConfigured = maybeSettings.isPresent() && settingsService.isPatternConfigured(maybeSettings.get());
         boolean usePattern = calendar.isPatternEnabled();
+        boolean patternConfigured = usePattern && calendarPatternService.hasPattern(calendar);
         if (usePattern && !patternConfigured) {
             return Optional.empty();
         }
-        UserSettings settings = maybeSettings.orElse(null);
-        List<String> pattern = usePattern && settings != null ? settingsService.extractPattern(settings) : List.of();
-        String baseCode = usePattern ? calculationService.determineCode(pattern, settings.getPatternStartDate(), date) : null;
+        String baseCode = null;
+        if (usePattern) {
+            Optional<CalendarPattern> effective = calendarPatternService.findEffective(calendar, date);
+            if (effective.isPresent()) {
+                CalendarPattern pattern = effective.get();
+                baseCode = calculationService.determineCode(
+                        calendarPatternService.extractPattern(pattern),
+                        pattern.getPatternStartDate(),
+                        date
+                );
+            }
+        }
         ShiftException exception = exceptionRepository.findByCalendarAndDate(calendar, date).orElse(null);
         String memo = exception != null ? exception.getMemo() : null;
         String anniversaryMemo = exception != null ? exception.getAnniversaryMemo() : null;

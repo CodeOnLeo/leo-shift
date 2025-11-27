@@ -8,6 +8,7 @@ import java.util.List;
 public record PatternSettingsRequest(
         @Size(min = 1, message = "pattern must have at least one code") List<String> pattern,
         @NotNull LocalDate patternStartDate,
-        Integer defaultNotificationMinutes
+        Integer defaultNotificationMinutes,
+        Boolean applyRetroactive
 ) {
 }

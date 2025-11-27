@@ -1,4 +1,4 @@
-export function initPatternForm({ sectionEl, formEl, patternInput, startInput, hoursInput, minutesInput, onSave }) {
+export function initPatternForm({ sectionEl, formEl, patternInput, startInput, hoursInput, minutesInput, applyRetroactiveInput, onSave }) {
   // Pattern builder elements
   const dDaysInput = document.getElementById('dDays');
   const dOffInput = document.getElementById('dOff');
@@ -120,7 +120,8 @@ export function initPatternForm({ sectionEl, formEl, patternInput, startInput, h
     const payload = {
       pattern,
       patternStartDate: startInput.value,
-      defaultNotificationMinutes: totalMinutes
+      defaultNotificationMinutes: totalMinutes,
+      applyRetroactive: applyRetroactiveInput ? applyRetroactiveInput.checked : false
     };
     await onSave(payload);
   });
@@ -135,6 +136,9 @@ export function initPatternForm({ sectionEl, formEl, patternInput, startInput, h
       const mins = initialMinutes % 60;
       hoursInput.value = hours;
       minutesInput.value = mins;
+      if (applyRetroactiveInput) {
+        applyRetroactiveInput.checked = false;
+      }
 
       if (existingSettings && existingSettings.configured) {
         // Load existing pattern - 직접입력 모드는 해제하고 패턴만 참고용으로 보여줌

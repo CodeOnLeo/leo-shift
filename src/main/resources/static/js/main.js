@@ -64,8 +64,13 @@ const patternManager = initPatternForm({
   startInput: document.getElementById('patternStartDate'),
   hoursInput: document.getElementById('patternHours'),
   minutesInput: document.getElementById('patternMinutes'),
+  applyRetroactiveInput: document.getElementById('applyPatternRetroactive'),
   onSave: async (payload) => {
-    await api.saveSettings(payload);
+    if (!state.calendarId) {
+      alert('캘린더를 먼저 선택하세요.');
+      return;
+    }
+    await api.saveSettings(payload, state.calendarId);
     await bootstrap();
   }
 });
@@ -83,13 +88,9 @@ const state = {
 async function bootstrap() {
   await loadCalendars();
   await loadMeColor();
-  const settings = await api.getSettings();
-  const currentCalendar = state.calendars.find((c) => c.id === state.calendarId);
-  const usePattern = currentCalendar ? currentCalendar.patternEnabled !== false : true;
-  state.patternConfigured = usePattern ? settings.configured : true;
-  state.usePattern = usePattern;
+  const settings = await loadPatternSettings();
   if (!state.patternConfigured) {
-    patternManager.show(settings.defaultNotificationMinutes || 60);
+    patternManager.show(settings.defaultNotificationMinutes || 60, settings);
     calendarSection.hidden = true;
     settingsMenuButton.hidden = true;
     dayModal.hidden = true;
@@ -121,6 +122,15 @@ async function loadMeColor() {
   } catch (e) {
     // ignore
   }
+}
+
+async function loadPatternSettings() {
+  const settings = await api.getSettings(state.calendarId);
+  const currentCalendar = state.calendars.find((c) => c.id === state.calendarId);
+  const usePattern = currentCalendar ? currentCalendar.patternEnabled !== false : true;
+  state.patternConfigured = usePattern ? settings.configured : true;
+  state.usePattern = usePattern;
+  return settings;
 }
 
 function syncCalendarEditForm() {
@@ -167,9 +177,19 @@ function renderCalendarSelector() {
     item.textContent = label;
     item.addEventListener('click', async () => {
       state.calendarId = cal.id;
-      state.usePattern = cal.patternEnabled !== false;
       calendarSelectorList.hidden = true;
+      const settings = await loadPatternSettings();
+      if (!state.patternConfigured) {
+        patternManager.show(settings.defaultNotificationMinutes || 60, settings);
+        calendarSection.hidden = true;
+        settingsMenuButton.hidden = true;
+        return;
+      }
+      patternManager.hide();
+      calendarSection.hidden = false;
+      settingsMenuButton.hidden = false;
       await loadCalendar(state.year, state.month);
+      await loadShares();
       renderCalendarSelector();
     });
     calendarSelectorList.appendChild(item);
@@ -429,7 +449,18 @@ if (createCalendarForm) {
       newCalendarNameInput.value = '';
       newCalendarPatternEnabledInput.checked = true;
       showToast('캘린더가 생성되었습니다.');
+      const settings = await loadPatternSettings();
+      if (!state.patternConfigured) {
+        patternManager.show(settings.defaultNotificationMinutes || 60, settings);
+        calendarSection.hidden = true;
+        settingsMenuButton.hidden = true;
+        return;
+      }
+      patternManager.hide();
+      calendarSection.hidden = false;
+      settingsMenuButton.hidden = false;
       await loadCalendar(state.year, state.month);
+      await loadShares();
     } catch (e) {
       showToast('캘린더 생성 실패: ' + (e.message || '오류'));
     }
@@ -464,7 +495,18 @@ if (editCalendarForm) {
       renderCalendarSelector();
       renderInvites();
       showToast('캘린더가 수정되었습니다.');
+      const settings = await loadPatternSettings();
+      if (!state.patternConfigured) {
+        patternManager.show(settings.defaultNotificationMinutes || 60, settings);
+        calendarSection.hidden = true;
+        settingsMenuButton.hidden = true;
+        return;
+      }
+      patternManager.hide();
+      calendarSection.hidden = false;
+      settingsMenuButton.hidden = false;
       await loadCalendar(state.year, state.month);
+      await loadShares();
     } catch (e) {
       showToast('캘린더 수정 실패: ' + (e.message || '오류'));
     }
@@ -493,8 +535,18 @@ if (deleteCalendarButton) {
       renderInvites();
       showToast('캘린더가 삭제되었습니다.');
       if (state.calendarId) {
-        await loadCalendar(state.year, state.month);
-        await loadShares();
+        const settings = await loadPatternSettings();
+        if (!state.patternConfigured) {
+          patternManager.show(settings.defaultNotificationMinutes || 60, settings);
+          calendarSection.hidden = true;
+          settingsMenuButton.hidden = true;
+        } else {
+          patternManager.hide();
+          calendarSection.hidden = false;
+          settingsMenuButton.hidden = false;
+          await loadCalendar(state.year, state.month);
+          await loadShares();
+        }
       } else {
         calendarGrid.innerHTML = '';
         summaryList.innerHTML = '';

@@ -1,21 +1,25 @@
 package io.github.codeonleo.leoshift.controller;
 
+import io.github.codeonleo.leoshift.dto.ColorUpdateRequest;
 import io.github.codeonleo.leoshift.dto.NotificationSettingsRequest;
 import io.github.codeonleo.leoshift.dto.NotificationSettingsResponse;
 import io.github.codeonleo.leoshift.dto.PatternSettingsRequest;
 import io.github.codeonleo.leoshift.dto.PatternSettingsResponse;
-import io.github.codeonleo.leoshift.dto.ColorUpdateRequest;
+import io.github.codeonleo.leoshift.entity.Calendar;
+import io.github.codeonleo.leoshift.entity.CalendarPattern;
 import io.github.codeonleo.leoshift.entity.UserSettings;
+import io.github.codeonleo.leoshift.service.CalendarAccessService;
+import io.github.codeonleo.leoshift.service.CalendarPatternService;
 import io.github.codeonleo.leoshift.service.NotificationPreferenceService;
 import io.github.codeonleo.leoshift.service.SettingsService;
 import jakarta.validation.Valid;
 import java.util.List;
-import java.util.Optional;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.util.StringUtils;
 
@@ -25,42 +29,57 @@ public class SettingsController {
 
     private static final List<String> ALLOWED_CODES = List.of("D", "A", "N", "V", "O");
 
+    private final CalendarAccessService calendarAccessService;
+    private final CalendarPatternService calendarPatternService;
     private final SettingsService settingsService;
     private final NotificationPreferenceService preferenceService;
 
-    public SettingsController(SettingsService settingsService, NotificationPreferenceService preferenceService) {
+    public SettingsController(CalendarAccessService calendarAccessService,
+                              CalendarPatternService calendarPatternService,
+                              SettingsService settingsService,
+                              NotificationPreferenceService preferenceService) {
+        this.calendarAccessService = calendarAccessService;
+        this.calendarPatternService = calendarPatternService;
         this.settingsService = settingsService;
         this.preferenceService = preferenceService;
     }
 
     @GetMapping
-    public ResponseEntity<PatternSettingsResponse> getSettings() {
-        Optional<UserSettings> settingsOpt = settingsService.findSettings();
-        if (settingsOpt.isEmpty() || !settingsService.isPatternConfigured(settingsOpt.get())) {
-            return ResponseEntity.ok(new PatternSettingsResponse(false, List.of(), null, null));
+    public ResponseEntity<PatternSettingsResponse> getSettings(@RequestParam(required = false) Long calendarId) {
+        Calendar calendar = calendarAccessService.requireView(calendarId).calendar();
+        CalendarPattern pattern = calendarPatternService.findLatest(calendar).orElse(null);
+        UserSettings userSettings = settingsService.getOrCreate();
+        if (pattern == null) {
+            return ResponseEntity.ok(new PatternSettingsResponse(false, List.of(), null, settingsService.resolveNotificationMinutes(userSettings)));
         }
-        UserSettings settings = settingsOpt.get();
         return ResponseEntity.ok(new PatternSettingsResponse(
                 true,
-                settingsService.extractPattern(settings),
-                settings.getPatternStartDate(),
-                settingsService.resolveNotificationMinutes(settings)
+                calendarPatternService.extractPattern(pattern),
+                pattern.getPatternStartDate(),
+                settingsService.resolveNotificationMinutes(userSettings)
         ));
     }
 
     @PutMapping
-    public ResponseEntity<PatternSettingsResponse> saveSettings(@Valid @RequestBody PatternSettingsRequest request) {
+    public ResponseEntity<PatternSettingsResponse> saveSettings(@RequestParam(required = false) Long calendarId,
+                                                                @Valid @RequestBody PatternSettingsRequest request) {
         validatePattern(request.pattern());
         Integer minutes = request.defaultNotificationMinutes();
         if (minutes != null && (minutes < 5 || minutes > 240)) {
             throw new IllegalArgumentException("notification_minutes_out_of_range");
         }
-        UserSettings saved = settingsService.upsertPattern(request.pattern(), request.patternStartDate(), minutes);
+        Calendar calendar = calendarAccessService.requireEdit(calendarId).calendar();
+        if (minutes != null) {
+            settingsService.updateNotificationMinutes(minutes);
+        }
+        boolean applyRetroactive = Boolean.TRUE.equals(request.applyRetroactive());
+        CalendarPattern saved = calendarPatternService.savePattern(calendar, request.pattern(), request.patternStartDate(), applyRetroactive);
+        UserSettings userSettings = settingsService.getOrCreate();
         return ResponseEntity.ok(new PatternSettingsResponse(
                 true,
-                settingsService.extractPattern(saved),
+                calendarPatternService.extractPattern(saved),
                 saved.getPatternStartDate(),
-                settingsService.resolveNotificationMinutes(saved)
+                settingsService.resolveNotificationMinutes(userSettings)
         ));
     }
 

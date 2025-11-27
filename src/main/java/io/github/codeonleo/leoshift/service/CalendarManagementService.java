@@ -5,6 +5,7 @@ import io.github.codeonleo.leoshift.dto.CalendarUpdateRequest;
 import io.github.codeonleo.leoshift.entity.Calendar;
 import io.github.codeonleo.leoshift.entity.User;
 import io.github.codeonleo.leoshift.entity.UserSettings;
+import io.github.codeonleo.leoshift.repository.CalendarPatternRepository;
 import io.github.codeonleo.leoshift.repository.CalendarShareRepository;
 import io.github.codeonleo.leoshift.repository.CalendarRepository;
 import io.github.codeonleo.leoshift.repository.ShiftExceptionRepository;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Service;
 public class CalendarManagementService {
 
     private final CalendarRepository calendarRepository;
+    private final CalendarPatternRepository calendarPatternRepository;
     private final CalendarShareRepository calendarShareRepository;
     private final ShiftExceptionRepository shiftExceptionRepository;
     private final CalendarAccessService calendarAccessService;
@@ -82,6 +84,7 @@ public class CalendarManagementService {
         Calendar calendar = calendarAccessService.requireOwner(calendarId);
 
         // delete dependent data first to satisfy FK constraints
+        calendarPatternRepository.deleteByCalendar(calendar);
         calendarShareRepository.deleteByCalendar(calendar);
         shiftExceptionRepository.deleteByCalendar(calendar);
 

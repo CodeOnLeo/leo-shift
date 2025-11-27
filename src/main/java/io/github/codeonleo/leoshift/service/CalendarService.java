@@ -4,8 +4,8 @@ import io.github.codeonleo.leoshift.dto.CalendarDayDto;
 import io.github.codeonleo.leoshift.dto.CalendarResponse;
 import io.github.codeonleo.leoshift.dto.AuthorDto;
 import io.github.codeonleo.leoshift.entity.Calendar;
+import io.github.codeonleo.leoshift.entity.CalendarPattern;
 import io.github.codeonleo.leoshift.entity.ShiftException;
-import io.github.codeonleo.leoshift.entity.UserSettings;
 import io.github.codeonleo.leoshift.repository.ShiftExceptionRepository;
 import io.github.codeonleo.leoshift.util.ColorTagUtil;
 import java.time.LocalDate;
@@ -14,7 +14,6 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -24,20 +23,17 @@ import org.springframework.util.StringUtils;
 @RequiredArgsConstructor
 public class CalendarService {
 
-    private final SettingsService settingsService;
+    private final CalendarPatternService calendarPatternService;
     private final ShiftCalculationService calculationService;
     private final ShiftExceptionRepository exceptionRepository;
 
     public CalendarResponse buildMonthlyCalendar(Calendar calendar, int year, int month) {
-        Optional<UserSettings> maybeSettings = settingsService.findSettings(calendar.getOwner());
-        boolean patternConfigured = maybeSettings.isPresent() && settingsService.isPatternConfigured(maybeSettings.get());
         boolean usePattern = calendar.isPatternEnabled();
+        boolean patternConfigured = usePattern && calendarPatternService.hasPattern(calendar);
         if (usePattern && !patternConfigured) {
             return new CalendarResponse(false, year, month, Collections.emptyList(), Collections.emptyMap());
         }
-        UserSettings settings = maybeSettings.orElse(null);
-        List<String> pattern = usePattern && settings != null ? settingsService.extractPattern(settings) : Collections.emptyList();
-        LocalDate patternStart = usePattern && settings != null ? settings.getPatternStartDate() : null;
+        List<CalendarPattern> patterns = usePattern ? calendarPatternService.findAll(calendar) : Collections.emptyList();
         LocalDate monthStart = LocalDate.of(year, month, 1);
         LocalDate monthEnd = monthStart.withDayOfMonth(monthStart.lengthOfMonth());
 
@@ -63,7 +59,23 @@ public class CalendarService {
         LocalDate cursor = calendarStart;
         while (!cursor.isAfter(calendarEnd)) {
             ShiftException dayException = exceptionByDate.get(cursor);
-            String baseCode = calculationService.determineCode(pattern, patternStart, cursor);
+            String baseCode = null;
+            if (usePattern) {
+                CalendarPattern effective = null;
+                for (int i = patterns.size() - 1; i >= 0; i--) {
+                    if (!patterns.get(i).getPatternStartDate().isAfter(cursor)) {
+                        effective = patterns.get(i);
+                        break;
+                    }
+                }
+                if (effective != null) {
+                    baseCode = calculationService.determineCode(
+                            calendarPatternService.extractPattern(effective),
+                            effective.getPatternStartDate(),
+                            cursor
+                    );
+                }
+            }
             String effectiveCode = baseCode;
             if (dayException != null && StringUtils.hasText(dayException.getCustomCode())) {
                 effectiveCode = dayException.getCustomCode().toUpperCase();

@@ -157,8 +157,8 @@ async function request(url, options = {}) {
 }
 
 export const api = {
-  getSettings: () => request('/api/settings'),
-  saveSettings: (payload) => request('/api/settings', { method: 'PUT', body: JSON.stringify(payload) }),
+  getSettings: (calendarId) => request(`/api/settings${calendarId ? `?calendarId=${calendarId}` : ''}`),
+  saveSettings: (payload, calendarId) => request(`/api/settings${calendarId ? `?calendarId=${calendarId}` : ''}`, { method: 'PUT', body: JSON.stringify(payload) }),
   getToday: (calendarId) => request(`/api/today${calendarId ? `?calendarId=${calendarId}` : ''}`),
   getCalendar: (year, month, calendarId) => request(`/api/calendar?year=${year}&month=${month}${calendarId ? `&calendarId=${calendarId}` : ''}`),
   getDay: (date, calendarId) => request(`/api/days/${date}${calendarId ? `?calendarId=${calendarId}` : ''}`),
