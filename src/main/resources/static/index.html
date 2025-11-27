@@ -180,134 +180,206 @@
       </div>
     </div>
 
-    <div id="settingsModal" class="modal" hidden>
-      <div class="modal-content">
-        <div class="modal-header">
-          <h2>설정</h2>
-          <button type="button" class="modal-close" id="settingsModalClose">&times;</button>
-        </div>
-        <div class="modal-body settings-modal-body">
-          <section class="settings-section" data-tone="primary">
-            <div class="settings-section-header">
-              <div class="settings-section-icon" data-color="primary" aria-hidden="true">🔔</div>
-              <div>
-                <h3>알림 설정</h3>
-                <p class="settings-section-description">근무 시작 전 받을 푸시·로컬 알림 시간을 자유롭게 조정하세요.</p>
-              </div>
+<div id="settingsModal" class="modal" hidden>
+  <div class="modal-content">
+    <div class="modal-header">
+      <button type="button" class="settings-back-button" id="settingsBackButton" hidden>←</button>
+      <h2 id="settingsTitle">설정</h2>
+      <button type="button" class="modal-close" id="settingsModalClose">&times;</button>
+    </div>
+    <div class="modal-body settings-modal-body">
+      <!-- 메인 설정 리스트 -->
+      <div id="settingsMainView" class="settings-view">
+        <div class="settings-menu-list">
+          <button type="button" class="settings-menu-item" data-view="notifications">
+            <div class="settings-menu-icon">🔔</div>
+            <div class="settings-menu-content">
+              <div class="settings-menu-title">알림 설정</div>
+              <div class="settings-menu-description">근무 알림 시간 관리</div>
             </div>
-            <form class="notification-form" id="notificationForm">
-              <label>근무 시작 전 알림 시간 (최대 4시간)</label>
-              <div class="time-input-group">
-                <div class="time-input-item">
-                  <input type="number" id="notificationHours" min="0" max="10" value="0" />
-                  <span>시간</span>
-                </div>
-                <div class="time-input-item">
-                  <input type="number" id="notificationMinutes" min="0" max="59" step="5" value="0" />
-                  <span>분</span>
-                </div>
-              </div>
-              <button type="submit">알림 시간 저장</button>
-            </form>
-            <button type="button" id="subscribePush" class="secondary full-width" style="margin-top: 1rem;">푸시 알림 활성화</button>
-          </section>
-          <section class="settings-section" data-tone="primary">
-            <div class="settings-section-header">
-              <div class="settings-section-icon" data-color="primary" aria-hidden="true">➕</div>
-              <div>
-                <h3>새 캘린더 만들기</h3>
-                <p class="settings-section-description">업무용, 개인용 등 용도별로 캘린더를 추가하세요.</p>
-              </div>
+            <div class="settings-menu-arrow">›</div>
+          </button>
+
+          <button type="button" class="settings-menu-item" data-view="calendar">
+            <div class="settings-menu-icon">📅</div>
+            <div class="settings-menu-content">
+              <div class="settings-menu-title">캘린더 관리</div>
+              <div class="settings-menu-description">캘린더 생성, 수정, 삭제</div>
             </div>
-            <form id="createCalendarForm">
-              <label>
-                캘린더 이름
-                <input type="text" id="newCalendarName" placeholder="예: 개인 일정" maxlength="100" required />
-              </label>
-              <label class="checkbox-label">
-                <input type="checkbox" id="newCalendarPatternEnabled" checked />
-                <span>근무 패턴 사용</span>
-              </label>
-              <button type="submit" class="full-width">캘린더 만들기</button>
-            </form>
-          </section>
-          <section class="settings-section" data-tone="neutral">
-            <div class="settings-section-header">
-              <div class="settings-section-icon" data-color="neutral" aria-hidden="true">✏️</div>
-              <div>
-                <h3>캘린더 수정</h3>
-                <p class="settings-section-description">선택한 캘린더의 이름을 바꾸거나 패턴 사용 여부를 조정합니다.</p>
-              </div>
+            <div class="settings-menu-arrow">›</div>
+          </button>
+
+          <button type="button" class="settings-menu-item" data-view="share">
+            <div class="settings-menu-icon">🤝</div>
+            <div class="settings-menu-content">
+              <div class="settings-menu-title">공유 관리</div>
+              <div class="settings-menu-description">캘린더 공유 및 초대</div>
             </div>
-            <form id="editCalendarForm">
-              <label>
-                캘린더 이름
-                <input type="text" id="editCalendarName" placeholder="예: 팀 일정" maxlength="100" required />
-              </label>
-              <label class="checkbox-label">
-                <input type="checkbox" id="editCalendarPatternEnabled" />
-                <span>근무 패턴 사용</span>
-              </label>
-              <button type="submit" class="full-width" id="editCalendarSaveButton">변경사항 저장</button>
-              <small class="hint" id="editCalendarHint" hidden>소유한 캘린더만 수정할 수 있습니다.</small>
-            </form>
-            <button type="button" id="deleteCalendarButton" class="logout-modal-button full-width">캘린더 삭제</button>
-          </section>
-          <section class="settings-section" data-tone="neutral" id="shareSection">
-            <div class="settings-section-header">
-              <div class="settings-section-icon" data-color="neutral" aria-hidden="true">🤝</div>
-              <div>
-                <h3>캘린더 공유</h3>
-                <p class="settings-section-description">이메일로 초대하고 보기/편집 권한을 설정하세요.</p>
-              </div>
+            <div class="settings-menu-arrow">›</div>
+          </button>
+
+          <button type="button" class="settings-menu-item" data-view="personal">
+            <div class="settings-menu-icon">🎨</div>
+            <div class="settings-menu-content">
+              <div class="settings-menu-title">개인 설정</div>
+              <div class="settings-menu-description">색상, 패턴 관리</div>
             </div>
-            <div class="share-form">
-              <input type="email" id="shareEmail" placeholder="이메일 입력" />
-              <select id="sharePermission">
-                <option value="VIEW">보기</option>
-                <option value="EDIT">편집</option>
-              </select>
-              <button type="button" id="shareInviteButton">초대 보내기</button>
+            <div class="settings-menu-arrow">›</div>
+          </button>
+
+          <button type="button" class="settings-menu-item" data-view="account">
+            <div class="settings-menu-icon">🔒</div>
+            <div class="settings-menu-content">
+              <div class="settings-menu-title">계정</div>
+              <div class="settings-menu-description">로그아웃</div>
             </div>
-            <div class="share-list" id="shareList"></div>
-            <div class="invite-list" id="inviteList"></div>
-          </section>
-          <section class="settings-section" data-tone="primary">
-            <div class="settings-section-header">
-              <div class="settings-section-icon" data-color="primary" aria-hidden="true">🎨</div>
-              <div>
-                <h3>작성자 색상</h3>
-                <p class="settings-section-description">달력에 표시될 내 색상 태그를 선택하세요.</p>
-              </div>
-            </div>
-            <div class="color-row">
-              <input type="color" id="colorPicker" value="#0A84FF" />
-              <button type="button" id="saveColorButton">색상 저장</button>
-            </div>
-          </section>
-          <section class="settings-section" data-tone="neutral">
-            <div class="settings-section-header">
-              <div class="settings-section-icon" data-color="neutral" aria-hidden="true">🗓️</div>
-              <div>
-                <h3>패턴 관리</h3>
-                <p class="settings-section-description">패턴이 꼬였을 때 쉽게 초기화하고 처음부터 다시 설정할 수 있어요.</p>
-              </div>
-            </div>
-            <button type="button" id="resetPattern" class="secondary full-width">근무 패턴 재설정</button>
-          </section>
-          <section class="settings-section" data-tone="danger">
-            <div class="settings-section-header">
-              <div class="settings-section-icon" data-color="danger" aria-hidden="true">🔒</div>
-              <div>
-                <h3>계정</h3>
-                <p class="settings-section-description">설정을 모두 마쳤다면 여기에서 안전하게 로그아웃할 수 있습니다.</p>
-              </div>
-            </div>
-            <button type="button" onclick="logout()" class="logout-modal-button full-width">로그아웃</button>
-          </section>
+            <div class="settings-menu-arrow">›</div>
+          </button>
         </div>
       </div>
+
+      <!-- 알림 설정 화면 -->
+      <div id="settingsNotificationsView" class="settings-view" hidden>
+        <section class="settings-section" data-tone="primary">
+          <div class="settings-section-header">
+            <div class="settings-section-icon" data-color="primary" aria-hidden="true">🔔</div>
+            <div>
+              <h3>알림 설정</h3>
+              <p class="settings-section-description">근무 시작 전 받을 푸시·로컬 알림 시간을 자유롭게 조정하세요.</p>
+            </div>
+          </div>
+          <form class="notification-form" id="notificationForm">
+            <label>근무 시작 전 알림 시간 (최대 4시간)</label>
+            <div class="time-input-group">
+              <div class="time-input-item">
+                <input type="number" id="notificationHours" min="0" max="10" value="0" />
+                <span>시간</span>
+              </div>
+              <div class="time-input-item">
+                <input type="number" id="notificationMinutes" min="0" max="59" step="5" value="0" />
+                <span>분</span>
+              </div>
+            </div>
+            <button type="submit">알림 시간 저장</button>
+          </form>
+          <button type="button" id="subscribePush" class="secondary full-width" style="margin-top: 1rem;">푸시 알림 활성화</button>
+        </section>
+      </div>
+
+      <!-- 캘린더 관리 화면 -->
+      <div id="settingsCalendarView" class="settings-view" hidden>
+        <section class="settings-section" data-tone="primary">
+          <div class="settings-section-header">
+            <div class="settings-section-icon" data-color="primary" aria-hidden="true">➕</div>
+            <div>
+              <h3>새 캘린더 만들기</h3>
+              <p class="settings-section-description">업무용, 개인용 등 용도별로 캘린더를 추가하세요.</p>
+            </div>
+          </div>
+          <form id="createCalendarForm">
+            <label>
+              캘린더 이름
+              <input type="text" id="newCalendarName" placeholder="예: 개인 일정" maxlength="100" required />
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="newCalendarPatternEnabled" checked />
+              <span>근무 패턴 사용</span>
+            </label>
+            <button type="submit" class="full-width">캘린더 만들기</button>
+          </form>
+        </section>
+
+        <section class="settings-section" data-tone="neutral">
+          <div class="settings-section-header">
+            <div class="settings-section-icon" data-color="neutral" aria-hidden="true">✏️</div>
+            <div>
+              <h3>캘린더 수정</h3>
+              <p class="settings-section-description">선택한 캘린더의 이름을 바꾸거나 패턴 사용 여부를 조정합니다.</p>
+            </div>
+          </div>
+          <form id="editCalendarForm">
+            <label>
+              캘린더 이름
+              <input type="text" id="editCalendarName" placeholder="예: 팀 일정" maxlength="100" required />
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="editCalendarPatternEnabled" />
+              <span>근무 패턴 사용</span>
+            </label>
+            <button type="submit" class="full-width" id="editCalendarSaveButton">변경사항 저장</button>
+            <small class="hint" id="editCalendarHint" hidden>소유한 캘린더만 수정할 수 있습니다.</small>
+          </form>
+          <button type="button" id="deleteCalendarButton" class="logout-modal-button full-width">캘린더 삭제</button>
+        </section>
+      </div>
+
+      <!-- 공유 관리 화면 -->
+      <div id="settingsShareView" class="settings-view" hidden>
+        <section class="settings-section" data-tone="neutral" id="shareSection">
+          <div class="settings-section-header">
+            <div class="settings-section-icon" data-color="neutral" aria-hidden="true">🤝</div>
+            <div>
+              <h3>캘린더 공유</h3>
+              <p class="settings-section-description">이메일로 초대하고 보기/편집 권한을 설정하세요.</p>
+            </div>
+          </div>
+          <div class="share-form">
+            <input type="email" id="shareEmail" placeholder="이메일 입력" />
+            <select id="sharePermission">
+              <option value="VIEW">보기</option>
+              <option value="EDIT">편집</option>
+            </select>
+            <button type="button" id="shareInviteButton">초대 보내기</button>
+          </div>
+          <div class="share-list" id="shareList"></div>
+          <div class="invite-list" id="inviteList"></div>
+        </section>
+      </div>
+
+      <!-- 개인 설정 화면 -->
+      <div id="settingsPersonalView" class="settings-view" hidden>
+        <section class="settings-section" data-tone="primary">
+          <div class="settings-section-header">
+            <div class="settings-section-icon" data-color="primary" aria-hidden="true">🎨</div>
+            <div>
+              <h3>작성자 색상</h3>
+              <p class="settings-section-description">달력에 표시될 내 색상 태그를 선택하세요.</p>
+            </div>
+          </div>
+          <div class="color-row">
+            <input type="color" id="colorPicker" value="#0A84FF" />
+            <button type="button" id="saveColorButton">색상 저장</button>
+          </div>
+        </section>
+
+        <section class="settings-section" data-tone="neutral">
+          <div class="settings-section-header">
+            <div class="settings-section-icon" data-color="neutral" aria-hidden="true">🗓️</div>
+            <div>
+              <h3>패턴 관리</h3>
+              <p class="settings-section-description">패턴이 꼬였을 때 쉽게 초기화하고 처음부터 다시 설정할 수 있어요.</p>
+            </div>
+          </div>
+          <button type="button" id="resetPattern" class="secondary full-width">근무 패턴 재설정</button>
+        </section>
+      </div>
+
+      <!-- 계정 화면 -->
+      <div id="settingsAccountView" class="settings-view" hidden>
+        <section class="settings-section" data-tone="danger">
+          <div class="settings-section-header">
+            <div class="settings-section-icon" data-color="danger" aria-hidden="true">🔒</div>
+            <div>
+              <h3>계정</h3>
+              <p class="settings-section-description">설정을 모두 마쳤다면 여기에서 안전하게 로그아웃할 수 있습니다.</p>
+            </div>
+          </div>
+          <button type="button" onclick="logout()" class="logout-modal-button full-width">로그아웃</button>
+        </section>
+      </div>
     </div>
+  </div>
+</div>
   </main>
 
   <script type="module" src="/js/main.js"></script>

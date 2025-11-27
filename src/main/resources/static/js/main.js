@@ -832,3 +832,76 @@ setLoadingHooks({
     }
   }
 });
+
+// 설정 네비게이션
+const settingsBackButton = document.getElementById('settingsBackButton');
+const settingsTitle = document.getElementById('settingsTitle');
+const settingsViews = {
+  main: document.getElementById('settingsMainView'),
+  notifications: document.getElementById('settingsNotificationsView'),
+  calendar: document.getElementById('settingsCalendarView'),
+  share: document.getElementById('settingsShareView'),
+  personal: document.getElementById('settingsPersonalView'),
+  account: document.getElementById('settingsAccountView')
+};
+
+const viewTitles = {
+  main: '설정',
+  notifications: '알림 설정',
+  calendar: '캘린더 관리',
+  share: '공유 관리',
+  personal: '개인 설정',
+  account: '계정'
+};
+
+let currentSettingsView = 'main';
+
+function showSettingsView(viewName) {
+  // 모든 뷰 숨기기
+  Object.values(settingsViews).forEach(view => {
+    if (view) view.hidden = true;
+  });
+
+  // 선택한 뷰 보이기
+  if (settingsViews[viewName]) {
+    settingsViews[viewName].hidden = false;
+  }
+
+  // 제목 변경
+  if (settingsTitle) {
+    settingsTitle.textContent = viewTitles[viewName] || '설정';
+  }
+
+  // 뒤로가기 버튼 표시/숨기기
+  if (settingsBackButton) {
+    settingsBackButton.hidden = viewName === 'main';
+  }
+
+  currentSettingsView = viewName;
+}
+
+// 메뉴 항목 클릭 이벤트
+const menuItems = document.querySelectorAll('.settings-menu-item');
+menuItems.forEach(item => {
+  item.addEventListener('click', () => {
+    const viewName = item.dataset.view;
+    if (viewName) {
+      showSettingsView(viewName);
+    }
+  });
+});
+
+// 뒤로가기 버튼 클릭 이벤트
+if (settingsBackButton) {
+  settingsBackButton.addEventListener('click', () => {
+    showSettingsView('main');
+  });
+}
+
+// 설정 모달이 열릴 때 메인 뷰로 초기화
+const originalSettingsMenuButtonClick = settingsMenuButton ? settingsMenuButton.onclick : null;
+if (settingsMenuButton) {
+  settingsMenuButton.addEventListener('click', () => {
+    showSettingsView('main');
+  });
+}
