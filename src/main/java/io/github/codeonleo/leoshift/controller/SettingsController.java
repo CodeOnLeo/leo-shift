@@ -47,15 +47,15 @@ public class SettingsController {
     @GetMapping
     public ResponseEntity<PatternSettingsResponse> getSettings(@RequestParam(required = false) Long calendarId) {
         Calendar calendar = calendarAccessService.requireView(calendarId).calendar();
-        CalendarPattern pattern = calendarPatternService.findLatest(calendar).orElse(null);
+        CalendarPatternService.ResolvedPattern pattern = calendarPatternService.findLatest(calendar).orElse(null);
         UserSettings userSettings = settingsService.getOrCreate();
         if (pattern == null) {
             return ResponseEntity.ok(new PatternSettingsResponse(false, List.of(), null, settingsService.resolveNotificationMinutes(userSettings)));
         }
         return ResponseEntity.ok(new PatternSettingsResponse(
                 true,
-                calendarPatternService.extractPattern(pattern),
-                pattern.getPatternStartDate(),
+                pattern.codes(),
+                pattern.startDate(),
                 settingsService.resolveNotificationMinutes(userSettings)
         ));
     }
