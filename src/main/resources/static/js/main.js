@@ -29,6 +29,8 @@ const patternDisabledHint = document.getElementById('patternDisabledHint');
 const toast = document.getElementById('toast');
 let toastTimer = null;
 let loadingCounter = 0;
+let loadingHideTimer = null;
+let loadingFailSafeTimer = null;
 const loadingOverlay = document.getElementById('loadingOverlay');
 const notificationForm = document.getElementById('notificationForm');
 const notificationHoursInput = document.getElementById('notificationHours');
@@ -162,29 +164,80 @@ function debounce(fn, delay = 200) {
   };
 }
 
-async function bootstrap() {
-  // 병렬로 실행 가능한 API들을 동시에 호출
-  const calendarsResult = await loadCalendars();
-  const [meColorResult, settingsResult, notificationResult, calendarResult, sharesResult] = await Promise.all([
-    loadMeColor(),
-    loadPatternSettings({ force: true }),
-    loadNotificationSettings().catch(() => null),
-    loadCalendar(state.year, state.month, { force: true }).catch(() => null),
-    loadShares({ force: true }).catch(() => null)
-  ]);
-  const settings = settingsResult;
-
-  if (!state.patternConfigured) {
-    patternManager.show(settings.defaultNotificationMinutes || 60, settings);
-    calendarSection.hidden = true;
-    settingsMenuButton.hidden = true;
-    dayModal.hidden = true;
-    settingsModal.hidden = true;
-    return;
+function startGlobalLoading() {
+  loadingCounter++;
+  if (loadingOverlay) {
+    loadingOverlay.hidden = false;
+    loadingOverlay.style.display = 'flex';
   }
-  patternManager.hide();
-  calendarSection.hidden = false;
-  settingsMenuButton.hidden = false;
+  if (loadingHideTimer) {
+    clearTimeout(loadingHideTimer);
+    loadingHideTimer = null;
+  }
+  if (loadingFailSafeTimer) {
+    clearTimeout(loadingFailSafeTimer);
+  }
+  loadingFailSafeTimer = setTimeout(() => {
+    loadingCounter = 0;
+    if (loadingOverlay) {
+      loadingOverlay.hidden = true;
+      loadingOverlay.style.display = 'none';
+    }
+  }, 15000);
+  return () => finishGlobalLoading();
+}
+
+function finishGlobalLoading(force = false) {
+  if (force) {
+    loadingCounter = 0;
+  } else {
+    loadingCounter = Math.max(loadingCounter - 1, 0);
+  }
+  if (loadingCounter === 0) {
+    if (loadingHideTimer) {
+      clearTimeout(loadingHideTimer);
+    }
+    loadingHideTimer = setTimeout(() => {
+      if (loadingCounter === 0 && loadingOverlay) {
+        loadingOverlay.hidden = true;
+        loadingOverlay.style.display = 'none';
+      }
+    }, 150);
+    if (loadingFailSafeTimer) {
+      clearTimeout(loadingFailSafeTimer);
+      loadingFailSafeTimer = null;
+    }
+  }
+}
+
+async function bootstrap() {
+  const endLoading = startGlobalLoading();
+  try {
+    // 캘린더를 먼저 로드해 기본 calendarId 확보
+    await loadCalendars();
+    // calendarId 확보 후 가능한 한 병렬로 API 호출
+    const settingsPromise = loadPatternSettings({ force: true });
+    const calendarPromise = loadCalendar(state.year, state.month, { force: true }).catch(() => null);
+    const sharesPromise = loadShares({ force: true }).catch(() => null);
+    const mePromise = loadMeColor();
+    const notificationPromise = loadNotificationSettings().catch(() => null);
+    const settings = await settingsPromise;
+    await Promise.all([calendarPromise, sharesPromise, mePromise, notificationPromise]);
+
+    if (!state.patternConfigured) {
+      patternManager.show(settings.defaultNotificationMinutes || 60, settings);
+      calendarSection.hidden = true;
+      settingsMenuButton.hidden = true;
+      dayModal.hidden = true;
+      settingsModal.hidden = true;
+      return;
+    }
+    patternManager.hide();
+    calendarSection.hidden = false;
+    settingsMenuButton.hidden = false;
+  } finally {
+    endLoading();
+  }
 }
 
 async function loadCalendars() {
@@ -967,19 +1020,8 @@ function showToast(message) {
 }
 
 setLoadingHooks({
-  onStart: () => {
-    // 임시 조치: 로그인 이후 로딩이 멈추지 않는 현상이 있어 캘린더 진입 시 오버레이 비활성화
-    loadingCounter = 0;
-    if (loadingOverlay) {
-      loadingOverlay.hidden = true;
-    }
-  },
-  onEnd: () => {
-    loadingCounter = 0;
-    if (loadingOverlay) {
-      loadingOverlay.hidden = true;
-    }
-  }
+  onStart: () => startGlobalLoading(),
+  onEnd: () => finishGlobalLoading()
 });
 
 // 설정 네비게이션
