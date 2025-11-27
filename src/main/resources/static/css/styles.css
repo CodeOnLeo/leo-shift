@@ -742,6 +742,11 @@ button.secondary {
     grid-row: 3;
   }
 
+  .share-form {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
   .calendar-grid {
     gap: 4px;
   }
