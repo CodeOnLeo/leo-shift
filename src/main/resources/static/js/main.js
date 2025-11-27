@@ -216,13 +216,13 @@ async function bootstrap() {
     // 캘린더를 먼저 로드해 기본 calendarId 확보
     await loadCalendars();
     // calendarId 확보 후 가능한 한 병렬로 API 호출
-    const settingsPromise = loadPatternSettings({ force: true });
-    const calendarPromise = loadCalendar(state.year, state.month, { force: true }).catch(() => null);
-    const sharesPromise = loadShares({ force: true }).catch(() => null);
-    const mePromise = loadMeColor();
-    const notificationPromise = loadNotificationSettings().catch(() => null);
-    const settings = await settingsPromise;
-    await Promise.all([calendarPromise, sharesPromise, mePromise, notificationPromise]);
+    const [settings] = await Promise.all([
+      loadPatternSettings({ force: true }),
+      loadCalendar(state.year, state.month, { force: true }).catch(() => null),
+      loadShares({ force: true }).catch(() => null),
+      loadMeColor(),
+      loadNotificationSettings().catch(() => null)
+    ]);
 
     if (!state.patternConfigured) {
       patternManager.show(settings.defaultNotificationMinutes || 60, settings);
@@ -681,6 +681,9 @@ if (createCalendarForm) {
         loadCalendar(state.year, state.month, { force: true }),
         loadShares({ force: true })
       ]);
+      if (settingsModal) {
+        settingsModal.hidden = true;
+      }
     } catch (e) {
       showToast('캘린더 생성 실패: ' + (e.message || '오류'));
     }
@@ -731,6 +734,9 @@ if (editCalendarForm) {
         loadCalendar(state.year, state.month, { force: true }),
         loadShares({ force: true })
       ]);
+      if (settingsModal) {
+        settingsModal.hidden = true;
+      }
     } catch (e) {
       showToast('캘린더 수정 실패: ' + (e.message || '오류'));
     }
@@ -780,6 +786,9 @@ if (deleteCalendarButton) {
         calendarGrid.innerHTML = '';
         summaryList.innerHTML = '';
         if (shareList) shareList.innerHTML = '';
+      }
+      if (settingsModal) {
+        settingsModal.hidden = true;
       }
     } catch (e) {
       showToast('캘린더 삭제 실패: ' + (e.message || '오류'));
@@ -890,6 +899,7 @@ dayDetailForm.addEventListener('submit', async (event) => {
     clearAnniversaryButton.style.display = (detail.anniversaryMemo || (detail.yearlyMemos && detail.yearlyMemos.length > 0)) ? 'block' : 'none';
 
     showToast('저장되었습니다.');
+    closeModal();
   } catch (e) {
     showToast('저장 실패: ' + (e.message || '오류'));
   }
