@@ -5,6 +5,7 @@ import io.github.codeonleo.leoshift.entity.CalendarShare;
 import io.github.codeonleo.leoshift.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -15,7 +16,8 @@ public interface CalendarShareRepository extends JpaRepository<CalendarShare, Lo
 
     List<CalendarShare> findByUserAndStatus(User user, CalendarShare.ShareStatus status);
 
-    List<CalendarShare> findByUser(User user);
+    @Query("SELECT cs FROM CalendarShare cs LEFT JOIN FETCH cs.calendar c LEFT JOIN FETCH c.owner WHERE cs.user = :user")
+    List<CalendarShare> findByUser(@Param("user") User user);
 
     List<CalendarShare> findByCalendar(Calendar calendar);
 

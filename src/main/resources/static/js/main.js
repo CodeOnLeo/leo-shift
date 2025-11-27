@@ -240,13 +240,14 @@ async function selectDay(date) {
   state.selectedDate = date;
   const detail = await api.getDay(date, state.calendarId);
   dayModal.hidden = false;
+  const hasMemo = detail.memo || detail.anniversaryMemo || (detail.yearlyMemos && detail.yearlyMemos.length > 0);
   dayDetailPanel.innerHTML = `
     <strong>${formatKoreanDate(date)}</strong>
     <span>기본 근무: ${detail.baseCode || '-'}</span>
     <span>실제 근무: ${detail.effectiveCode || '-'}</span>
     <span>${detail.shiftLabel || ''} · ${detail.timeRange || ''}</span>
     <small>${[detail.memo, detail.anniversaryMemo, ...(detail.yearlyMemos || [])].filter(Boolean).join(' • ')}</small>
-    ${detail.memoAuthor ? `<div class="memo-author-line">작성: ${detail.memoAuthor.name}${detail.updatedAt ? ` · ${formatDateTime(detail.updatedAt)}` : ''}</div>` : ''}
+    ${hasMemo && detail.memoAuthor ? `<div class="memo-author-line">작성: ${detail.memoAuthor.name}${detail.updatedAt ? ` · ${formatDateTime(detail.updatedAt)}` : ''}</div>` : ''}
   `;
   detailCode.value = detail.effectiveCode || '';
 
@@ -476,13 +477,14 @@ dayDetailForm.addEventListener('submit', async (event) => {
 
     // 모달 내용도 즉시 업데이트 (저장된 내용 다시 로드)
     const detail = await api.getDay(state.selectedDate, state.calendarId);
+    const hasMemo = detail.memo || detail.anniversaryMemo || (detail.yearlyMemos && detail.yearlyMemos.length > 0);
     dayDetailPanel.innerHTML = `
       <strong>${formatKoreanDate(state.selectedDate)}</strong>
       <span>기본 근무: ${detail.baseCode || '-'}</span>
       <span>실제 근무: ${detail.effectiveCode || '-'}</span>
       <span>${detail.shiftLabel || ''} · ${detail.timeRange || ''}</span>
       <small>${[detail.memo, detail.anniversaryMemo, ...(detail.yearlyMemos || [])].filter(Boolean).join(' • ')}</small>
-      ${detail.memoAuthor ? `<div class="memo-author-line">작성: ${detail.memoAuthor.name}${detail.updatedAt ? ` · ${formatDateTime(detail.updatedAt)}` : ''}</div>` : ''}
+      ${hasMemo && detail.memoAuthor ? `<div class="memo-author-line">작성: ${detail.memoAuthor.name}${detail.updatedAt ? ` · ${formatDateTime(detail.updatedAt)}` : ''}</div>` : ''}
     `;
 
     // 메모 지우기 버튼 표시 여부 업데이트

@@ -25,7 +25,6 @@ public class ExceptionService {
             ex.setCalendar(calendar);
             return ex;
         });
-        User author = calendarAccessService.getCurrentUser();
         boolean hasContent = StringUtils.hasText(customCode) || StringUtils.hasText(memo) || StringUtils.hasText(anniversaryMemo) || repeatYearly;
         if (!hasContent) {
             if (entity.getId() != null) {
@@ -37,7 +36,16 @@ public class ExceptionService {
         entity.setMemo(StringUtils.hasText(memo) ? memo.trim() : null);
         entity.setAnniversaryMemo(StringUtils.hasText(anniversaryMemo) ? anniversaryMemo.trim() : null);
         entity.setRepeatYearly(repeatYearly);
-        entity.setAuthor(author);
+
+        // 메모나 기념일 메모가 있을 때만 author 설정, 없으면 null로 초기화
+        boolean hasMemoContent = StringUtils.hasText(memo) || StringUtils.hasText(anniversaryMemo);
+        if (hasMemoContent) {
+            User author = calendarAccessService.getCurrentUser();
+            entity.setAuthor(author);
+        } else {
+            entity.setAuthor(null);
+        }
+
         return repository.save(entity);
     }
 }

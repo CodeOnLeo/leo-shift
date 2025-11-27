@@ -747,6 +747,13 @@ button.secondary {
     gap: 0.75rem;
   }
 
+  .share-form input,
+  .share-form select,
+  .share-form button {
+    min-height: 48px;
+    font-size: 1rem;
+  }
+
   .calendar-grid {
     gap: 4px;
   }
