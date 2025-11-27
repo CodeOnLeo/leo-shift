@@ -210,21 +210,23 @@ function finishGlobalLoading(force = false) {
   }
 }
 
+function scheduleIdle(task) {
+  if (typeof window.requestIdleCallback === 'function') {
+    window.requestIdleCallback(task, { timeout: 1500 });
+  } else {
+    setTimeout(task, 200);
+  }
+}
+
 async function bootstrap() {
   const endLoading = startGlobalLoading();
   try {
-    // calendarId가 필요 없는 API는 loadCalendars()와 병렬로 실행
-    const [calendarsResult] = await Promise.all([
-      loadCalendars(),
-      loadMeColor().catch(() => null),
-      loadNotificationSettings().catch(() => null)
-    ]);
-
-    // calendarId 확보 후 나머지 API 병렬 호출
+    // 필수 데이터만 먼저: 캘린더, 사용자, 설정, 현재 달
+    await loadCalendars();
     const [settings] = await Promise.all([
       loadPatternSettings({ force: true }),
-      loadCalendar(state.year, state.month, { force: true }).catch(() => null),
-      loadShares({ force: true }).catch(() => null)
+      loadCalendar(state.year, state.month, { force: true, prefetch: false }).catch(() => null),
+      loadMeColor().catch(() => null)
     ]);
 
     if (!state.patternConfigured) {
@@ -238,6 +240,13 @@ async function bootstrap() {
     patternManager.hide();
     calendarSection.hidden = false;
     settingsMenuButton.hidden = false;
+
+    // 부가 데이터와 prefetch는 렌더 이후로 지연 실행
+    scheduleIdle(() => {
+      loadNotificationSettings().catch(() => null);
+      loadShares({ force: true }).catch(() => null);
+      prefetchAdjacentMonths(state.year, state.month, state.calendarId);
+    });
   } finally {
     endLoading();
   }
@@ -472,7 +481,7 @@ function prefetchAdjacentMonths(year, month, calendarId = state.calendarId) {
   });
 }
 
-async function loadCalendar(year, month, { calendarId = state.calendarId, force = false } = {}) {
+async function loadCalendar(year, month, { calendarId = state.calendarId, force = false, prefetch = true } = {}) {
   if (!calendarId) return null;
   const requestId = ++calendarRequestSeq;
   const data = await fetchCalendar(year, month, { calendarId, force });
@@ -492,7 +501,9 @@ async function loadCalendar(year, month, { calendarId = state.calendarId, force 
     onSelectDay: (date) => selectDay(date)
   });
 
-  prefetchAdjacentMonths(data.year, data.month, calendarId);
+  if (prefetch) {
+    prefetchAdjacentMonths(data.year, data.month, calendarId);
+  }
 
   return data;
 }

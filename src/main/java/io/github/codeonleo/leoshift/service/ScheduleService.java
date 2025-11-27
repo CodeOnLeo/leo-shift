@@ -53,14 +53,16 @@ public class ScheduleService {
         if (!usePattern && exception == null) {
             return Optional.of(DaySchedule.empty(date));
         }
-        List<String> yearlyMemos = exceptionRepository.findYearlyEntriesForMonth(calendar, date.getMonthValue()).stream()
-                .filter(e -> e.getDate().getDayOfMonth() == date.getDayOfMonth())
-                .filter(e -> !e.getDate().equals(date))
-                .filter(e -> !e.getDate().isAfter(date)) // 등록 날짜 이후만 표시
-                .map(ShiftException::getAnniversaryMemo)
-                .filter(StringUtils::hasText)
-                .map(String::trim)
-                .toList();
+        LocalDate monthStart = date.withDayOfMonth(1);
+        LocalDate monthEnd = monthStart.withDayOfMonth(monthStart.lengthOfMonth());
+        List<String> yearlyMemos = exceptionRepository.findYearlyEntriesInRange(calendar, monthStart, monthEnd).stream()
+            .filter(e -> e.getDate().getDayOfMonth() == date.getDayOfMonth())
+            .filter(e -> !e.getDate().equals(date))
+            .filter(e -> !e.getDate().isAfter(date)) // 등록 날짜 이후만 표시
+            .map(ShiftException::getAnniversaryMemo)
+            .filter(StringUtils::hasText)
+            .map(String::trim)
+            .toList();
         AuthorDto author = null;
         if (exception != null && exception.getAuthor() != null) {
             author = new AuthorDto(

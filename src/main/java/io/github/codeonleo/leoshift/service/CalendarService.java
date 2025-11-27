@@ -47,7 +47,9 @@ public class CalendarService {
         Map<LocalDate, ShiftException> exceptionByDate = exceptionRepository.findByCalendarAndDateBetween(calendar, calendarStart, calendarEnd).stream()
                 .collect(Collectors.toMap(ShiftException::getDate, ex -> ex));
 
-        Map<Integer, List<ShiftException>> yearlyByDay = exceptionRepository.findYearlyEntriesForMonth(calendar, month).stream()
+        Map<Integer, List<ShiftException>> yearlyByDay = exceptionRepository
+                .findYearlyEntriesInRange(calendar, monthStart, monthEnd)
+                .stream()
                 .collect(Collectors.groupingBy(ex -> ex.getDate().getDayOfMonth()));
 
         // 패턴을 한 번만 조회 (N+1 문제 해결)
