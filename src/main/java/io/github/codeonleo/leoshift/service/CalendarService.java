@@ -48,6 +48,18 @@ public class CalendarService {
         Map<Integer, List<ShiftException>> yearlyByDay = exceptionRepository.findYearlyEntriesForMonth(calendar, month).stream()
                 .collect(Collectors.groupingBy(ex -> ex.getDate().getDayOfMonth()));
 
+        // 패턴을 한 번만 조회 (N+1 문제 해결)
+        List<String> patternCodes = null;
+        LocalDate patternStartDate = null;
+        if (usePattern) {
+            var resolved = calendarPatternService.findEffective(calendar, calendarEnd);
+            if (resolved.isPresent()) {
+                var pattern = resolved.get();
+                patternCodes = pattern.codes();
+                patternStartDate = pattern.startDate();
+            }
+        }
+
         List<CalendarDayDto> days = new ArrayList<>();
         Map<String, Long> summary = new LinkedHashMap<>();
         summary.put("D", 0L);
@@ -59,16 +71,12 @@ public class CalendarService {
         while (!cursor.isAfter(calendarEnd)) {
             ShiftException dayException = exceptionByDate.get(cursor);
             String baseCode = null;
-            if (usePattern) {
-                var resolved = calendarPatternService.findEffective(calendar, cursor);
-                if (resolved.isPresent()) {
-                    var pattern = resolved.get();
-                    baseCode = calculationService.determineCode(
-                            pattern.codes(),
-                            pattern.startDate(),
-                            cursor
-                    );
-                }
+            if (usePattern && patternCodes != null && patternStartDate != null) {
+                baseCode = calculationService.determineCode(
+                        patternCodes,
+                        patternStartDate,
+                        cursor
+                );
             }
             String effectiveCode = baseCode;
             if (dayException != null && StringUtils.hasText(dayException.getCustomCode())) {

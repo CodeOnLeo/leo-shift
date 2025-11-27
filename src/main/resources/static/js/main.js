@@ -86,9 +86,14 @@ const state = {
 };
 
 async function bootstrap() {
-  await loadCalendars();
-  await loadMeColor();
-  const settings = await loadPatternSettings();
+  // 병렬로 실행 가능한 API들을 동시에 호출
+  const [calendarsResult, meColorResult, settingsResult] = await Promise.all([
+    loadCalendars(),
+    loadMeColor(),
+    loadPatternSettings()
+  ]);
+  const settings = settingsResult;
+
   if (!state.patternConfigured) {
     patternManager.show(settings.defaultNotificationMinutes || 60, settings);
     calendarSection.hidden = true;
@@ -109,18 +114,21 @@ async function loadCalendars() {
   state.calendarId = res.defaultCalendarId || (state.calendars[0] ? state.calendars[0].id : null);
   renderCalendarSelector();
   renderInvites();
+  return res;
 }
 
 async function loadMeColor() {
-  if (!colorPicker) return;
+  if (!colorPicker) return null;
   try {
     const me = await api.me();
     state.me = me;
     if (me && me.colorTag) {
       colorPicker.value = me.colorTag;
     }
+    return me;
   } catch (e) {
     // ignore
+    return null;
   }
 }
 
@@ -299,7 +307,13 @@ async function loadCalendar(year, month) {
 
 async function selectDay(date) {
   state.selectedDate = date;
-  const detail = await api.getDay(date, state.calendarId);
+
+  // 날짜 상세 조회와 캘린더 데이터를 병렬로 가져오기
+  const [detail, calendarData] = await Promise.all([
+    api.getDay(date, state.calendarId),
+    api.getCalendar(state.year, state.month, state.calendarId)
+  ]);
+
   dayModal.hidden = false;
   const hasMemo = detail.memo || detail.anniversaryMemo || (detail.yearlyMemos && detail.yearlyMemos.length > 0);
   dayDetailPanel.innerHTML = `
@@ -349,7 +363,15 @@ async function selectDay(date) {
     }
   }
 
-  await loadCalendar(state.year, state.month);
+  // 선택된 날짜를 표시하기 위해 캘린더 렌더링
+  renderCalendar({
+    gridEl: calendarGrid,
+    summaryEl: summaryList,
+    data: calendarData,
+    today: new Date().toISOString().split('T')[0],
+    selectedDate: state.selectedDate,
+    onSelectDay: (date) => selectDay(date)
+  });
 }
 
 function closeModal() {
@@ -635,11 +657,26 @@ dayDetailForm.addEventListener('submit', async (event) => {
       repeatYearly: repeatYearly.checked
     }, state.calendarId);
 
-    // 캘린더 그리드 즉시 업데이트
-    await loadCalendar(state.year, state.month);
+    // 캘린더 그리드와 모달 내용 병렬 업데이트
+    const [calendarData, detail] = await Promise.all([
+      api.getCalendar(state.year, state.month, state.calendarId),
+      api.getDay(state.selectedDate, state.calendarId)
+    ]);
 
-    // 모달 내용도 즉시 업데이트 (저장된 내용 다시 로드)
-    const detail = await api.getDay(state.selectedDate, state.calendarId);
+    // 캘린더 그리드 업데이트
+    state.year = calendarData.year;
+    state.month = calendarData.month;
+    calendarTitle.textContent = `${calendarData.year}년 ${calendarData.month}월`;
+    renderCalendar({
+      gridEl: calendarGrid,
+      summaryEl: summaryList,
+      data: calendarData,
+      today: new Date().toISOString().split('T')[0],
+      selectedDate: state.selectedDate,
+      onSelectDay: (date) => selectDay(date)
+    });
+
+    // 모달 내용 업데이트
     const hasMemo = detail.memo || detail.anniversaryMemo || (detail.yearlyMemos && detail.yearlyMemos.length > 0);
     dayDetailPanel.innerHTML = `
       <strong>${formatKoreanDate(state.selectedDate)}</strong>
