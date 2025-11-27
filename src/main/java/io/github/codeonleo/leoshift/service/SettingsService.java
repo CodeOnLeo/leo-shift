@@ -122,6 +122,13 @@ public class SettingsService {
     }
 
     @Transactional
+    public void clearDefaultCalendar() {
+        UserSettings settings = getOrCreate();
+        settings.setDefaultCalendar(null);
+        repository.save(settings);
+    }
+
+    @Transactional
     public void updateColorTag(String color) {
         Long userId = currentUserId();
         User user = userRepository.findById(userId)

@@ -50,6 +50,12 @@ const saveColorButton = document.getElementById('saveColorButton');
 const createCalendarForm = document.getElementById('createCalendarForm');
 const newCalendarNameInput = document.getElementById('newCalendarName');
 const newCalendarPatternEnabledInput = document.getElementById('newCalendarPatternEnabled');
+const editCalendarForm = document.getElementById('editCalendarForm');
+const editCalendarNameInput = document.getElementById('editCalendarName');
+const editCalendarPatternEnabledInput = document.getElementById('editCalendarPatternEnabled');
+const editCalendarSaveButton = document.getElementById('editCalendarSaveButton');
+const editCalendarHint = document.getElementById('editCalendarHint');
+const deleteCalendarButton = document.getElementById('deleteCalendarButton');
 
 const patternManager = initPatternForm({
   sectionEl: document.getElementById('pattern-setup'),
@@ -117,6 +123,36 @@ async function loadMeColor() {
   }
 }
 
+function syncCalendarEditForm() {
+  if (!editCalendarForm || !editCalendarNameInput || !editCalendarPatternEnabledInput) return;
+  const current = state.calendars.find((c) => c.id === state.calendarId);
+  const isOwner = !!current && current.owned;
+  if (current) {
+    editCalendarNameInput.value = current.name || '';
+    editCalendarPatternEnabledInput.checked = current.patternEnabled !== false;
+  } else {
+    editCalendarNameInput.value = '';
+    editCalendarPatternEnabledInput.checked = true;
+  }
+  const disableForm = !isOwner;
+  [editCalendarNameInput, editCalendarPatternEnabledInput, editCalendarSaveButton, deleteCalendarButton].forEach((el) => {
+    if (el) {
+      el.disabled = disableForm;
+    }
+  });
+  if (editCalendarHint) {
+    if (!current) {
+      editCalendarHint.hidden = false;
+      editCalendarHint.textContent = '캘린더를 선택하세요.';
+    } else {
+      editCalendarHint.hidden = isOwner;
+      if (!isOwner) {
+        editCalendarHint.textContent = '소유한 캘린더만 수정할 수 있습니다.';
+      }
+    }
+  }
+}
+
 function renderCalendarSelector() {
   if (!calendarSelector || !calendarSelectorList) return;
   calendarSelectorList.innerHTML = '';
@@ -138,7 +174,12 @@ function renderCalendarSelector() {
     });
     calendarSelectorList.appendChild(item);
   });
-  calendarSelectorButton.textContent = state.calendars.find(c => c.id === state.calendarId)?.name || '캘린더 선택';
+  const current = state.calendars.find(c => c.id === state.calendarId);
+  if (current) {
+    state.usePattern = current.patternEnabled !== false;
+  }
+  calendarSelectorButton.textContent = current?.name || '캘린더 선택';
+  syncCalendarEditForm();
 }
 
 async function loadShares() {
@@ -391,6 +432,76 @@ if (createCalendarForm) {
       await loadCalendar(state.year, state.month);
     } catch (e) {
       showToast('캘린더 생성 실패: ' + (e.message || '오류'));
+    }
+  });
+}
+
+if (editCalendarForm) {
+  editCalendarForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const current = state.calendars.find((c) => c.id === state.calendarId);
+    if (!current) {
+      alert('캘린더를 먼저 선택하세요.');
+      return;
+    }
+    if (!current.owned) {
+      alert('소유한 캘린더만 수정할 수 있습니다.');
+      return;
+    }
+    const name = (editCalendarNameInput.value || '').trim();
+    if (!name) {
+      alert('캘린더 이름을 입력하세요.');
+      return;
+    }
+    const patternEnabled = editCalendarPatternEnabledInput.checked;
+    try {
+      const res = await api.updateCalendar(state.calendarId, { name, patternEnabled });
+      state.calendars = res.calendars || [];
+      const stillExists = state.calendars.find(c => c.id === state.calendarId);
+      if (!stillExists) {
+        state.calendarId = res.defaultCalendarId || (state.calendars[0] ? state.calendars[0].id : null);
+      }
+      renderCalendarSelector();
+      renderInvites();
+      showToast('캘린더가 수정되었습니다.');
+      await loadCalendar(state.year, state.month);
+    } catch (e) {
+      showToast('캘린더 수정 실패: ' + (e.message || '오류'));
+    }
+  });
+}
+
+if (deleteCalendarButton) {
+  deleteCalendarButton.addEventListener('click', async () => {
+    const current = state.calendars.find((c) => c.id === state.calendarId);
+    if (!current) {
+      alert('캘린더를 먼저 선택하세요.');
+      return;
+    }
+    if (!current.owned) {
+      alert('소유한 캘린더만 삭제할 수 있습니다.');
+      return;
+    }
+    if (!confirm(`"${current.name}" 캘린더를 삭제하시겠습니까?\n공유·메모 등 모든 데이터가 삭제됩니다.`)) {
+      return;
+    }
+    try {
+      const res = await api.deleteCalendar(state.calendarId);
+      state.calendars = res.calendars || [];
+      state.calendarId = res.defaultCalendarId || (state.calendars[0] ? state.calendars[0].id : null);
+      renderCalendarSelector();
+      renderInvites();
+      showToast('캘린더가 삭제되었습니다.');
+      if (state.calendarId) {
+        await loadCalendar(state.year, state.month);
+        await loadShares();
+      } else {
+        calendarGrid.innerHTML = '';
+        summaryList.innerHTML = '';
+        if (shareList) shareList.innerHTML = '';
+      }
+    } catch (e) {
+      showToast('캘린더 삭제 실패: ' + (e.message || '오류'));
     }
   });
 }

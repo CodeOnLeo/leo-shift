@@ -21,6 +21,8 @@ public interface CalendarShareRepository extends JpaRepository<CalendarShare, Lo
 
     List<CalendarShare> findByCalendar(Calendar calendar);
 
+    void deleteByCalendar(Calendar calendar);
+
     Optional<CalendarShare> findByCalendarAndUser(Calendar calendar, User user);
 
     @Query("SELECT cs FROM CalendarShare cs WHERE cs.user = :user AND cs.status = 'ACCEPTED'")

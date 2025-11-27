@@ -2,10 +2,10 @@ package io.github.codeonleo.leoshift.controller;
 
 import io.github.codeonleo.leoshift.dto.CalendarCreateRequest;
 import io.github.codeonleo.leoshift.dto.CalendarListResponse;
+import io.github.codeonleo.leoshift.dto.CalendarShareInvitationRequest;
 import io.github.codeonleo.leoshift.dto.CalendarShareRequest;
-import io.github.codeonleo.leoshift.dto.CalendarShareInvitationRequest;
 import io.github.codeonleo.leoshift.dto.CalendarShareResponse;
-import io.github.codeonleo.leoshift.dto.CalendarShareInvitationRequest;
+import io.github.codeonleo.leoshift.dto.CalendarUpdateRequest;
 import io.github.codeonleo.leoshift.dto.ShareDecisionRequest;
 import io.github.codeonleo.leoshift.service.CalendarAccessService;
 import io.github.codeonleo.leoshift.service.CalendarManagementService;
@@ -13,6 +13,7 @@ import io.github.codeonleo.leoshift.service.CalendarShareService;
 import io.github.codeonleo.leoshift.service.SettingsService;
 import jakarta.validation.Valid;
 import java.util.List;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -50,6 +51,23 @@ public class CalendarManagementController {
     @PostMapping
     public CalendarListResponse createCalendar(@Valid @RequestBody CalendarCreateRequest request) {
         calendarManagementService.createCalendar(request);
+        var settings = settingsService.getOrCreate();
+        Long defaultCalendarId = settings.getDefaultCalendar() != null ? settings.getDefaultCalendar().getId() : null;
+        return new CalendarListResponse(calendarAccessService.listAccessible(), defaultCalendarId);
+    }
+
+    @PutMapping("/{calendarId}")
+    public CalendarListResponse updateCalendar(@PathVariable Long calendarId,
+                                               @Valid @RequestBody CalendarUpdateRequest request) {
+        calendarManagementService.updateCalendar(calendarId, request);
+        var settings = settingsService.getOrCreate();
+        Long defaultCalendarId = settings.getDefaultCalendar() != null ? settings.getDefaultCalendar().getId() : null;
+        return new CalendarListResponse(calendarAccessService.listAccessible(), defaultCalendarId);
+    }
+
+    @DeleteMapping("/{calendarId}")
+    public CalendarListResponse deleteCalendar(@PathVariable Long calendarId) {
+        calendarManagementService.deleteCalendar(calendarId);
         var settings = settingsService.getOrCreate();
         Long defaultCalendarId = settings.getDefaultCalendar() != null ? settings.getDefaultCalendar().getId() : null;
         return new CalendarListResponse(calendarAccessService.listAccessible(), defaultCalendarId);

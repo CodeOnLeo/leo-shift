@@ -22,4 +22,6 @@ public interface ShiftExceptionRepository extends JpaRepository<ShiftException, 
 
     @Query("select e from ShiftException e left join fetch e.author where e.calendar = :calendar and e.repeatYearly = true and MONTH(e.date) = :month")
     List<ShiftException> findYearlyEntriesForMonth(@Param("calendar") Calendar calendar, @Param("month") int month);
+
+    void deleteByCalendar(Calendar calendar);
 }
