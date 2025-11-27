@@ -11,13 +11,15 @@ import org.springframework.data.repository.query.Param;
 
 public interface ShiftExceptionRepository extends JpaRepository<ShiftException, Long> {
 
-    Optional<ShiftException> findByCalendarAndDate(Calendar calendar, LocalDate date);
+    @Query("select e from ShiftException e left join fetch e.author where e.calendar = :calendar and e.date = :date")
+    Optional<ShiftException> findByCalendarAndDate(@Param("calendar") Calendar calendar, @Param("date") LocalDate date);
 
-    List<ShiftException> findByCalendarAndDateBetween(Calendar calendar, LocalDate start, LocalDate end);
+    @Query("select e from ShiftException e left join fetch e.author where e.calendar = :calendar and e.date between :start and :end")
+    List<ShiftException> findByCalendarAndDateBetween(@Param("calendar") Calendar calendar, @Param("start") LocalDate start, @Param("end") LocalDate end);
 
-    @Query("select e from ShiftException e where e.calendar = :calendar and e.repeatYearly = true")
+    @Query("select e from ShiftException e left join fetch e.author where e.calendar = :calendar and e.repeatYearly = true")
     List<ShiftException> findYearlyRepeating(@Param("calendar") Calendar calendar);
 
-    @Query("select e from ShiftException e where e.calendar = :calendar and e.repeatYearly = true and MONTH(e.date) = :month")
+    @Query("select e from ShiftException e left join fetch e.author where e.calendar = :calendar and e.repeatYearly = true and MONTH(e.date) = :month")
     List<ShiftException> findYearlyEntriesForMonth(@Param("calendar") Calendar calendar, @Param("month") int month);
 }
