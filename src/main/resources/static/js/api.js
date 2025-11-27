@@ -60,7 +60,6 @@ export function setLoadingHooks({ onStart, onEnd }) {
 }
 
 async function request(url, options = {}) {
-  const startedAt = performance.now();
   loadingHooks.onStart();
   try {
     const response = await fetch(url, {
@@ -145,19 +144,9 @@ async function request(url, options = {}) {
 
     const contentType = response.headers.get('content-type') || '';
     if (contentType.includes('application/json')) {
-      const data = await response.json();
-      const elapsed = Math.round(performance.now() - startedAt);
-      if (elapsed > 500) {
-        console.warn(`[api] ${url} ${response.status} ${elapsed}ms`);
-      }
-      return data;
+      return response.json();
     }
-    const text = await response.text();
-    const elapsed = Math.round(performance.now() - startedAt);
-    if (elapsed > 500) {
-      console.warn(`[api] ${url} ${response.status} ${elapsed}ms (text)`);
-    }
-    return text;
+    return response.text();
   } finally {
     loadingHooks.onEnd();
   }
