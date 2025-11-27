@@ -5,6 +5,7 @@ import io.github.codeonleo.leoshift.config.PushProperties;
 import io.github.codeonleo.leoshift.dto.PushSubscriptionRequest;
 import io.github.codeonleo.leoshift.entity.PushSubscription;
 import io.github.codeonleo.leoshift.entity.Calendar;
+import io.github.codeonleo.leoshift.entity.User;
 import io.github.codeonleo.leoshift.entity.UserSettings;
 import io.github.codeonleo.leoshift.repository.PushSubscriptionRepository;
 import java.io.IOException;
@@ -41,6 +42,7 @@ public class PushNotificationService {
     private final SettingsService settingsService;
     private final ScheduleService scheduleService;
     private final ObjectMapper objectMapper;
+    private final CalendarAccessService calendarAccessService;
 
     public void saveSubscription(PushSubscriptionRequest request) {
         if (request == null || !StringUtils.hasText(request.endpoint()) || request.keys() == null) {
@@ -51,6 +53,7 @@ public class PushNotificationService {
         subscription.setEndpoint(request.endpoint());
         subscription.setP256dh(request.keys().p256dh());
         subscription.setAuth(request.keys().auth());
+        subscription.setUser(calendarAccessService.getCurrentUser());
         repository.save(subscription);
     }
 
