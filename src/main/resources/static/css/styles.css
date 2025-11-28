@@ -1134,6 +1134,29 @@ button.secondary {
   white-space: nowrap;
 }
 
+.onboarding-text {
+  margin: 0 0 1rem 0;
+  color: #1c1c1e;
+  line-height: 1.5;
+}
+
+.onboarding-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.onboarding-actions .primary,
+.onboarding-actions .secondary {
+  flex: 1;
+}
+
+.pattern-calendar-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
 /* Modal */
 .modal {
   position: fixed;

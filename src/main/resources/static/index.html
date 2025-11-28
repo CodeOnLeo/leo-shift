@@ -14,6 +14,42 @@
 </head>
 <body>
   <main>
+    <div id="patternOnboardingModal" class="modal" hidden>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>패턴으로 관리할까요?</h2>
+          <button type="button" class="modal-close" id="patternOnboardingClose">&times;</button>
+        </div>
+        <div class="modal-body">
+          <p class="onboarding-text">근무 패턴을 설정하면 자동으로 스케줄이 채워지고 알림도 함께 설정돼요.</p>
+          <div class="onboarding-actions">
+            <button type="button" class="primary" id="patternOnboardingUse">패턴 사용하기</button>
+            <button type="button" class="secondary" id="patternOnboardingSkip">패턴 없이 보기</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="patternCalendarModal" class="modal" hidden>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>패턴 캘린더 만들기</h2>
+          <button type="button" class="modal-close" id="patternCalendarClose">&times;</button>
+        </div>
+        <form class="modal-body pattern-calendar-form" id="patternCalendarForm">
+          <p class="onboarding-text">패턴을 적용할 캘린더 이름을 정해주세요.</p>
+          <label>
+            캘린더 이름
+            <input type="text" id="patternCalendarName" placeholder="예: 내 근무표" maxlength="100" required />
+          </label>
+          <div class="onboarding-actions">
+            <button type="submit" class="primary">패턴 캘린더 준비</button>
+            <button type="button" class="secondary" id="patternCalendarBack">이전</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <section id="pattern-setup" hidden>
       <h2>근무 패턴 설정</h2>
       <form class="pattern-form" id="patternForm">
