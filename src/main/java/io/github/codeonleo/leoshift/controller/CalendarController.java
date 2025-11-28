@@ -87,7 +87,7 @@ public class CalendarController {
                                          @PathVariable Long memoId,
                                          @RequestParam(required = false) Long calendarId) {
         CalendarAccessService.CalendarAccess access = calendarAccessService.requireEdit(calendarId);
-        dayMemoService.deleteById(memoId, access.user());
+        dayMemoService.deleteById(memoId, calendarAccessService.getCurrentUser());
         return dayDetailService.load(date, access.calendar());
     }
 }
