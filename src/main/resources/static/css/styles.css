@@ -326,7 +326,7 @@ section h2 {
 }
 
 .day-cell .shift-code {
-  font-size: 1.4rem;
+  font-size: 1.2rem;
   font-weight: 700;
 }
 
@@ -810,7 +810,7 @@ button.secondary {
   }
 
   .day-cell .shift-code {
-    font-size: 1.2rem;
+    font-size: 1.1rem;
   }
 
   .day-cell .memo-regular,
@@ -1232,7 +1232,7 @@ button.secondary {
   }
 
   .day-cell .shift-code {
-    font-size: 1.1rem;
+    font-size: 1.0rem;
   }
 
   .modal-content {
