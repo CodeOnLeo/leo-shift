@@ -90,8 +90,23 @@ export function renderCalendar({
       cell.append(memo);
     }
 
-    // 작성자 태그
-    if (day.memoAuthor) {
+    // 작성자 태그 (다중 사용자 메모)
+    if (day.dayMemos && day.dayMemos.length > 0) {
+      day.dayMemos.forEach(memo => {
+        const tag = document.createElement('div');
+        tag.className = 'memo-author-tag';
+        const authorName = memo.author.nickname || memo.author.name || '';
+        tag.textContent = initials(authorName);
+        tag.title = `${authorName || '작성자'}: ${memo.memo}${memo.updatedAt ? ` · ${formatDate(memo.updatedAt)}` : ''}`;
+        if (memo.author.color) {
+          tag.style.backgroundColor = memo.author.color;
+          tag.style.color = '#fff';
+          tag.style.border = '1px solid rgba(0,0,0,0.08)';
+        }
+        cell.append(tag);
+      });
+    } else if (day.memoAuthor) {
+      // 기존 호환성 유지 (deprecated)
       const tag = document.createElement('div');
       tag.className = 'memo-author-tag';
       const authorName = day.memoAuthor.nickname || day.memoAuthor.name || '';

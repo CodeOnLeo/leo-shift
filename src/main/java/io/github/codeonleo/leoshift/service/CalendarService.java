@@ -3,6 +3,7 @@ package io.github.codeonleo.leoshift.service;
 import io.github.codeonleo.leoshift.dto.CalendarDayDto;
 import io.github.codeonleo.leoshift.dto.CalendarResponse;
 import io.github.codeonleo.leoshift.dto.AuthorDto;
+import io.github.codeonleo.leoshift.dto.MemoDto;
 import io.github.codeonleo.leoshift.entity.Calendar;
 import io.github.codeonleo.leoshift.entity.CalendarPattern;
 import io.github.codeonleo.leoshift.entity.ShiftException;
@@ -27,6 +28,7 @@ public class CalendarService {
     private final CalendarPatternService calendarPatternService;
     private final ShiftCalculationService calculationService;
     private final ShiftExceptionRepository exceptionRepository;
+    private final DayMemoService dayMemoService;
 
     @Transactional(readOnly = true)
     public CalendarResponse buildMonthlyCalendar(Calendar calendar, int year, int month) {
@@ -51,6 +53,11 @@ public class CalendarService {
                 .findYearlyEntriesInRange(calendar, monthStart, monthEnd)
                 .stream()
                 .collect(Collectors.groupingBy(ex -> ex.getDate().getDayOfMonth()));
+
+        // DayMemo 조회 (다중 사용자 메모)
+        List<MemoDto> allDayMemos = dayMemoService.getMemosInRange(calendarStart, calendarEnd, calendar);
+        Map<LocalDate, List<MemoDto>> memosByDate = allDayMemos.stream()
+                .collect(Collectors.groupingBy(MemoDto::date));
 
         // 패턴을 한 번만 조회 (N+1 문제 해결)
         List<String> patternCodes = null;
@@ -118,7 +125,11 @@ public class CalendarService {
                         ColorTagUtil.resolve(dayException.getAuthor())
                 );
             }
-            days.add(new CalendarDayDto(cursor, baseCode, effectiveCode, memos, anniversaryMemos, yearlyMemos, dayException != null, author, dayException != null ? dayException.getUpdatedAt() : null));
+
+            // 다중 사용자 메모 추가
+            List<MemoDto> dayMemos = memosByDate.getOrDefault(cursor, Collections.emptyList());
+
+            days.add(new CalendarDayDto(cursor, baseCode, effectiveCode, memos, anniversaryMemos, yearlyMemos, dayException != null, author, dayException != null ? dayException.getUpdatedAt() : null, dayMemos));
             // summary는 현재 월의 날짜만 카운트
             if (effectiveCode != null && !cursor.isBefore(monthStart) && !cursor.isAfter(monthEnd)) {
                 summary.merge(effectiveCode, 1L, Long::sum);

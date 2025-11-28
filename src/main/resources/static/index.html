@@ -137,6 +137,19 @@
         </div>
         <div class="modal-body">
           <div class="day-detail-panel" id="dayDetailPanel"></div>
+
+          <!-- 다중 사용자 메모 목록 -->
+          <div class="memo-list-section" id="memoListSection">
+            <h3>메모</h3>
+            <div id="memoList" class="memo-list"></div>
+            <form class="memo-add-form" id="memoAddForm">
+              <textarea id="newMemoText" rows="2" placeholder="메모를 입력하세요"></textarea>
+              <button type="submit">메모 추가</button>
+            </form>
+          </div>
+
+          <div class="divider"></div>
+
           <form class="day-detail-form" id="dayDetailForm">
             <label>
               근무 변경
@@ -152,8 +165,8 @@
             </label>
 
             <label>
-              메모
-              <textarea id="detailMemo" rows="2" placeholder="일반 메모를 입력하세요"></textarea>
+              메모 (구버전 - 사용 안 함)
+              <textarea id="detailMemo" rows="2" placeholder="일반 메모를 입력하세요" style="display: none;"></textarea>
             </label>
             <button type="button" id="clearMemo" class="clear-button" style="display: none;">메모 지우기</button>
 

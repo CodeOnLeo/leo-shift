@@ -183,5 +183,17 @@ export const api = {
     if (calendarId) params.append('calendarId', calendarId);
     const query = params.toString();
     return request(`/api/bootstrap${query ? `?${query}` : ''}`);
+  },
+  saveMemo: (date, payload, calendarId) => {
+    const params = new URLSearchParams();
+    if (calendarId) params.append('calendarId', calendarId);
+    const query = params.toString();
+    return request(`/api/days/${date}/memos${query ? `?${query}` : ''}`, { method: 'POST', body: JSON.stringify(payload) });
+  },
+  deleteMemo: (date, memoId, calendarId) => {
+    const params = new URLSearchParams();
+    if (calendarId) params.append('calendarId', calendarId);
+    const query = params.toString();
+    return request(`/api/days/${date}/memos/${memoId}${query ? `?${query}` : ''}`, { method: 'DELETE' });
   }
 };

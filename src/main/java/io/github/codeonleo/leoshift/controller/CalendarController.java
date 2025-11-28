@@ -3,17 +3,21 @@ package io.github.codeonleo.leoshift.controller;
 import io.github.codeonleo.leoshift.dto.CalendarResponse;
 import io.github.codeonleo.leoshift.dto.DayDetailResponse;
 import io.github.codeonleo.leoshift.dto.ExceptionUpdateRequest;
+import io.github.codeonleo.leoshift.dto.MemoSaveRequest;
 import io.github.codeonleo.leoshift.dto.TodayResponse;
 import io.github.codeonleo.leoshift.service.CalendarAccessService;
 import io.github.codeonleo.leoshift.service.CalendarService;
 import io.github.codeonleo.leoshift.service.DayDetailService;
+import io.github.codeonleo.leoshift.service.DayMemoService;
 import io.github.codeonleo.leoshift.service.TodayService;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -27,12 +31,14 @@ public class CalendarController {
     private final CalendarService calendarService;
     private final TodayService todayService;
     private final DayDetailService dayDetailService;
+    private final DayMemoService dayMemoService;
     private final CalendarAccessService calendarAccessService;
 
-    public CalendarController(CalendarService calendarService, TodayService todayService, DayDetailService dayDetailService, CalendarAccessService calendarAccessService) {
+    public CalendarController(CalendarService calendarService, TodayService todayService, DayDetailService dayDetailService, DayMemoService dayMemoService, CalendarAccessService calendarAccessService) {
         this.calendarService = calendarService;
         this.todayService = todayService;
         this.dayDetailService = dayDetailService;
+        this.dayMemoService = dayMemoService;
         this.calendarAccessService = calendarAccessService;
     }
 
@@ -65,5 +71,23 @@ public class CalendarController {
                                        @RequestParam(required = false) Long calendarId) {
         CalendarAccessService.CalendarAccess access = calendarAccessService.requireEdit(calendarId);
         return dayDetailService.save(date, request, access.calendar());
+    }
+
+    @PostMapping("/days/{date}/memos")
+    public DayDetailResponse saveMemo(@PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+                                       @Valid @RequestBody MemoSaveRequest request,
+                                       @RequestParam(required = false) Long calendarId) {
+        CalendarAccessService.CalendarAccess access = calendarAccessService.requireEdit(calendarId);
+        dayMemoService.saveOrUpdate(date, request.memo(), access.calendar());
+        return dayDetailService.load(date, access.calendar());
+    }
+
+    @DeleteMapping("/days/{date}/memos/{memoId}")
+    public DayDetailResponse deleteMemo(@PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+                                         @PathVariable Long memoId,
+                                         @RequestParam(required = false) Long calendarId) {
+        CalendarAccessService.CalendarAccess access = calendarAccessService.requireEdit(calendarId);
+        dayMemoService.deleteById(memoId, access.user());
+        return dayDetailService.load(date, access.calendar());
     }
 }

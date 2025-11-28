@@ -26,6 +26,9 @@ const anniversaryMemo = document.getElementById('anniversaryMemo');
 const clearMemoButton = document.getElementById('clearMemo');
 const clearAnniversaryButton = document.getElementById('clearAnniversary');
 const patternDisabledHint = document.getElementById('patternDisabledHint');
+const memoList = document.getElementById('memoList');
+const memoAddForm = document.getElementById('memoAddForm');
+const newMemoText = document.getElementById('newMemoText');
 const toast = document.getElementById('toast');
 let toastTimer = null;
 let loadingCounter = 0;
@@ -591,6 +594,58 @@ async function loadCalendar(year, month, { calendarId = state.calendarId, force 
   return data;
 }
 
+function renderMemos(memos) {
+  memoList.innerHTML = '';
+  if (!memos || memos.length === 0) {
+    memoList.innerHTML = '<div class="memo-empty">메모가 없습니다</div>';
+    return;
+  }
+
+  memos.forEach(memo => {
+    const item = document.createElement('div');
+    item.className = 'memo-item';
+
+    const content = document.createElement('div');
+    content.className = 'memo-content';
+
+    const text = document.createElement('div');
+    text.className = 'memo-text';
+    text.textContent = memo.memo;
+
+    const meta = document.createElement('div');
+    meta.className = 'memo-meta';
+    const authorName = memo.author.nickname || memo.author.name;
+    const timeStr = memo.updatedAt ? formatDateTime(memo.updatedAt) : '';
+    meta.textContent = `${authorName}${timeStr ? ' · ' + timeStr : ''}`;
+
+    content.append(text, meta);
+    item.append(content);
+
+    if (memo.isOwn) {
+      const deleteBtn = document.createElement('button');
+      deleteBtn.className = 'memo-delete-btn';
+      deleteBtn.textContent = '삭제';
+      deleteBtn.type = 'button';
+      deleteBtn.addEventListener('click', () => deleteMemo(memo.id));
+      item.append(deleteBtn);
+    }
+
+    memoList.append(item);
+  });
+}
+
+async function deleteMemo(memoId) {
+  if (!confirm('메모를 삭제하시겠습니까?')) return;
+
+  try {
+    await api.deleteMemo(state.selectedDate, memoId, state.calendarId);
+    await selectDay(state.selectedDate);
+    showToast('메모가 삭제되었습니다.');
+  } catch (e) {
+    showToast('메모 삭제 실패: ' + (e.message || '오류'));
+  }
+}
+
 async function selectDay(date) {
   state.selectedDate = date;
   const activeCalendarId = state.calendarId;
@@ -614,6 +669,9 @@ async function selectDay(date) {
     ${hasMemo && detail.memoAuthor ? `<div class="memo-author-line">작성: ${detail.memoAuthor.nickname || detail.memoAuthor.name}${detail.updatedAt ? ` · ${formatDateTime(detail.updatedAt)}` : ''}</div>` : ''}
   `;
   detailCode.value = detail.effectiveCode || '';
+
+  // 다중 사용자 메모 렌더링
+  renderMemos(detail.dayMemos || []);
 
   // 일반 메모와 기념일 메모를 각각 표시
   detailMemo.value = detail.memo || '';
@@ -1060,6 +1118,26 @@ legendToggle.addEventListener('click', () => {
 document.addEventListener('click', (e) => {
   if (!legendTooltip.hidden && !legendToggle.contains(e.target) && !legendTooltip.contains(e.target)) {
     legendTooltip.hidden = true;
+  }
+});
+
+// 메모 추가 폼
+memoAddForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const memoText = newMemoText.value.trim();
+  if (!memoText) {
+    showToast('메모를 입력해주세요.');
+    return;
+  }
+
+  try {
+    await api.saveMemo(state.selectedDate, { memo: memoText }, state.calendarId);
+    newMemoText.value = '';
+    await selectDay(state.selectedDate);
+    await loadCalendar(state.year, state.month, { force: true });
+    showToast('메모가 저장되었습니다.');
+  } catch (e) {
+    showToast('메모 저장 실패: ' + (e.message || '오류'));
   }
 });
 

@@ -2,6 +2,7 @@ package io.github.codeonleo.leoshift.service;
 
 import io.github.codeonleo.leoshift.dto.DayDetailResponse;
 import io.github.codeonleo.leoshift.dto.ExceptionUpdateRequest;
+import io.github.codeonleo.leoshift.dto.MemoDto;
 import io.github.codeonleo.leoshift.entity.Calendar;
 import java.time.LocalDate;
 import java.util.List;
@@ -17,11 +18,15 @@ public class DayDetailService {
 
     private final ScheduleService scheduleService;
     private final ExceptionService exceptionService;
+    private final DayMemoService dayMemoService;
 
     public DayDetailResponse load(LocalDate date, Calendar calendar) {
         return scheduleService.resolveDay(date, calendar)
-                .map(this::toResponse)
-                .orElseGet(() -> new DayDetailResponse(date, null, null, "", "", null, null, false, List.of(), null, null));
+                .map(schedule -> toResponse(schedule, calendar))
+                .orElseGet(() -> {
+                    List<MemoDto> dayMemos = dayMemoService.getMemos(date, calendar);
+                    return new DayDetailResponse(date, null, null, "", "", null, null, false, List.of(), null, null, dayMemos);
+                });
     }
 
     public DayDetailResponse save(LocalDate date, ExceptionUpdateRequest request, Calendar calendar) {
@@ -30,8 +35,9 @@ public class DayDetailService {
         return load(date, calendar);
     }
 
-    private DayDetailResponse toResponse(DaySchedule schedule) {
+    private DayDetailResponse toResponse(DaySchedule schedule, Calendar calendar) {
         ShiftCodeDefinition definition = ShiftCodeDefinition.fromCode(schedule.effectiveCode());
+        List<MemoDto> dayMemos = dayMemoService.getMemos(schedule.date(), calendar);
         return new DayDetailResponse(
                 schedule.date(),
                 schedule.baseCode(),
@@ -43,7 +49,8 @@ public class DayDetailService {
                 schedule.repeatYearly(),
                 schedule.yearlyMemos(),
                 schedule.author(),
-                schedule.updatedAt()
+                schedule.updatedAt(),
+                dayMemos
         );
     }
 
