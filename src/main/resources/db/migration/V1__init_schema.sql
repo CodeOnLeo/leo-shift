@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS user_settings (
     default_calendar_id BIGINT REFERENCES calendars(id),
     pattern_codes TEXT,
     pattern_start_date DATE,
-    notification_minutes INT
+    default_notification_minutes INT NOT NULL DEFAULT 60
 );
 
 -- exceptions 테이블 (기념일 및 근무 예외)
