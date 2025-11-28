@@ -68,6 +68,9 @@ const patternCalendarForm = document.getElementById('patternCalendarForm');
 const patternCalendarNameInput = document.getElementById('patternCalendarName');
 const patternCalendarBack = document.getElementById('patternCalendarBack');
 const patternCalendarClose = document.getElementById('patternCalendarClose');
+const patternCalendarTitle = document.getElementById('patternCalendarTitle');
+const patternCalendarSubtitle = document.getElementById('patternCalendarSubtitle');
+const patternCalendarSubmit = document.getElementById('patternCalendarSubmit');
 
 const patternManager = initPatternForm({
   sectionEl: document.getElementById('pattern-setup'),
@@ -93,6 +96,7 @@ const state = {
   year: new Date().getFullYear(),
   month: new Date().getMonth() + 1,
   patternConfigured: false,
+  usePattern: true,
   selectedDate: null,
   calendarId: null,
   calendars: [],
@@ -117,6 +121,7 @@ const inflightStores = {
 let calendarRequestSeq = 0;
 let hasPromptedPattern = false;
 let lastPatternSettings = null;
+let patternCalendarMode = 'pattern'; // 'pattern' | 'nopattern'
 
 function calendarCacheKey(calendarId, year, month) {
   return `${calendarId || 'default'}:${year}-${month}`;
@@ -247,6 +252,8 @@ async function bootstrap() {
       state.calendarId = state.calendarId
         || calendarsRes.defaultCalendarId
         || (state.calendars[0] ? state.calendars[0].id : null);
+      const currentCalendar = state.calendars.find((c) => c.id === state.calendarId);
+      state.usePattern = currentCalendar ? currentCalendar.patternEnabled !== false : true;
       renderCalendarSelector();
       renderInvites();
 
@@ -260,8 +267,7 @@ async function bootstrap() {
 
       // 설정
       const settings = bootstrapData.settings || {};
-      state.patternConfigured = settings.configured || false;
-      state.usePattern = true;
+      state.patternConfigured = state.usePattern ? (settings.configured || false) : true;
       if (!state.patternConfigured) {
         handlePatternOnboarding(settings, bootstrapData.notificationSettings);
         return;
@@ -284,7 +290,8 @@ async function bootstrap() {
           data: calData,
           today: new Date().toISOString().split('T')[0],
           selectedDate: state.selectedDate,
-          onSelectDay: (date) => selectDay(date)
+          onSelectDay: (date) => selectDay(date),
+          usePattern: state.usePattern
         });
       }
 
@@ -583,7 +590,8 @@ async function loadCalendar(year, month, { calendarId = state.calendarId, force 
     data,
     today: new Date().toISOString().split('T')[0],
     selectedDate: state.selectedDate,
-    onSelectDay: (date) => selectDay(date)
+    onSelectDay: (date) => selectDay(date),
+    usePattern: state.usePattern
   });
 
   if (prefetch) {
@@ -710,7 +718,8 @@ async function selectDay(date) {
     data: calendarData,
     today: new Date().toISOString().split('T')[0],
     selectedDate: state.selectedDate,
-    onSelectDay: (date) => selectDay(date)
+    onSelectDay: (date) => selectDay(date),
+    usePattern: state.usePattern
   });
 }
 
@@ -986,15 +995,9 @@ function handlePatternOnboarding(settings, notificationSettings) {
   openPatternChoice(settings);
 }
 
-async function ensurePatternCalendar(name) {
+async function ensureCalendar(name, patternEnabled) {
   const targetName = (name || guessPatternCalendarName()).trim() || guessPatternCalendarName();
-  const current = state.calendars.find((c) => c.id === state.calendarId && c.owned);
-  let res;
-  if (current) {
-    res = await api.updateCalendar(current.id, { name: targetName, patternEnabled: true });
-  } else {
-    res = await api.createCalendar({ name: targetName, patternEnabled: true });
-  }
+  const res = await api.createCalendar({ name: targetName, patternEnabled });
   state.calendars = res.calendars || [];
   state.calendarId = res.defaultCalendarId || (state.calendars[0] ? state.calendars[0].id : null);
   invalidateCache('settings');
@@ -1004,60 +1007,46 @@ async function ensurePatternCalendar(name) {
   return res;
 }
 
-async function disablePatternForCurrent() {
-  const current = state.calendars.find((c) => c.id === state.calendarId && c.owned);
-  if (!current) {
-    showToast('패턴을 끄려면 소유한 캘린더가 필요합니다. 새 캘린더를 만들어 주세요.');
-    return;
+function openPatternCalendarModal(mode = 'pattern') {
+  patternCalendarMode = mode;
+  if (patternCalendarModal) {
+    patternCalendarModal.hidden = false;
   }
-  if (current && current.patternEnabled !== false) {
-    const res = await api.updateCalendar(current.id, { name: current.name, patternEnabled: false });
-    state.calendars = res.calendars || [];
-    state.calendarId = res.defaultCalendarId || (state.calendars[0] ? state.calendars[0].id : null);
-    renderCalendarSelector();
-    invalidateCache('settings');
-    invalidateCache('calendar');
-    invalidateCache('shares');
+  if (patternOnboardingModal) {
+    patternOnboardingModal.hidden = true;
   }
-  state.patternConfigured = true;
-  state.usePattern = false;
-  patternManager.hide();
-  if (patternOnboardingModal) patternOnboardingModal.hidden = true;
-  if (patternCalendarModal) patternCalendarModal.hidden = true;
-  calendarSection.hidden = false;
-  settingsMenuButton.hidden = false;
-  await bootstrap();
+  if (!patternCalendarNameInput.value) {
+    patternCalendarNameInput.value = guessPatternCalendarName();
+  }
+  if (patternCalendarTitle && patternCalendarSubtitle && patternCalendarSubmit) {
+    if (mode === 'pattern') {
+      patternCalendarTitle.textContent = '패턴 캘린더 만들기';
+      patternCalendarSubtitle.textContent = '패턴을 적용할 캘린더 이름을 정해주세요.';
+      patternCalendarSubmit.textContent = '패턴 캘린더 준비';
+    } else {
+      patternCalendarTitle.textContent = '캘린더 만들기';
+      patternCalendarSubtitle.textContent = '패턴 설정은 나중에 하고 지금은 이름만 정해볼게요.';
+      patternCalendarSubmit.textContent = '캘린더 만들기';
+    }
+  }
+  patternCalendarNameInput.focus();
 }
 
 if (patternOnboardingUse) {
   patternOnboardingUse.addEventListener('click', () => {
-    patternOnboardingModal.hidden = true;
-    if (patternCalendarModal) {
-      patternCalendarModal.hidden = false;
-      if (!patternCalendarNameInput.value) {
-        patternCalendarNameInput.value = guessPatternCalendarName();
-      }
-      patternCalendarNameInput.focus();
-    } else {
-      patternManager.show((lastPatternSettings && lastPatternSettings.defaultNotificationMinutes) || 60, lastPatternSettings);
-    }
+    openPatternCalendarModal('pattern');
   });
 }
 
 if (patternOnboardingSkip) {
-  patternOnboardingSkip.addEventListener('click', async () => {
-    try {
-      await disablePatternForCurrent();
-    } catch (e) {
-      showToast('패턴 없이 보기 설정에 실패했습니다: ' + (e.message || '오류'));
-    }
+  patternOnboardingSkip.addEventListener('click', () => {
+    openPatternCalendarModal('nopattern');
   });
 }
 
 if (patternOnboardingClose) {
   patternOnboardingClose.addEventListener('click', () => {
     if (patternOnboardingModal) patternOnboardingModal.hidden = true;
-    patternManager.show((lastPatternSettings && lastPatternSettings.defaultNotificationMinutes) || 60, lastPatternSettings);
   });
 }
 
@@ -1084,20 +1073,35 @@ if (patternCalendarForm) {
       return;
     }
     try {
-      const res = await ensurePatternCalendar(name);
-      const settings = await loadPatternSettings({ force: true });
-      state.patternConfigured = settings.configured || false;
+      const wantPattern = patternCalendarMode !== 'nopattern';
+      const res = await ensureCalendar(name, wantPattern);
       if (patternCalendarModal) patternCalendarModal.hidden = true;
-      patternManager.show(settings.defaultNotificationMinutes || 60, settings);
-      calendarSection.hidden = true;
-      settingsMenuButton.hidden = true;
       if (patternOnboardingModal) patternOnboardingModal.hidden = true;
-      document.getElementById('pattern-setup')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      if (!state.patternConfigured && res.defaultCalendarId) {
-        state.calendarId = res.defaultCalendarId;
+
+      if (wantPattern) {
+        const settings = await loadPatternSettings({ force: true });
+        state.patternConfigured = settings.configured || false;
+        patternManager.show(settings.defaultNotificationMinutes || 60, settings);
+        calendarSection.hidden = true;
+        settingsMenuButton.hidden = true;
+        document.getElementById('pattern-setup')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        if (!state.patternConfigured && res.defaultCalendarId) {
+          state.calendarId = res.defaultCalendarId;
+        }
+      } else {
+        state.usePattern = false;
+        state.patternConfigured = true;
+        hasPromptedPattern = true;
+        patternManager.hide();
+        calendarSection.hidden = false;
+        settingsMenuButton.hidden = false;
+        await Promise.all([
+          loadCalendar(state.year, state.month, { force: true }).catch(() => null),
+          loadShares({ force: true }).catch(() => null)
+        ]);
       }
     } catch (e) {
-      showToast('패턴 캘린더 준비에 실패했습니다: ' + (e.message || '오류'));
+      showToast('캘린더 준비에 실패했습니다: ' + (e.message || '오류'));
     }
   });
 }

@@ -33,17 +33,17 @@
     <div id="patternCalendarModal" class="modal" hidden>
       <div class="modal-content">
         <div class="modal-header">
-          <h2>패턴 캘린더 만들기</h2>
+          <h2 id="patternCalendarTitle">패턴 캘린더 만들기</h2>
           <button type="button" class="modal-close" id="patternCalendarClose">&times;</button>
         </div>
         <form class="modal-body pattern-calendar-form" id="patternCalendarForm">
-          <p class="onboarding-text">패턴을 적용할 캘린더 이름을 정해주세요.</p>
+          <p class="onboarding-text" id="patternCalendarSubtitle">패턴을 적용할 캘린더 이름을 정해주세요.</p>
           <label>
             캘린더 이름
             <input type="text" id="patternCalendarName" placeholder="예: 내 근무표" maxlength="100" required />
           </label>
           <div class="onboarding-actions">
-            <button type="submit" class="primary">패턴 캘린더 준비</button>
+            <button type="submit" class="primary" id="patternCalendarSubmit">패턴 캘린더 준비</button>
             <button type="button" class="secondary" id="patternCalendarBack">이전</button>
           </div>
         </form>

@@ -24,13 +24,14 @@ export function renderCalendar({
   data,
   today,
   selectedDate,
-  onSelectDay
+  onSelectDay,
+  usePattern = true
 }) {
   gridEl.innerHTML = '';
   // Clear only summary items, preserve the legend button
   const summaryItems = summaryEl.querySelectorAll('.summary-item');
   summaryItems.forEach(item => item.remove());
-  if (!data.patternConfigured) {
+  if (usePattern && !data.patternConfigured) {
     gridEl.innerHTML = '<p>Please configure your pattern first.</p>';
     return;
   }
@@ -55,7 +56,7 @@ export function renderCalendar({
       cell.classList.add('other-month');
     }
 
-    if (day.effectiveCode) {
+    if (usePattern && day.effectiveCode) {
       cell.dataset.code = day.effectiveCode;
     }
     if (day.date === today) {
@@ -69,9 +70,12 @@ export function renderCalendar({
     dateLabel.textContent = new Date(day.date).getDate();
     const codeLabel = document.createElement('div');
     codeLabel.className = 'shift-code';
-    codeLabel.textContent = day.effectiveCode || '-';
+    codeLabel.textContent = usePattern ? (day.effectiveCode || '-') : '';
 
-    cell.append(dateLabel, codeLabel);
+    cell.append(dateLabel);
+    if (usePattern) {
+      cell.append(codeLabel);
+    }
 
     // 기념일 메모를 먼저 표시 (당일 + 반복)
     const allAnniversaries = [...(day.anniversaryMemos || []), ...(day.yearlyMemos || [])];
@@ -157,7 +161,7 @@ export function renderCalendar({
     gridEl.appendChild(cell);
   });
 
-  if (data.summary) {
+  if (usePattern && data.summary) {
     Object.entries(data.summary).forEach(([code, count]) => {
       const item = document.createElement('div');
       item.className = 'summary-item';
