@@ -94,8 +94,9 @@ export function renderCalendar({
     if (day.memoAuthor) {
       const tag = document.createElement('div');
       tag.className = 'memo-author-tag';
-      tag.textContent = initials(day.memoAuthor.name || '');
-      tag.title = `${day.memoAuthor.name || '작성자'}${day.updatedAt ? ` · ${formatDate(day.updatedAt)}` : ''}`;
+      const authorName = day.memoAuthor.nickname || day.memoAuthor.name || '';
+      tag.textContent = initials(authorName);
+      tag.title = `${authorName || '작성자'}${day.updatedAt ? ` · ${formatDate(day.updatedAt)}` : ''}`;
       if (day.memoAuthor.color) {
         tag.style.backgroundColor = day.memoAuthor.color;
         tag.style.color = '#fff';

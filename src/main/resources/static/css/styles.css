@@ -389,9 +389,10 @@ section h2 {
   background: #e8f0ff;
   color: #0a64ff;
   border-radius: 999px;
-  padding: 2px 8px;
-  font-size: 0.7rem;
+  padding: 2px 6px;
+  font-size: 0.6rem;
   font-weight: 700;
+  white-space: nowrap;
 }
 
 /* Legend Tooltip */
