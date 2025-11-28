@@ -20,10 +20,8 @@ const modalClose = document.getElementById('modalClose');
 const dayDetailPanel = document.getElementById('dayDetailPanel');
 const dayDetailForm = document.getElementById('dayDetailForm');
 const detailCode = document.getElementById('detailCode');
-const detailMemo = document.getElementById('detailMemo');
 const repeatYearly = document.getElementById('repeatYearly');
 const anniversaryMemo = document.getElementById('anniversaryMemo');
-const clearMemoButton = document.getElementById('clearMemo');
 const clearAnniversaryButton = document.getElementById('clearAnniversary');
 const patternDisabledHint = document.getElementById('patternDisabledHint');
 const memoList = document.getElementById('memoList');
@@ -673,9 +671,6 @@ async function selectDay(date) {
   // 다중 사용자 메모 렌더링
   renderMemos(detail.dayMemos || []);
 
-  // 일반 메모와 기념일 메모를 각각 표시
-  detailMemo.value = detail.memo || '';
-
   // 기념일 메모: 당일 것이 있으면 우선, 없으면 yearlyMemos에서 첫 번째 것 사용
   if (detail.anniversaryMemo) {
     anniversaryMemo.value = detail.anniversaryMemo;
@@ -687,9 +682,6 @@ async function selectDay(date) {
     anniversaryMemo.value = '';
     repeatYearly.checked = false;
   }
-
-  // 메모 지우기 버튼 표시 여부
-  clearMemoButton.style.display = detail.memo ? 'block' : 'none';
 
   // 기념일 지우기 버튼 표시 여부
   clearAnniversaryButton.style.display = (detail.anniversaryMemo || (detail.yearlyMemos && detail.yearlyMemos.length > 0)) ? 'block' : 'none';
@@ -966,13 +958,6 @@ dayModal.addEventListener('click', (e) => {
 
 // 기념일 체크박스는 별도 기능 없음 (매년 반복 여부만 결정)
 
-// 메모 지우기 버튼
-clearMemoButton.addEventListener('click', () => {
-  if (confirm('메모를 삭제하시겠습니까?')) {
-    detailMemo.value = '';
-  }
-});
-
 // 기념일 지우기 버튼
 clearAnniversaryButton.addEventListener('click', async () => {
   const detail = await fetchDay(state.selectedDate, { calendarId: state.calendarId });
@@ -1025,10 +1010,9 @@ dayDetailForm.addEventListener('submit', async (event) => {
   }
 
   try {
-    // 일반 메모와 기념일 메모를 각각 저장
+    // 기념일 메모 저장
     const savedDetail = await api.saveDay(state.selectedDate, {
       customCode: detailCode.value || null,
-      memo: detailMemo.value || null,
       anniversaryMemo: anniversaryMemo.value || null,
       repeatYearly: repeatYearly.checked
     }, state.calendarId);
@@ -1054,8 +1038,7 @@ dayDetailForm.addEventListener('submit', async (event) => {
       ${hasMemo && detail.memoAuthor ? `<div class="memo-author-line">작성: ${detail.memoAuthor.nickname || detail.memoAuthor.name}${detail.updatedAt ? ` · ${formatDateTime(detail.updatedAt)}` : ''}</div>` : ''}
     `;
 
-    // 메모 지우기 버튼 표시 여부 업데이트
-    clearMemoButton.style.display = detail.memo ? 'block' : 'none';
+    // 기념일 메모 지우기 버튼 표시 여부 업데이트
     clearAnniversaryButton.style.display = (detail.anniversaryMemo || (detail.yearlyMemos && detail.yearlyMemos.length > 0)) ? 'block' : 'none';
 
     showToast('저장되었습니다.');

@@ -383,9 +383,17 @@ section h2 {
   white-space: normal;
 }
 
-.memo-author-tag {
+.memo-author-tags {
   margin-top: auto;
-  align-self: flex-end;
+  display: flex;
+  flex-direction: row;
+  gap: 0.2rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  width: 100%;
+}
+
+.memo-author-tag {
   background: #e8f0ff;
   color: #0a64ff;
   border-radius: 999px;

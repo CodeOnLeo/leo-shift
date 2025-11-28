@@ -92,6 +92,9 @@ export function renderCalendar({
 
     // 작성자 태그 (다중 사용자 메모)
     if (day.dayMemos && day.dayMemos.length > 0) {
+      const tagContainer = document.createElement('div');
+      tagContainer.className = 'memo-author-tags';
+
       day.dayMemos.forEach(memo => {
         const tag = document.createElement('div');
         tag.className = 'memo-author-tag';
@@ -103,8 +106,10 @@ export function renderCalendar({
           tag.style.color = '#fff';
           tag.style.border = '1px solid rgba(0,0,0,0.08)';
         }
-        cell.append(tag);
+        tagContainer.append(tag);
       });
+
+      cell.append(tagContainer);
     } else if (day.memoAuthor) {
       // 기존 호환성 유지 (deprecated)
       const tag = document.createElement('div');
