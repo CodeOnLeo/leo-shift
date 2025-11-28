@@ -37,9 +37,8 @@ public class ExceptionService {
         entity.setAnniversaryMemo(StringUtils.hasText(anniversaryMemo) ? anniversaryMemo.trim() : null);
         entity.setRepeatYearly(repeatYearly);
 
-        // 메모나 기념일 메모가 있을 때만 author 설정, 없으면 null로 초기화
-        boolean hasMemoContent = StringUtils.hasText(memo) || StringUtils.hasText(anniversaryMemo);
-        if (hasMemoContent) {
+        // 일반 메모가 있을 때만 author 설정, 기념일 메모는 작성자 표시 안 함
+        if (StringUtils.hasText(memo)) {
             User author = calendarAccessService.getCurrentUser();
             entity.setAuthor(author);
         } else {

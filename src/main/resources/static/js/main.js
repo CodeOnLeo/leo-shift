@@ -965,6 +965,8 @@ clearAnniversaryButton.addEventListener('click', async () => {
   // yearlyMemos가 있고 현재 날짜에 anniversaryMemo가 없으면, 다른 년도에서 반복되는 것
   const isYearlyFromOtherYear = !detail.anniversaryMemo && detail.yearlyMemos && detail.yearlyMemos.length > 0;
 
+  let shouldSave = false;
+
   if (isYearlyFromOtherYear) {
     // 다른 년도의 반복 기념일인 경우
     const selectedDate = new Date(state.selectedDate);
@@ -977,7 +979,7 @@ clearAnniversaryButton.addEventListener('click', async () => {
       // 해당 날짜만 숨기기
       anniversaryMemo.value = '';
       repeatYearly.checked = false;
-      alert('변경사항을 저장하면 이 날짜에서만 숨겨집니다.');
+      shouldSave = true;
     }
   } else if (repeatYearly.checked) {
     // 매년 반복이 설정된 기념일 (원본)
@@ -986,41 +988,57 @@ clearAnniversaryButton.addEventListener('click', async () => {
 
     const choice = confirm(`이 기념일을 삭제하시겠습니까?\n\n확인: ${currentYear}년부터 이후 모든 연도에서 삭제\n취소: ${currentYear}년에만 삭제`);
 
-    anniversaryMemo.value = '';
-    repeatYearly.checked = false;
-
-    if (choice) {
-      alert(`변경사항을 저장하면 ${currentYear}년부터 모든 연도에서 삭제됩니다.\n(${currentYear}년 이전 과거 기록은 유지됩니다)`);
-    } else {
-      alert(`변경사항을 저장하면 ${currentYear}년에서만 삭제됩니다.`);
+    if (choice !== null) {
+      anniversaryMemo.value = '';
+      repeatYearly.checked = false;
+      shouldSave = true;
     }
   } else {
     if (confirm('기념일을 삭제하시겠습니까?')) {
       anniversaryMemo.value = '';
       repeatYearly.checked = false;
+      shouldSave = true;
+    }
+  }
+
+  // 자동 저장
+  if (shouldSave) {
+    try {
+      const savedDetail = await api.saveDay(state.selectedDate, {
+        customCode: detailCode.value || null,
+        anniversaryMemo: anniversaryMemo.value || null,
+        repeatYearly: repeatYearly.checked
+      }, state.calendarId);
+
+      // 캘린더 새로고침
+      await refreshCalendar();
+
+      // 기념일 지우기 버튼 숨기기
+      clearAnniversaryButton.style.display = 'none';
+
+      showToast('기념일이 삭제되었습니다.');
+    } catch (error) {
+      console.error('기념일 삭제 실패:', error);
+      showToast('삭제에 실패했습니다.');
     }
   }
 });
 
-dayDetailForm.addEventListener('submit', async (event) => {
-  event.preventDefault();
+// 공통 저장 함수
+async function saveDayDetail(showSuccessToast = true) {
   if (!state.selectedDate) {
-    alert('날짜를 먼저 선택하세요.');
     return;
   }
 
   try {
-    // 기념일 메모 저장
     const savedDetail = await api.saveDay(state.selectedDate, {
       customCode: detailCode.value || null,
       anniversaryMemo: anniversaryMemo.value || null,
       repeatYearly: repeatYearly.checked
     }, state.calendarId);
 
-    // 캘린더 그리드와 모달 내용 병렬 업데이트
-    const [calendarData] = await Promise.all([
-      loadCalendar(state.year, state.month, { force: true })
-    ]);
+    // 캘린더 새로고침
+    await refreshCalendar();
 
     const detail = savedDetail || await fetchDay(state.selectedDate, { calendarId: state.calendarId, force: true });
     // 저장 결과를 캐시에 반영
@@ -1041,11 +1059,38 @@ dayDetailForm.addEventListener('submit', async (event) => {
     // 기념일 메모 지우기 버튼 표시 여부 업데이트
     clearAnniversaryButton.style.display = (detail.anniversaryMemo || (detail.yearlyMemos && detail.yearlyMemos.length > 0)) ? 'block' : 'none';
 
-    showToast('저장되었습니다.');
-    closeModal();
+    if (showSuccessToast) {
+      showToast('저장되었습니다.');
+    }
   } catch (e) {
     showToast('저장 실패: ' + (e.message || '오류'));
   }
+}
+
+// 근무 패턴(customCode) 변경 시 자동 저장
+detailCode.addEventListener('change', async () => {
+  await saveDayDetail();
+});
+
+// 기념일 메모 변경 시 자동 저장 (포커스 해제 시)
+let anniversaryMemoOriginalValue = '';
+anniversaryMemo.addEventListener('focus', () => {
+  anniversaryMemoOriginalValue = anniversaryMemo.value;
+});
+anniversaryMemo.addEventListener('blur', async () => {
+  if (anniversaryMemo.value !== anniversaryMemoOriginalValue) {
+    await saveDayDetail();
+  }
+});
+
+// 매년 반복 체크박스 변경 시 자동 저장
+repeatYearly.addEventListener('change', async () => {
+  await saveDayDetail();
+});
+
+// form submit은 preventDefault만 (저장 버튼이 닫기로 변경되어 제출되지 않음)
+dayDetailForm.addEventListener('submit', (event) => {
+  event.preventDefault();
 });
 
 notificationForm.addEventListener('submit', async (event) => {
