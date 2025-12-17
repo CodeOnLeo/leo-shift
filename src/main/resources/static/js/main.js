@@ -1,7 +1,6 @@
 import { api } from './api.js';
 import { renderCalendar } from './calendar.js';
 import { initPatternForm } from './pattern.js';
-import { enablePushSubscription } from './notifications.js';
 import { setLoadingHooks } from './api.js';
 
 const calendarSection = document.getElementById('calendar-section');
@@ -36,7 +35,6 @@ const loadingOverlay = document.getElementById('loadingOverlay');
 const notificationForm = document.getElementById('notificationForm');
 const notificationHoursInput = document.getElementById('notificationHours');
 const notificationMinutesInput = document.getElementById('notificationMinutes');
-const subscribePushButton = document.getElementById('subscribePush');
 const resetPatternButton = document.getElementById('resetPattern');
 const calendarSelector = document.getElementById('calendarSelector');
 const calendarSelectorButton = document.getElementById('calendarSelectorButton');
@@ -103,6 +101,16 @@ const state = {
   me: null,
   calendarData: null
 };
+
+function getCurrentCalendar() {
+  return state.calendars.find((c) => c.id === state.calendarId) || null;
+}
+
+function isCalendarEditable() {
+  const current = getCurrentCalendar();
+  if (!current) return true;
+  return current.owned || current.editable || current.permission === 'EDIT';
+}
 
 const CACHE_TTL_MS = 3 * 60 * 1000; // 3분 캐시
 const cacheStores = {
@@ -601,7 +609,19 @@ async function loadCalendar(year, month, { calendarId = state.calendarId, force 
   return data;
 }
 
-function renderMemos(memos) {
+function setMemoFormEnabled(enabled) {
+  if (!memoAddForm) return;
+  memoAddForm.classList.toggle('disabled', !enabled);
+  const submitBtn = memoAddForm.querySelector('button[type="submit"]');
+  if (submitBtn) {
+    submitBtn.disabled = !enabled;
+  }
+  if (newMemoText) {
+    newMemoText.disabled = !enabled;
+  }
+}
+
+function renderMemos(memos, canEdit = true) {
   memoList.innerHTML = '';
   if (!memos || memos.length === 0) {
     memoList.innerHTML = '<div class="memo-empty">메모가 없습니다</div>';
@@ -628,7 +648,7 @@ function renderMemos(memos) {
     content.append(text, meta);
     item.append(content);
 
-    if (memo.isOwn) {
+    if (memo.isOwn && canEdit) {
       const deleteBtn = document.createElement('button');
       deleteBtn.className = 'memo-delete-btn';
       deleteBtn.textContent = '삭제';
@@ -642,6 +662,10 @@ function renderMemos(memos) {
 }
 
 async function deleteMemo(memoId) {
+  if (!isCalendarEditable()) {
+    showToast('읽기 전용 캘린더입니다.');
+    return;
+  }
   if (!confirm('메모를 삭제하시겠습니까?')) return;
 
   try {
@@ -654,73 +678,85 @@ async function deleteMemo(memoId) {
 }
 
 async function selectDay(date) {
-  state.selectedDate = date;
-  const activeCalendarId = state.calendarId;
+  try {
+    state.selectedDate = date;
+    const activeCalendarId = state.calendarId;
+    const canEdit = isCalendarEditable();
 
-  // 날짜 상세 조회와 캘린더 데이터를 병렬로 가져오기
-  const cachedCalendar = getCachedCalendarData(state.year, state.month);
-  const [detail, calendarData] = await Promise.all([
-    fetchDay(date, { calendarId: activeCalendarId }),
-    cachedCalendar ? Promise.resolve(cachedCalendar) : fetchCalendar(state.year, state.month, { calendarId: activeCalendarId })
-  ]);
+    // 날짜 상세 조회와 캘린더 데이터를 병렬로 가져오기
+    const cachedCalendar = getCachedCalendarData(state.year, state.month);
+    const [detail, calendarData] = await Promise.all([
+      fetchDay(date, { calendarId: activeCalendarId }),
+      cachedCalendar ? Promise.resolve(cachedCalendar) : fetchCalendar(state.year, state.month, { calendarId: activeCalendarId })
+    ]);
 
-  dayModal.hidden = false;
-  state.calendarData = calendarData;
-  const hasMemo = detail.memo || detail.anniversaryMemo || (detail.yearlyMemos && detail.yearlyMemos.length > 0);
-  dayDetailPanel.innerHTML = `
-    <strong>${formatKoreanDate(date)}</strong>
-    <span>기본 근무: ${detail.baseCode || '-'}</span>
-    <span>실제 근무: ${detail.effectiveCode || '-'}</span>
-    <span>${detail.shiftLabel || ''} · ${detail.timeRange || ''}</span>
-    <small>${[detail.memo, detail.anniversaryMemo, ...(detail.yearlyMemos || [])].filter(Boolean).join(' • ')}</small>
-    ${hasMemo && detail.memoAuthor ? `<div class="memo-author-line">작성: ${detail.memoAuthor.nickname || detail.memoAuthor.name}${detail.updatedAt ? ` · ${formatDateTime(detail.updatedAt)}` : ''}</div>` : ''}
-  `;
-  detailCode.value = detail.effectiveCode || '';
+    dayModal.hidden = false;
+    state.calendarData = calendarData;
+    const hasMemo = detail.memo || detail.anniversaryMemo || (detail.yearlyMemos && detail.yearlyMemos.length > 0);
+    dayDetailPanel.innerHTML = `
+      <strong>${formatKoreanDate(date)}</strong>
+      <span>기본 근무: ${detail.baseCode || '-'}</span>
+      <span>실제 근무: ${detail.effectiveCode || '-'}</span>
+      <span>${detail.shiftLabel || ''} · ${detail.timeRange || ''}</span>
+      <small>${[detail.memo, detail.anniversaryMemo, ...(detail.yearlyMemos || [])].filter(Boolean).join(' • ')}</small>
+      ${hasMemo && detail.memoAuthor ? `<div class="memo-author-line">작성: ${detail.memoAuthor.nickname || detail.memoAuthor.name}${detail.updatedAt ? ` · ${formatDateTime(detail.updatedAt)}` : ''}</div>` : ''}
+    `;
+    detailCode.value = detail.effectiveCode || '';
 
-  // 다중 사용자 메모 렌더링
-  renderMemos(detail.dayMemos || []);
+    // 다중 사용자 메모 렌더링
+    renderMemos(detail.dayMemos || [], canEdit);
 
-  // 기념일 메모: 당일 것이 있으면 우선, 없으면 yearlyMemos에서 첫 번째 것 사용
-  if (detail.anniversaryMemo) {
-    anniversaryMemo.value = detail.anniversaryMemo;
-    repeatYearly.checked = detail.repeatYearly;
-  } else if (detail.yearlyMemos && detail.yearlyMemos.length > 0) {
-    anniversaryMemo.value = detail.yearlyMemos[0];
-    repeatYearly.checked = true; // yearlyMemos에 있다는 것은 반복 설정된 것
-  } else {
-    anniversaryMemo.value = '';
-    repeatYearly.checked = false;
-  }
-
-  // 기념일 지우기 버튼 표시 여부
-  clearAnniversaryButton.style.display = (detail.anniversaryMemo || (detail.yearlyMemos && detail.yearlyMemos.length > 0)) ? 'block' : 'none';
-
-  // 패턴 사용 안 하는 캘린더면 코드 선택 비활성
-  if (state.usePattern === false) {
-    detailCode.value = '';
-    detailCode.disabled = true;
-    patternFields.forEach(el => el.setAttribute('disabled', 'true'));
-    if (patternDisabledHint) {
-      patternDisabledHint.hidden = false;
+    // 기념일 메모: 당일 것이 있으면 우선, 없으면 yearlyMemos에서 첫 번째 것 사용
+    if (detail.anniversaryMemo) {
+      anniversaryMemo.value = detail.anniversaryMemo;
+      repeatYearly.checked = detail.repeatYearly;
+    } else if (detail.yearlyMemos && detail.yearlyMemos.length > 0) {
+      anniversaryMemo.value = detail.yearlyMemos[0];
+      repeatYearly.checked = true; // yearlyMemos에 있다는 것은 반복 설정된 것
+    } else {
+      anniversaryMemo.value = '';
+      repeatYearly.checked = false;
     }
-  } else {
-    detailCode.disabled = false;
-    patternFields.forEach(el => el.removeAttribute('disabled'));
-    if (patternDisabledHint) {
-      patternDisabledHint.hidden = true;
-    }
-  }
 
-  // 선택된 날짜를 표시하기 위해 캘린더 렌더링
-  renderCalendar({
-    gridEl: calendarGrid,
-    summaryEl: summaryList,
-    data: calendarData,
-    today: new Date().toISOString().split('T')[0],
-    selectedDate: state.selectedDate,
-    onSelectDay: (date) => selectDay(date),
-    usePattern: state.usePattern
-  });
+    const hasAnniversary = detail.anniversaryMemo || (detail.yearlyMemos && detail.yearlyMemos.length > 0);
+    clearAnniversaryButton.style.display = canEdit && hasAnniversary ? 'block' : 'none';
+    clearAnniversaryButton.disabled = !canEdit;
+
+    // 패턴 사용 안 하는 캘린더거나 읽기 전용이면 코드 선택 비활성
+    if (state.usePattern === false || !canEdit) {
+      if (state.usePattern === false) {
+        detailCode.value = '';
+      }
+      detailCode.disabled = true;
+      patternFields.forEach(el => el.setAttribute('disabled', 'true'));
+      if (patternDisabledHint) {
+        patternDisabledHint.hidden = state.usePattern !== false;
+      }
+    } else {
+      detailCode.disabled = false;
+      patternFields.forEach(el => el.removeAttribute('disabled'));
+      if (patternDisabledHint) {
+        patternDisabledHint.hidden = true;
+      }
+    }
+
+    // 메모 추가/수정 가능 여부 표시
+    setMemoFormEnabled(canEdit);
+
+    // 선택된 날짜를 표시하기 위해 캘린더 렌더링
+    renderCalendar({
+      gridEl: calendarGrid,
+      summaryEl: summaryList,
+      data: calendarData,
+      today: new Date().toISOString().split('T')[0],
+      selectedDate: state.selectedDate,
+      onSelectDay: (date) => selectDay(date),
+      usePattern: state.usePattern
+    });
+  } catch (e) {
+    console.error('Failed to load day detail', e);
+    showToast(e.message || '날짜 정보를 불러오지 못했습니다.');
+  }
 }
 
 function closeModal() {
@@ -1118,73 +1154,87 @@ dayModal.addEventListener('click', (e) => {
 
 // 기념일 지우기 버튼
 clearAnniversaryButton.addEventListener('click', async () => {
-  const detail = await fetchDay(state.selectedDate, { calendarId: state.calendarId });
-
-  // yearlyMemos가 있고 현재 날짜에 anniversaryMemo가 없으면, 다른 년도에서 반복되는 것
-  const isYearlyFromOtherYear = !detail.anniversaryMemo && detail.yearlyMemos && detail.yearlyMemos.length > 0;
-
-  let shouldSave = false;
-
-  if (isYearlyFromOtherYear) {
-    // 다른 년도의 반복 기념일인 경우
-    const selectedDate = new Date(state.selectedDate);
-    const currentYear = selectedDate.getFullYear();
-
-    if (confirm(`이 기념일은 다른 년도에 등록된 매년 반복 기념일입니다.\n\n삭제 옵션:\n확인: ${currentYear}년 이후로 더 이상 표시 안 함\n취소: 이 날짜(${currentYear}년)에서만 숨김`)) {
-      // 이 날짜 이후로 반복 중지
-      alert(`원본 기념일이 등록된 년도로 이동하여 "매년 반복"을 해제해야 ${currentYear}년 이후 반복이 중지됩니다.\n\n또는 이 날짜에서 빈 값으로 저장하면 이 날짜에서만 숨겨집니다.`);
-    } else {
-      // 해당 날짜만 숨기기
-      anniversaryMemo.value = '';
-      repeatYearly.checked = false;
-      shouldSave = true;
-    }
-  } else if (repeatYearly.checked) {
-    // 매년 반복이 설정된 기념일 (원본)
-    const selectedDate = new Date(state.selectedDate);
-    const currentYear = selectedDate.getFullYear();
-
-    const choice = confirm(`이 기념일을 삭제하시겠습니까?\n\n확인: ${currentYear}년부터 이후 모든 연도에서 삭제\n취소: ${currentYear}년에만 삭제`);
-
-    if (choice !== null) {
-      anniversaryMemo.value = '';
-      repeatYearly.checked = false;
-      shouldSave = true;
-    }
-  } else {
-    if (confirm('기념일을 삭제하시겠습니까?')) {
-      anniversaryMemo.value = '';
-      repeatYearly.checked = false;
-      shouldSave = true;
-    }
+  if (!isCalendarEditable()) {
+    showToast('읽기 전용 캘린더입니다.');
+    return;
   }
+  try {
+    const detail = await fetchDay(state.selectedDate, { calendarId: state.calendarId });
 
-  // 자동 저장
-  if (shouldSave) {
-    try {
-      const savedDetail = await api.saveDay(state.selectedDate, {
-        customCode: detailCode.value || null,
-        anniversaryMemo: anniversaryMemo.value || null,
-        repeatYearly: repeatYearly.checked
-      }, state.calendarId);
+    // yearlyMemos가 있고 현재 날짜에 anniversaryMemo가 없으면, 다른 년도에서 반복되는 것
+    const isYearlyFromOtherYear = !detail.anniversaryMemo && detail.yearlyMemos && detail.yearlyMemos.length > 0;
 
-      // 캘린더 새로고침
-      await refreshCalendar();
+    let shouldSave = false;
 
-      // 기념일 지우기 버튼 숨기기
-      clearAnniversaryButton.style.display = 'none';
+    if (isYearlyFromOtherYear) {
+      // 다른 년도의 반복 기념일인 경우
+      const selectedDate = new Date(state.selectedDate);
+      const currentYear = selectedDate.getFullYear();
 
-      showToast('기념일이 삭제되었습니다.');
-    } catch (error) {
-      console.error('기념일 삭제 실패:', error);
-      showToast('삭제에 실패했습니다.');
+      if (confirm(`이 기념일은 다른 년도에 등록된 매년 반복 기념일입니다.\n\n삭제 옵션:\n확인: ${currentYear}년 이후로 더 이상 표시 안 함\n취소: 이 날짜(${currentYear}년)에서만 숨김`)) {
+        // 이 날짜 이후로 반복 중지
+        alert(`원본 기념일이 등록된 년도로 이동하여 "매년 반복"을 해제해야 ${currentYear}년 이후 반복이 중지됩니다.\n\n또는 이 날짜에서 빈 값으로 저장하면 이 날짜에서만 숨겨집니다.`);
+      } else {
+        // 해당 날짜만 숨기기
+        anniversaryMemo.value = '';
+        repeatYearly.checked = false;
+        shouldSave = true;
+      }
+    } else if (repeatYearly.checked) {
+      // 매년 반복이 설정된 기념일 (원본)
+      const selectedDate = new Date(state.selectedDate);
+      const currentYear = selectedDate.getFullYear();
+
+      const choice = confirm(`이 기념일을 삭제하시겠습니까?\n\n확인: ${currentYear}년부터 이후 모든 연도에서 삭제\n취소: ${currentYear}년에만 삭제`);
+
+      if (choice !== null) {
+        anniversaryMemo.value = '';
+        repeatYearly.checked = false;
+        shouldSave = true;
+      }
+    } else if (anniversaryMemo.value) {
+      if (confirm('기념일을 삭제하시겠습니까?')) {
+        anniversaryMemo.value = '';
+        repeatYearly.checked = false;
+        shouldSave = true;
+      }
+    } else {
+      showToast('삭제할 기념일이 없습니다.');
     }
+
+    // 자동 저장
+    if (shouldSave) {
+      try {
+        const savedDetail = await api.saveDay(state.selectedDate, {
+          customCode: detailCode.value || null,
+          anniversaryMemo: anniversaryMemo.value || null,
+          repeatYearly: repeatYearly.checked
+        }, state.calendarId);
+
+        // 캘린더 새로고침
+        await refreshCalendar();
+
+        // 기념일 지우기 버튼 숨기기
+        clearAnniversaryButton.style.display = 'none';
+
+        showToast('기념일이 삭제되었습니다.');
+      } catch (error) {
+        console.error('기념일 삭제 실패:', error);
+        showToast('삭제에 실패했습니다.');
+      }
+    }
+  } catch (e) {
+    showToast(e.message || '기념일을 불러오지 못했습니다.');
   }
 });
 
 // 공통 저장 함수
 async function saveDayDetail(showSuccessToast = true) {
   if (!state.selectedDate) {
+    return;
+  }
+  if (!isCalendarEditable()) {
+    showToast('읽기 전용 캘린더입니다.');
     return;
   }
 
@@ -1270,8 +1320,6 @@ notificationForm.addEventListener('submit', async (event) => {
   alert('알림 설정이 저장되었습니다.');
 });
 
-subscribePushButton.addEventListener('click', () => enablePushSubscription());
-
 resetPatternButton.addEventListener('click', async () => {
   if (!confirm('근무 패턴을 재설정하시겠습니까?')) return;
   const settings = await api.getSettings();
@@ -1310,6 +1358,10 @@ document.addEventListener('click', (e) => {
 // 메모 추가 폼
 memoAddForm.addEventListener('submit', async (event) => {
   event.preventDefault();
+  if (!isCalendarEditable()) {
+    showToast('읽기 전용 캘린더입니다.');
+    return;
+  }
   const memoText = newMemoText.value.trim();
   if (!memoText) {
     showToast('메모를 입력해주세요.');
@@ -1374,10 +1426,6 @@ window.logout = async function() {
     }
   }
 };
-
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js');
-}
 
 if (checkAuth()) {
   bootstrap();

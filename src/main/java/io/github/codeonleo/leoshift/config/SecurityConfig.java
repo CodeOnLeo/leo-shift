@@ -1,6 +1,5 @@
 package io.github.codeonleo.leoshift.config;
 
-import io.github.codeonleo.leoshift.security.ApiKeyAuthenticationFilter;
 import io.github.codeonleo.leoshift.security.CustomUserDetailsService;
 import io.github.codeonleo.leoshift.security.JwtAuthenticationFilter;
 import io.github.codeonleo.leoshift.security.oauth2.CustomOAuth2UserService;
@@ -39,7 +38,6 @@ public class SecurityConfig {
 
     private final CustomUserDetailsService customUserDetailsService;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
-    private final ApiKeyAuthenticationFilter apiKeyAuthenticationFilter;
     private final CustomOAuth2UserService customOAuth2UserService;
     private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
     private final OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler;
@@ -84,7 +82,6 @@ public class SecurityConfig {
                                 "/login.html",
                                 "/index.html",
                                 "/manifest.json",
-                                "/sw.js",
                                 "/css/**",
                                 "/js/**",
                                 "/icons/**",
@@ -93,7 +90,6 @@ public class SecurityConfig {
                                 "/api/auth/signup",
                                 "/api/auth/login",
                                 "/api/auth/refresh",
-                                "/api/push/send-scheduled-reminder",
                                 "/oauth2/**",
                                 "/login/oauth2/**"
                         ).permitAll()
@@ -126,7 +122,6 @@ public class SecurityConfig {
                         .failureHandler(oAuth2AuthenticationFailureHandler)
                 )
                 .authenticationProvider(authenticationProvider())
-                .addFilterBefore(apiKeyAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
