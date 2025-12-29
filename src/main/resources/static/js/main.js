@@ -481,7 +481,10 @@ function renderCalendarSelector() {
   });
   const current = state.calendars.find(c => c.id === state.calendarId);
   state.usePattern = current ? current.patternEnabled !== false : false;
-  calendarSelectorButton.textContent = current?.name || '캘린더 선택';
+  const currentLabel = current
+    ? `${current.name}${current.owned ? '' : ` · ${current.ownerName || ''}`}`
+    : '캘린더 선택';
+  calendarSelectorButton.textContent = currentLabel;
   syncCalendarEditForm();
   updateCalendarEmptyState();
 }
