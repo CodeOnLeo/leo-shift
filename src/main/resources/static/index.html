@@ -25,6 +25,7 @@
           <div class="onboarding-actions">
             <button type="button" class="primary" id="patternOnboardingUse">패턴 사용하기</button>
             <button type="button" class="secondary" id="patternOnboardingSkip">패턴 없이 보기</button>
+            <button type="button" class="secondary" id="patternOnboardingNoCalendar">캘린더 없이 시작</button>
           </div>
         </div>
       </div>
@@ -147,6 +148,10 @@
           <div id="calendarSelectorList" class="calendar-selector-list" hidden></div>
         </div>
         <button type="button" id="settingsMenuButton" class="settings-icon-button" hidden title="설정">⚙</button>
+      </div>
+      <div class="calendar-empty" id="calendarEmpty" hidden>
+        <strong>캘린더가 없습니다.</strong>
+        <span>설정에서 새 캘린더를 만들거나 공유 초대를 수락해 주세요.</span>
       </div>
       <div class="calendar-grid" id="calendarGrid"></div>
       <div class="summary-list" id="summaryList">

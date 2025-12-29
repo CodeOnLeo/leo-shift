@@ -6,6 +6,7 @@ import { setLoadingHooks } from './api.js';
 const calendarSection = document.getElementById('calendar-section');
 const calendarTitle = document.getElementById('calendarTitle');
 const calendarGrid = document.getElementById('calendarGrid');
+const calendarEmpty = document.getElementById('calendarEmpty');
 const summaryList = document.getElementById('summaryList');
 const prevMonthBtn = document.getElementById('prevMonth');
 const nextMonthBtn = document.getElementById('nextMonth');
@@ -60,6 +61,7 @@ const deleteCalendarButton = document.getElementById('deleteCalendarButton');
 const patternOnboardingModal = document.getElementById('patternOnboardingModal');
 const patternOnboardingUse = document.getElementById('patternOnboardingUse');
 const patternOnboardingSkip = document.getElementById('patternOnboardingSkip');
+const patternOnboardingNoCalendar = document.getElementById('patternOnboardingNoCalendar');
 const patternOnboardingClose = document.getElementById('patternOnboardingClose');
 const patternCalendarModal = document.getElementById('patternCalendarModal');
 const patternCalendarForm = document.getElementById('patternCalendarForm');
@@ -419,6 +421,31 @@ function syncCalendarEditForm() {
   }
 }
 
+function updateCalendarEmptyState() {
+  if (!calendarEmpty) return;
+  const hasCalendar = !!state.calendarId;
+  calendarEmpty.hidden = hasCalendar;
+  if (calendarGrid) calendarGrid.hidden = !hasCalendar;
+  if (summaryList) summaryList.hidden = !hasCalendar;
+  if (prevMonthBtn) prevMonthBtn.disabled = !hasCalendar;
+  if (nextMonthBtn) nextMonthBtn.disabled = !hasCalendar;
+  if (!hasCalendar) {
+    if (calendarTitle) {
+      calendarTitle.textContent = '';
+    }
+    if (calendarGrid) {
+      calendarGrid.innerHTML = '';
+    }
+    if (summaryList) {
+      const summaryItems = summaryList.querySelectorAll('.summary-item');
+      summaryItems.forEach(item => item.remove());
+    }
+    if (legendTooltip) {
+      legendTooltip.hidden = true;
+    }
+  }
+}
+
 function renderCalendarSelector() {
   if (!calendarSelector || !calendarSelectorList) return;
   calendarSelectorList.innerHTML = '';
@@ -453,11 +480,10 @@ function renderCalendarSelector() {
     calendarSelectorList.appendChild(item);
   });
   const current = state.calendars.find(c => c.id === state.calendarId);
-  if (current) {
-    state.usePattern = current.patternEnabled !== false;
-  }
+  state.usePattern = current ? current.patternEnabled !== false : false;
   calendarSelectorButton.textContent = current?.name || '캘린더 선택';
   syncCalendarEditForm();
+  updateCalendarEmptyState();
 }
 
 async function loadShares({ force = false } = {}) {
@@ -1016,10 +1042,28 @@ function openPatternChoice(settings) {
     if (patternCalendarNameInput) {
       patternCalendarNameInput.value = guessPatternCalendarName();
     }
+    if (patternOnboardingNoCalendar) {
+      patternOnboardingNoCalendar.hidden = !!state.calendarId;
+    }
   } else {
     const baseSettings = settings || lastPatternSettings;
     patternManager.show((baseSettings && baseSettings.defaultNotificationMinutes) || 60, baseSettings);
   }
+}
+
+function startWithoutCalendar() {
+  hasPromptedPattern = true;
+  state.calendarId = null;
+  state.usePattern = false;
+  state.patternConfigured = true;
+  patternManager.hide();
+  if (patternOnboardingModal) patternOnboardingModal.hidden = true;
+  if (patternCalendarModal) patternCalendarModal.hidden = true;
+  calendarSection.hidden = false;
+  settingsMenuButton.hidden = false;
+  renderCalendarSelector();
+  renderInvites();
+  updateCalendarEmptyState();
 }
 
 function handlePatternOnboarding(settings, notificationSettings) {
@@ -1077,6 +1121,12 @@ if (patternOnboardingUse) {
 if (patternOnboardingSkip) {
   patternOnboardingSkip.addEventListener('click', () => {
     openPatternCalendarModal('nopattern');
+  });
+}
+
+if (patternOnboardingNoCalendar) {
+  patternOnboardingNoCalendar.addEventListener('click', () => {
+    startWithoutCalendar();
   });
 }
 

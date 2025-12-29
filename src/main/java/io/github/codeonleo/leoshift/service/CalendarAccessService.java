@@ -112,6 +112,16 @@ public class CalendarAccessService {
             }
         }
         if (defaultCalendar == null) {
+            // 소유 캘린더가 없더라도 공유받은(수락된) 캘린더가 있으면 기본으로 설정
+            List<CalendarShare> acceptedShares = calendarShareRepository.findAcceptedSharesByUser(currentUser);
+            if (!acceptedShares.isEmpty()) {
+                defaultCalendar = acceptedShares.getFirst().getCalendar();
+                if (defaultCalendar != null) {
+                    settingsService.setDefaultCalendar(defaultCalendar);
+                }
+            }
+        }
+        if (defaultCalendar == null) {
             throw new IllegalStateException("default_calendar_not_set");
         }
         if (defaultCalendar.getOwner() != null) {
