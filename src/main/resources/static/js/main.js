@@ -487,7 +487,12 @@ function renderCalendarSelector() {
 }
 
 async function loadShares({ force = false } = {}) {
-  if (!shareList || !state.calendarId) return;
+  if (!shareList) return;
+  const current = state.calendars.find(c => c.id === state.calendarId);
+  if (!current || !current.owned) {
+    shareList.innerHTML = '';
+    return;
+  }
   const key = state.calendarId;
   const shares = await fetchWithCache('shares', key, () => api.listShares(state.calendarId), { force });
   shareList.innerHTML = '';
