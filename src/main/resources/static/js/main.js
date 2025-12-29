@@ -155,6 +155,13 @@ function invalidateCache(kind, key) {
   inflightStores[kind].delete(key);
 }
 
+function invalidateDayCache(date, calendarId = state.calendarId) {
+  if (!date || !calendarId) {
+    return;
+  }
+  invalidateCache('day', dayCacheKey(calendarId, date));
+}
+
 async function fetchWithCache(kind, key, fetcher, { force = false } = {}) {
   const store = cacheStores[kind];
   const inflight = inflightStores[kind];
@@ -704,6 +711,7 @@ async function deleteMemo(memoId) {
 
   try {
     await api.deleteMemo(state.selectedDate, memoId, state.calendarId);
+    invalidateDayCache(state.selectedDate);
     await selectDay(state.selectedDate);
     showToast('메모가 삭제되었습니다.');
   } catch (e) {
@@ -1429,6 +1437,7 @@ memoAddForm.addEventListener('submit', async (event) => {
   try {
     await api.saveMemo(state.selectedDate, { memo: memoText }, state.calendarId);
     newMemoText.value = '';
+    invalidateDayCache(state.selectedDate);
     await selectDay(state.selectedDate);
     await loadCalendar(state.year, state.month, { force: true });
     showToast('메모가 저장되었습니다.');
