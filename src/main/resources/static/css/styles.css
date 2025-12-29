@@ -415,9 +415,12 @@ section h2 {
   border-radius: 16px;
   text-align: center;
   color: #6e6e73;
-  display: flex;
   flex-direction: column;
   gap: 0.4rem;
+}
+
+.calendar-empty:not([hidden]) {
+  display: flex;
 }
 
 .calendar-empty strong {
