@@ -21,7 +21,7 @@
           <button type="button" class="modal-close" id="patternOnboardingClose">&times;</button>
         </div>
         <div class="modal-body">
-          <p class="onboarding-text">근무 패턴을 설정하면 자동으로 스케줄이 채워지고 알림도 함께 설정돼요.</p>
+          <p class="onboarding-text">근무 패턴을 설정하면 자동으로 스케줄이 채워져요.</p>
           <div class="onboarding-actions">
             <button type="button" class="primary" id="patternOnboardingUse">패턴 사용하기</button>
             <button type="button" class="secondary" id="patternOnboardingSkip">패턴 없이 보기</button>
@@ -112,27 +112,6 @@
           <input type="checkbox" id="applyPatternRetroactive" />
           <span>이전 날짜까지 모두 적용</span>
         </label>
-
-        <div class="divider"></div>
-
-        <label class="checkbox-label">
-          <input type="checkbox" id="useNotification" checked />
-          <span>알림 사용</span>
-        </label>
-
-        <div id="notificationTimeSection">
-          <label>알림 시간 (근무 시작 전, 최대 4시간)</label>
-          <div class="time-input-group">
-            <div class="time-input-item">
-              <input type="number" id="patternHours" min="0" max="10" value="0" />
-              <span>시간</span>
-            </div>
-            <div class="time-input-item">
-              <input type="number" id="patternMinutes" min="0" max="59" step="5" value="60" />
-              <span>분</span>
-            </div>
-          </div>
-        </div>
 
         <button type="submit">패턴 저장</button>
       </form>
@@ -239,15 +218,6 @@
       <!-- 메인 설정 리스트 -->
       <div id="settingsMainView" class="settings-view">
         <div class="settings-menu-list">
-          <button type="button" class="settings-menu-item" data-view="notifications">
-            <div class="settings-menu-icon">🔔</div>
-            <div class="settings-menu-content">
-              <div class="settings-menu-title">알림 설정</div>
-              <div class="settings-menu-description">근무 알림 시간 관리</div>
-            </div>
-            <div class="settings-menu-arrow">›</div>
-          </button>
-
           <button type="button" class="settings-menu-item" data-view="calendar">
             <div class="settings-menu-icon">📅</div>
             <div class="settings-menu-content">
@@ -277,33 +247,6 @@
         </div>
 
         <button type="button" onclick="logout()" class="logout-modal-button full-width" style="margin-top: 1rem;">로그아웃</button>
-      </div>
-
-      <!-- 알림 설정 화면 -->
-      <div id="settingsNotificationsView" class="settings-view" hidden>
-        <section class="settings-section" data-tone="primary">
-          <div class="settings-section-header">
-            <div class="settings-section-icon" data-color="primary" aria-hidden="true">🔔</div>
-            <div>
-              <h3>알림 설정</h3>
-              <p class="settings-section-description">근무 시작 전 받을 로컬 알림 시간을 자유롭게 조정하세요.</p>
-            </div>
-          </div>
-          <form class="notification-form" id="notificationForm">
-            <label>근무 시작 전 알림 시간 (최대 4시간)</label>
-            <div class="time-input-group">
-              <div class="time-input-item">
-                <input type="number" id="notificationHours" min="0" max="10" value="0" />
-                <span>시간</span>
-              </div>
-              <div class="time-input-item">
-                <input type="number" id="notificationMinutes" min="0" max="59" step="5" value="0" />
-                <span>분</span>
-              </div>
-            </div>
-            <button type="submit">알림 시간 저장</button>
-          </form>
-        </section>
       </div>
 
       <!-- 캘린더 관리 메인 화면 -->

@@ -33,9 +33,6 @@ let loadingCounter = 0;
 let loadingHideTimer = null;
 let loadingFailSafeTimer = null;
 const loadingOverlay = document.getElementById('loadingOverlay');
-const notificationForm = document.getElementById('notificationForm');
-const notificationHoursInput = document.getElementById('notificationHours');
-const notificationMinutesInput = document.getElementById('notificationMinutes');
 const resetPatternButton = document.getElementById('resetPattern');
 const calendarSelector = document.getElementById('calendarSelector');
 const calendarSelectorButton = document.getElementById('calendarSelectorButton');
@@ -77,8 +74,6 @@ const patternManager = initPatternForm({
   formEl: document.getElementById('patternForm'),
   patternInput: document.getElementById('patternInput'),
   startInput: document.getElementById('patternStartDate'),
-  hoursInput: document.getElementById('patternHours'),
-  minutesInput: document.getElementById('patternMinutes'),
   applyRetroactiveInput: document.getElementById('applyPatternRetroactive'),
   onSave: async (payload) => {
     if (!state.calendarId) {
@@ -286,7 +281,7 @@ async function bootstrap() {
       const settings = bootstrapData.settings || {};
       state.patternConfigured = state.usePattern ? (settings.configured || false) : true;
       if (!state.patternConfigured) {
-        handlePatternOnboarding(settings, bootstrapData.notificationSettings);
+        handlePatternOnboarding(settings);
         return;
       }
 
@@ -301,6 +296,7 @@ async function bootstrap() {
           data: calData,
           fetchedAt: Date.now()
         });
+        calendarTitle.textContent = `${calData.year}년 ${calData.month}월`;
         renderCalendar({
           gridEl: calendarGrid,
           summaryEl: summaryList,
@@ -320,7 +316,6 @@ async function bootstrap() {
         await loadShares();
       }
 
-      applyNotificationSettings(bootstrapData.notificationSettings);
       patternManager.hide();
       calendarSection.hidden = false;
       settingsMenuButton.hidden = false;
@@ -352,7 +347,6 @@ async function bootstrap() {
 
     // 부가 데이터와 prefetch는 렌더 이후로 지연 실행
     scheduleIdle(() => {
-      loadNotificationSettings().catch(() => null);
       loadShares({ force: true }).catch(() => null);
       prefetchAdjacentMonths(state.year, state.month, state.calendarId);
     });
@@ -470,7 +464,7 @@ function renderCalendarSelector() {
       calendarSelectorList.hidden = true;
       const settings = await loadPatternSettings();
       if (!state.patternConfigured) {
-        patternManager.show(settings.defaultNotificationMinutes || 60, settings);
+        patternManager.show(60, settings);
         calendarSection.hidden = true;
         settingsMenuButton.hidden = true;
         return;
@@ -807,20 +801,6 @@ function closeModal() {
   loadCalendar(state.year, state.month);
 }
 
-async function loadNotificationSettings() {
-  const data = await api.getNotificationSettings();
-  applyNotificationSettings(data);
-}
-
-function applyNotificationSettings(data) {
-  if (!data) return;
-  const totalMinutes = data.minutes;
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
-  if (notificationHoursInput) notificationHoursInput.value = hours;
-  if (notificationMinutesInput) notificationMinutesInput.value = minutes;
-}
-
 settingsMenuButton.addEventListener('click', () => {
   settingsModal.hidden = false;
 });
@@ -909,7 +889,7 @@ if (createCalendarForm) {
       showToast('캘린더가 생성되었습니다.');
       const settings = await loadPatternSettings({ force: true });
       if (!state.patternConfigured) {
-        patternManager.show(settings.defaultNotificationMinutes || 60, settings);
+        patternManager.show(60, settings);
         calendarSection.hidden = true;
         settingsMenuButton.hidden = true;
         return;
@@ -962,7 +942,7 @@ if (editCalendarForm) {
       showToast('캘린더가 수정되었습니다.');
       const settings = await loadPatternSettings({ force: true });
       if (!state.patternConfigured) {
-        patternManager.show(settings.defaultNotificationMinutes || 60, settings);
+        patternManager.show(60, settings);
         calendarSection.hidden = true;
         settingsMenuButton.hidden = true;
         return;
@@ -1010,7 +990,7 @@ if (deleteCalendarButton) {
       if (state.calendarId) {
         const settings = await loadPatternSettings({ force: true });
         if (!state.patternConfigured) {
-          patternManager.show(settings.defaultNotificationMinutes || 60, settings);
+          patternManager.show(60, settings);
           calendarSection.hidden = true;
           settingsMenuButton.hidden = true;
         } else {
@@ -1063,7 +1043,7 @@ function openPatternChoice(settings) {
     }
   } else {
     const baseSettings = settings || lastPatternSettings;
-    patternManager.show((baseSettings && baseSettings.defaultNotificationMinutes) || 60, baseSettings);
+    patternManager.show(60, baseSettings);
   }
 }
 
@@ -1082,9 +1062,8 @@ function startWithoutCalendar() {
   updateCalendarEmptyState();
 }
 
-function handlePatternOnboarding(settings, notificationSettings) {
+function handlePatternOnboarding(settings) {
   lastPatternSettings = settings || lastPatternSettings;
-  applyNotificationSettings(notificationSettings);
   if (hasPromptedPattern) {
     return;
   }
@@ -1183,7 +1162,7 @@ if (patternCalendarForm) {
       if (wantPattern) {
         const settings = await loadPatternSettings({ force: true });
         state.patternConfigured = settings.configured || false;
-        patternManager.show(settings.defaultNotificationMinutes || 60, settings);
+        patternManager.show(60, settings);
         calendarSection.hidden = true;
         settingsMenuButton.hidden = true;
         document.getElementById('pattern-setup')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -1367,25 +1346,6 @@ dayDetailForm.addEventListener('submit', (event) => {
   event.preventDefault();
 });
 
-notificationForm.addEventListener('submit', async (event) => {
-  event.preventDefault();
-  const hours = Number(notificationHoursInput.value) || 0;
-  const minutes = Number(notificationMinutesInput.value) || 0;
-  const totalMinutes = hours * 60 + minutes;
-
-  if (totalMinutes < 5) {
-    alert('알림 시간은 최소 5분 이상이어야 합니다.');
-    return;
-  }
-  if (totalMinutes > 240) {
-    alert('알림 시간은 최대 4시간(240분)까지 설정 가능합니다.');
-    return;
-  }
-
-  await api.updateNotificationSettings({ minutes: totalMinutes });
-  alert('알림 설정이 저장되었습니다.');
-});
-
 resetPatternButton.addEventListener('click', async () => {
   if (!confirm('근무 패턴을 재설정하시겠습니까?')) return;
   const settings = await api.getSettings();
@@ -1393,7 +1353,7 @@ resetPatternButton.addEventListener('click', async () => {
   calendarSection.hidden = true;
   settingsMenuButton.hidden = true;
   dayModal.hidden = true;
-  patternManager.show(settings.defaultNotificationMinutes || 60, settings);
+  patternManager.show(60, settings);
 });
 
 const navigateMonth = debounce((year, month) => {
@@ -1520,7 +1480,6 @@ const settingsBackButton = document.getElementById('settingsBackButton');
 const settingsTitle = document.getElementById('settingsTitle');
 const settingsViews = {
   main: document.getElementById('settingsMainView'),
-  notifications: document.getElementById('settingsNotificationsView'),
   calendar: document.getElementById('settingsCalendarView'),
   'calendar-create': document.getElementById('settingsCalendarCreateView'),
   'calendar-edit': document.getElementById('settingsCalendarEditView'),
@@ -1531,7 +1490,6 @@ const settingsViews = {
 
 const viewTitles = {
   main: '설정',
-  notifications: '알림 설정',
   calendar: '캘린더 관리',
   'calendar-create': '새 캘린더 만들기',
   'calendar-edit': '캘린더 수정',

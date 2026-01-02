@@ -5,7 +5,7 @@
   "display": "standalone",
   "background_color": "#007AFF",
   "theme_color": "#007AFF",
-  "description": "나의 교대 근무 일정과 알림",
+  "description": "나의 교대 근무 일정",
   "lang": "ko-KR",
   "orientation": "portrait",
   "icons": [

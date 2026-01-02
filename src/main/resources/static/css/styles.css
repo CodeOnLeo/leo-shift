@@ -556,7 +556,6 @@ section h2 {
 
 /* Forms */
 .pattern-form,
-.notification-form,
 .day-detail-form {
   display: flex;
   flex-direction: column;
