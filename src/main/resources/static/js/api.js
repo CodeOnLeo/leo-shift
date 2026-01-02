@@ -159,8 +159,6 @@ export const api = {
   getCalendar: (year, month, calendarId) => request(`/api/calendar?year=${year}&month=${month}${calendarId ? `&calendarId=${calendarId}` : ''}`),
   getDay: (date, calendarId) => request(`/api/days/${date}${calendarId ? `?calendarId=${calendarId}` : ''}`),
   saveDay: (date, payload, calendarId) => request(`/api/days/${date}${calendarId ? `?calendarId=${calendarId}` : ''}`, { method: 'PUT', body: JSON.stringify(payload) }),
-  getNotificationSettings: () => request('/api/settings/notifications'),
-  updateNotificationSettings: (payload) => request('/api/settings/notifications', { method: 'PUT', body: JSON.stringify(payload) }),
   logout: () => request('/api/auth/logout', { method: 'POST' }),
   listCalendars: () => request('/api/calendars'),
   createCalendar: (payload) => request('/api/calendars', { method: 'POST', body: JSON.stringify(payload) }),

@@ -1,4 +1,4 @@
-export function initPatternForm({ sectionEl, formEl, patternInput, startInput, hoursInput, minutesInput, applyRetroactiveInput, onSave }) {
+export function initPatternForm({ sectionEl, formEl, patternInput, startInput, applyRetroactiveInput, onSave }) {
   // Pattern builder elements
   const dDaysInput = document.getElementById('dDays');
   const dOffInput = document.getElementById('dOff');
@@ -8,8 +8,6 @@ export function initPatternForm({ sectionEl, formEl, patternInput, startInput, h
   const nOffInput = document.getElementById('nOff');
   const previewText = document.getElementById('patternPreviewText');
   const useManualCheckbox = document.getElementById('useManualPattern');
-  const useNotificationCheckbox = document.getElementById('useNotification');
-  const notificationTimeSection = document.getElementById('notificationTimeSection');
 
   // Generate pattern from inputs
   function generatePattern() {
@@ -75,15 +73,6 @@ export function initPatternForm({ sectionEl, formEl, patternInput, startInput, h
     updatePreview();
   });
 
-  // Toggle notification time section
-  useNotificationCheckbox.addEventListener('change', (e) => {
-    if (e.target.checked) {
-      notificationTimeSection.hidden = false;
-    } else {
-      notificationTimeSection.hidden = true;
-    }
-  });
-
   // Form submit
   formEl.addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -100,27 +89,9 @@ export function initPatternForm({ sectionEl, formEl, patternInput, startInput, h
       pattern = generatePattern();
     }
 
-    let totalMinutes = null;
-
-    if (useNotificationCheckbox.checked) {
-      const hours = Number(hoursInput.value) || 0;
-      const minutes = Number(minutesInput.value) || 0;
-      totalMinutes = hours * 60 + minutes;
-
-      if (totalMinutes < 5) {
-        alert('알림 시간은 최소 5분 이상이어야 합니다.');
-        return;
-      }
-      if (totalMinutes > 240) {
-        alert('알림 시간은 최대 4시간(240분)까지 설정 가능합니다.');
-        return;
-      }
-    }
-
     const payload = {
       pattern,
       patternStartDate: startInput.value,
-      defaultNotificationMinutes: totalMinutes,
       applyRetroactive: applyRetroactiveInput ? applyRetroactiveInput.checked : false
     };
     await onSave(payload);
@@ -132,10 +103,6 @@ export function initPatternForm({ sectionEl, formEl, patternInput, startInput, h
   return {
     show(initialMinutes = 60, existingSettings = null) {
       sectionEl.hidden = false;
-      const hours = Math.floor(initialMinutes / 60);
-      const mins = initialMinutes % 60;
-      hoursInput.value = hours;
-      minutesInput.value = mins;
       if (applyRetroactiveInput) {
         applyRetroactiveInput.checked = false;
       }
