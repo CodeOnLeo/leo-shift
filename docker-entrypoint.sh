@@ -99,7 +99,7 @@ configure_postgres_from_database_url() {
 
 configure_postgres_from_database_url "$DATABASE_URL"
 
-JAVA_OPTS="${JAVA_OPTS:--Xmx512m -Xms256m}"
+JAVA_OPTS="${JAVA_OPTS:--XX:InitialRAMPercentage=15 -XX:MaxRAMPercentage=60 -XX:MinRAMPercentage=10 -XX:+UseG1GC}"
 APP_PORT="${PORT:-8080}"
 
 if [ "$#" -eq 0 ]; then
