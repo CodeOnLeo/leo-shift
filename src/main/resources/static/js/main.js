@@ -97,8 +97,95 @@ const state = {
   calendarId: null,
   calendars: [],
   me: null,
-  calendarData: null
+  calendarData: null,
+  scheduleTypes: []
 };
+
+function getScheduleTypes(preferred = null) {
+  if (Array.isArray(preferred) && preferred.length > 0) {
+    return preferred;
+  }
+  return Array.isArray(state.scheduleTypes) ? state.scheduleTypes : [];
+}
+
+function setScheduleTypes(scheduleTypes = []) {
+  state.scheduleTypes = Array.isArray(scheduleTypes) ? scheduleTypes : [];
+  renderLegend();
+  syncDetailCodeOptions();
+}
+
+function getScheduleType(code, scheduleTypes = null) {
+  if (!code) return null;
+  return getScheduleTypes(scheduleTypes).find((type) => type.code === code) || null;
+}
+
+function formatScheduleTypeLabel(type) {
+  if (!type) return '';
+  if (!type.name || type.name === type.code) {
+    return type.code;
+  }
+  return `${type.name} (${type.code})`;
+}
+
+function formatScheduleValue(code, scheduleTypes = null) {
+  if (!code) return '-';
+  const type = getScheduleType(code, scheduleTypes);
+  return formatScheduleTypeLabel(type) || code;
+}
+
+function renderLegend(scheduleTypes = state.scheduleTypes) {
+  if (!legendTooltip) return;
+  legendTooltip.innerHTML = '';
+  getScheduleTypes(scheduleTypes).forEach((type) => {
+    const item = document.createElement('div');
+    item.className = 'legend-item';
+    const parts = [formatScheduleTypeLabel(type)];
+    if (type.timeRangeLabel && type.timeRangeLabel !== type.name) {
+      parts.push(type.timeRangeLabel);
+    }
+    item.textContent = parts.join(' · ');
+    legendTooltip.appendChild(item);
+  });
+}
+
+function syncDetailCodeOptions(scheduleTypes = state.scheduleTypes, selectedValue = detailCode?.value || '') {
+  if (!detailCode) return;
+  detailCode.innerHTML = '';
+
+  const defaultOption = document.createElement('option');
+  defaultOption.value = '';
+  defaultOption.textContent = '패턴대로';
+  detailCode.appendChild(defaultOption);
+
+  getScheduleTypes(scheduleTypes).forEach((type) => {
+    const option = document.createElement('option');
+    option.value = type.code;
+    option.textContent = formatScheduleTypeLabel(type);
+    detailCode.appendChild(option);
+  });
+
+  if (selectedValue && !getScheduleType(selectedValue, scheduleTypes)) {
+    const fallbackOption = document.createElement('option');
+    fallbackOption.value = selectedValue;
+    fallbackOption.textContent = selectedValue;
+    detailCode.appendChild(fallbackOption);
+  }
+
+  detailCode.value = selectedValue || '';
+}
+
+function renderDayDetailPanel(detail, date) {
+  const activeTypes = detail?.scheduleTypes || state.scheduleTypes;
+  const hasMemo = detail.memo || detail.anniversaryMemo || (detail.yearlyMemos && detail.yearlyMemos.length > 0);
+  dayDetailPanel.innerHTML = `
+    <strong>${formatKoreanDate(date)}</strong>
+    <span>기본 일정: ${formatScheduleValue(detail.baseCode, activeTypes)}</span>
+    <span>실제 일정: ${formatScheduleValue(detail.effectiveCode, activeTypes)}</span>
+    <span>${detail.shiftLabel || ''}${detail.timeRange ? ` · ${detail.timeRange}` : ''}</span>
+    <small>${[detail.memo, detail.anniversaryMemo, ...(detail.yearlyMemos || [])].filter(Boolean).join(' • ')}</small>
+    ${hasMemo && detail.memoAuthor ? `<div class="memo-author-line">작성: ${detail.memoAuthor.nickname || detail.memoAuthor.name}${detail.updatedAt ? ` · ${formatDateTime(detail.updatedAt)}` : ''}</div>` : ''}
+  `;
+}
 
 function getCurrentCalendar() {
   return state.calendars.find((c) => c.id === state.calendarId) || null;
@@ -293,6 +380,7 @@ async function bootstrap() {
         state.month = calData.month;
         calData.calendarId = state.calendarId;
         state.calendarData = calData;
+        setScheduleTypes(calData.scheduleTypes || []);
         cacheStores.calendar.set(calendarCacheKey(state.calendarId, calData.year, calData.month), {
           data: calData,
           fetchedAt: Date.now()
@@ -362,6 +450,9 @@ async function loadCalendars() {
   state.calendarId = res.defaultCalendarId || (state.calendars[0] ? state.calendars[0].id : null);
   state.selectedDate = null;
   state.calendarData = null;
+  if (!state.calendarId) {
+    setScheduleTypes([]);
+  }
   renderCalendarSelector();
   renderInvites();
   return res;
@@ -602,6 +693,9 @@ async function fetchCalendar(year, month, { calendarId = state.calendarId, force
   const key = calendarCacheKey(targetCalendarId, year, month);
   const data = await fetchWithCache('calendar', key, () => api.getCalendar(year, month, targetCalendarId), { force });
   data.calendarId = targetCalendarId;
+  if (Array.isArray(data.scheduleTypes)) {
+    setScheduleTypes(data.scheduleTypes);
+  }
   return data;
 }
 
@@ -729,16 +823,9 @@ async function selectDay(date) {
 
     dayModal.hidden = false;
     state.calendarData = calendarData;
-    const hasMemo = detail.memo || detail.anniversaryMemo || (detail.yearlyMemos && detail.yearlyMemos.length > 0);
-    dayDetailPanel.innerHTML = `
-      <strong>${formatKoreanDate(date)}</strong>
-      <span>기본 근무: ${detail.baseCode || '-'}</span>
-      <span>실제 근무: ${detail.effectiveCode || '-'}</span>
-      <span>${detail.shiftLabel || ''} · ${detail.timeRange || ''}</span>
-      <small>${[detail.memo, detail.anniversaryMemo, ...(detail.yearlyMemos || [])].filter(Boolean).join(' • ')}</small>
-      ${hasMemo && detail.memoAuthor ? `<div class="memo-author-line">작성: ${detail.memoAuthor.nickname || detail.memoAuthor.name}${detail.updatedAt ? ` · ${formatDateTime(detail.updatedAt)}` : ''}</div>` : ''}
-    `;
-    detailCode.value = detail.effectiveCode || '';
+    setScheduleTypes(detail.scheduleTypes || calendarData.scheduleTypes || state.scheduleTypes);
+    renderDayDetailPanel(detail, date);
+    syncDetailCodeOptions(detail.scheduleTypes || calendarData.scheduleTypes, detail.effectiveCode || '');
 
     // 다중 사용자 메모 렌더링
     renderMemos(detail.dayMemos || [], canEdit);
@@ -1006,6 +1093,7 @@ if (deleteCalendarButton) {
       } else {
         calendarGrid.innerHTML = '';
         summaryList.innerHTML = '';
+        setScheduleTypes([]);
         if (shareList) shareList.innerHTML = '';
       }
       if (settingsModal) {
@@ -1053,6 +1141,7 @@ function startWithoutCalendar() {
   state.calendarId = null;
   state.usePattern = false;
   state.patternConfigured = true;
+  setScheduleTypes([]);
   patternManager.hide();
   if (patternOnboardingModal) patternOnboardingModal.hidden = true;
   if (patternCalendarModal) patternCalendarModal.hidden = true;
@@ -1300,15 +1389,9 @@ async function saveDayDetail(showSuccessToast = true) {
     cacheStores.day.set(dayKey, { data: detail, fetchedAt: Date.now() });
 
     // 모달 내용 업데이트
-    const hasMemo = detail.memo || detail.anniversaryMemo || (detail.yearlyMemos && detail.yearlyMemos.length > 0);
-    dayDetailPanel.innerHTML = `
-      <strong>${formatKoreanDate(state.selectedDate)}</strong>
-      <span>기본 근무: ${detail.baseCode || '-'}</span>
-      <span>실제 근무: ${detail.effectiveCode || '-'}</span>
-      <span>${detail.shiftLabel || ''} · ${detail.timeRange || ''}</span>
-      <small>${[detail.memo, detail.anniversaryMemo, ...(detail.yearlyMemos || [])].filter(Boolean).join(' • ')}</small>
-      ${hasMemo && detail.memoAuthor ? `<div class="memo-author-line">작성: ${detail.memoAuthor.nickname || detail.memoAuthor.name}${detail.updatedAt ? ` · ${formatDateTime(detail.updatedAt)}` : ''}</div>` : ''}
-    `;
+    setScheduleTypes(detail.scheduleTypes || state.scheduleTypes);
+    renderDayDetailPanel(detail, state.selectedDate);
+    syncDetailCodeOptions(detail.scheduleTypes || state.scheduleTypes, detail.effectiveCode || '');
 
     // 기념일 메모 지우기 버튼 표시 여부 업데이트
     clearAnniversaryButton.style.display = (detail.anniversaryMemo || (detail.yearlyMemos && detail.yearlyMemos.length > 0)) ? 'block' : 'none';

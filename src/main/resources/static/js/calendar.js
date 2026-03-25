@@ -164,10 +164,27 @@ export function renderCalendar({
   });
 
   if (usePattern && data.summary) {
-    Object.entries(data.summary).forEach(([code, count]) => {
+    const types = Array.isArray(data.scheduleTypes) ? data.scheduleTypes : [];
+    const typeMap = new Map(types.map((type) => [type.code, type]));
+    const renderedCodes = new Set();
+
+    types.forEach((type) => {
       const item = document.createElement('div');
       item.className = 'summary-item';
-      item.textContent = `${code}: ${count}`;
+      const count = data.summary[type.code] ?? 0;
+      item.textContent = `${type.name || type.code}: ${count}`;
+      summaryEl.appendChild(item);
+      renderedCodes.add(type.code);
+    });
+
+    Object.entries(data.summary).forEach(([code, count]) => {
+      if (renderedCodes.has(code)) {
+        return;
+      }
+      const item = document.createElement('div');
+      item.className = 'summary-item';
+      const type = typeMap.get(code);
+      item.textContent = `${type?.name || code}: ${count}`;
       summaryEl.appendChild(item);
     });
   }
