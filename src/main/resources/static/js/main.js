@@ -49,7 +49,8 @@ const colorPicker = document.getElementById('colorPicker');
 const saveColorButton = document.getElementById('saveColorButton');
 const createCalendarForm = document.getElementById('createCalendarForm');
 const newCalendarNameInput = document.getElementById('newCalendarName');
-const newCalendarPatternEnabledInput = document.getElementById('newCalendarPatternEnabled');
+const newCalendarTemplateInput = document.getElementById('newCalendarTemplate');
+const newCalendarTemplateHint = document.getElementById('newCalendarTemplateHint');
 const editCalendarForm = document.getElementById('editCalendarForm');
 const editCalendarNameInput = document.getElementById('editCalendarName');
 const editCalendarPatternEnabledInput = document.getElementById('editCalendarPatternEnabled');
@@ -214,7 +215,54 @@ const inflightStores = {
 let calendarRequestSeq = 0;
 let hasPromptedPattern = false;
 let lastPatternSettings = null;
-let patternCalendarMode = 'pattern'; // 'pattern' | 'nopattern'
+let patternCalendarMode = 'shift'; // 'shift' | 'general'
+
+function getCalendarTemplateConfig(template) {
+  switch (template) {
+    case 'shift':
+      return {
+        patternEnabled: true,
+        createTitle: '교대 근무 캘린더 만들기',
+        subtitle: '교대 패턴을 적용할 캘린더 이름을 정해주세요.',
+        submitLabel: '교대 캘린더 준비',
+        placeholder: '예: 내 근무표',
+        hint: '교대 근무 사이클을 설정해서 자동으로 일정을 채우는 캘린더입니다.',
+        defaultName: state.me?.name ? `${state.me.name}의 근무표` : '내 근무표'
+      };
+    case 'empty':
+      return {
+        patternEnabled: false,
+        createTitle: '비어 있는 캘린더 만들기',
+        subtitle: '일정은 나중에 추가하고 지금은 이름만 정해둘게요.',
+        submitLabel: '빈 캘린더 만들기',
+        placeholder: '예: 아이디어 보드',
+        hint: '자동 패턴 없이 빈 상태로 시작하는 캘린더입니다.',
+        defaultName: state.me?.name ? `${state.me.name}의 새 캘린더` : '새 캘린더'
+      };
+    case 'general':
+    default:
+      return {
+        patternEnabled: false,
+        createTitle: '일반 일정 캘린더 만들기',
+        subtitle: '반복 패턴 없이 바로 기록을 시작할 캘린더 이름을 정해주세요.',
+        submitLabel: '일정 캘린더 만들기',
+        placeholder: '예: 개인 일정',
+        hint: '개인 일정, 가족 일정, 공부 계획처럼 일반 용도로 쓰는 캘린더입니다.',
+        defaultName: state.me?.name ? `${state.me.name}의 일정` : '내 일정'
+      };
+  }
+}
+
+function updateCreateCalendarTemplateUI() {
+  if (!newCalendarTemplateInput) return;
+  const config = getCalendarTemplateConfig(newCalendarTemplateInput.value);
+  if (newCalendarTemplateHint) {
+    newCalendarTemplateHint.textContent = config.hint;
+  }
+  if (newCalendarNameInput && !newCalendarNameInput.value) {
+    newCalendarNameInput.placeholder = config.placeholder;
+  }
+}
 
 function calendarCacheKey(calendarId, year, month) {
   return `${calendarId || 'default'}:${year}-${month}`;
@@ -962,7 +1010,8 @@ if (createCalendarForm) {
       alert('캘린더 이름을 입력하세요.');
       return;
     }
-    const patternEnabled = newCalendarPatternEnabledInput.checked;
+    const template = newCalendarTemplateInput?.value || 'general';
+    const patternEnabled = getCalendarTemplateConfig(template).patternEnabled;
     try {
       const res = await api.createCalendar({ name, patternEnabled });
       state.calendars = res.calendars || [];
@@ -973,7 +1022,10 @@ if (createCalendarForm) {
       renderCalendarSelector();
       renderInvites();
       newCalendarNameInput.value = '';
-      newCalendarPatternEnabledInput.checked = true;
+      if (newCalendarTemplateInput) {
+        newCalendarTemplateInput.value = 'general';
+        updateCreateCalendarTemplateUI();
+      }
       showToast('캘린더가 생성되었습니다.');
       const settings = await loadPatternSettings({ force: true });
       if (!state.patternConfigured) {
@@ -1106,10 +1158,13 @@ if (deleteCalendarButton) {
 }
 
 function guessPatternCalendarName() {
+  return getCalendarTemplateConfig('shift').defaultName;
+}
+
+function guessCalendarName(template = 'general') {
   const current = state.calendars.find((c) => c.id === state.calendarId && c.owned);
   if (current && current.name) return current.name;
-  if (state.me && state.me.name) return `${state.me.name}의 근무표`;
-  return '내 근무표';
+  return getCalendarTemplateConfig(template).defaultName;
 }
 
 function openPatternChoice(settings) {
@@ -1125,7 +1180,7 @@ function openPatternChoice(settings) {
       patternCalendarModal.hidden = true;
     }
     if (patternCalendarNameInput) {
-      patternCalendarNameInput.value = guessPatternCalendarName();
+      patternCalendarNameInput.value = guessCalendarName('shift');
     }
     if (patternOnboardingNoCalendar) {
       patternOnboardingNoCalendar.hidden = !!state.calendarId;
@@ -1161,7 +1216,9 @@ function handlePatternOnboarding(settings) {
 }
 
 async function ensureCalendar(name, patternEnabled) {
-  const targetName = (name || guessPatternCalendarName()).trim() || guessPatternCalendarName();
+  const template = patternEnabled ? 'shift' : 'general';
+  const fallbackName = guessCalendarName(template);
+  const targetName = (name || fallbackName).trim() || fallbackName;
   const res = await api.createCalendar({ name: targetName, patternEnabled });
   state.calendars = res.calendars || [];
   state.calendarId = res.defaultCalendarId || (state.calendars[0] ? state.calendars[0].id : null);
@@ -1172,8 +1229,9 @@ async function ensureCalendar(name, patternEnabled) {
   return res;
 }
 
-function openPatternCalendarModal(mode = 'pattern') {
+function openPatternCalendarModal(mode = 'shift') {
   patternCalendarMode = mode;
+  const config = getCalendarTemplateConfig(mode);
   if (patternCalendarModal) {
     patternCalendarModal.hidden = false;
   }
@@ -1181,31 +1239,28 @@ function openPatternCalendarModal(mode = 'pattern') {
     patternOnboardingModal.hidden = true;
   }
   if (!patternCalendarNameInput.value) {
-    patternCalendarNameInput.value = guessPatternCalendarName();
+    patternCalendarNameInput.value = guessCalendarName(mode);
   }
   if (patternCalendarTitle && patternCalendarSubtitle && patternCalendarSubmit) {
-    if (mode === 'pattern') {
-      patternCalendarTitle.textContent = '패턴 캘린더 만들기';
-      patternCalendarSubtitle.textContent = '패턴을 적용할 캘린더 이름을 정해주세요.';
-      patternCalendarSubmit.textContent = '패턴 캘린더 준비';
-    } else {
-      patternCalendarTitle.textContent = '캘린더 만들기';
-      patternCalendarSubtitle.textContent = '패턴 설정은 나중에 하고 지금은 이름만 정해볼게요.';
-      patternCalendarSubmit.textContent = '캘린더 만들기';
-    }
+    patternCalendarTitle.textContent = config.createTitle;
+    patternCalendarSubtitle.textContent = config.subtitle;
+    patternCalendarSubmit.textContent = config.submitLabel;
+  }
+  if (patternCalendarNameInput) {
+    patternCalendarNameInput.placeholder = config.placeholder;
   }
   patternCalendarNameInput.focus();
 }
 
 if (patternOnboardingUse) {
   patternOnboardingUse.addEventListener('click', () => {
-    openPatternCalendarModal('pattern');
+    openPatternCalendarModal('shift');
   });
 }
 
 if (patternOnboardingSkip) {
   patternOnboardingSkip.addEventListener('click', () => {
-    openPatternCalendarModal('nopattern');
+    openPatternCalendarModal('general');
   });
 }
 
@@ -1244,7 +1299,7 @@ if (patternCalendarForm) {
       return;
     }
     try {
-      const wantPattern = patternCalendarMode !== 'nopattern';
+      const wantPattern = getCalendarTemplateConfig(patternCalendarMode).patternEnabled;
       const res = await ensureCalendar(name, wantPattern);
       if (patternCalendarModal) patternCalendarModal.hidden = true;
       if (patternOnboardingModal) patternOnboardingModal.hidden = true;
@@ -1540,6 +1595,11 @@ window.logout = async function() {
 
 if (checkAuth()) {
   bootstrap();
+}
+
+if (newCalendarTemplateInput) {
+  newCalendarTemplateInput.addEventListener('change', updateCreateCalendarTemplateUI);
+  updateCreateCalendarTemplateUI();
 }
 
 function showToast(message) {

@@ -17,15 +17,15 @@
     <div id="patternOnboardingModal" class="modal" hidden>
       <div class="modal-content">
         <div class="modal-header">
-          <h2>패턴으로 관리할까요?</h2>
+          <h2>어떤 일정으로 시작할까요?</h2>
           <button type="button" class="modal-close" id="patternOnboardingClose">&times;</button>
         </div>
         <div class="modal-body">
-          <p class="onboarding-text">근무 패턴을 설정하면 자동으로 스케줄이 채워져요.</p>
+          <p class="onboarding-text">캘린더 유형을 고르면 바로 시작할 수 있어요.</p>
           <div class="onboarding-actions">
-            <button type="button" class="primary" id="patternOnboardingUse">패턴 사용하기</button>
-            <button type="button" class="secondary" id="patternOnboardingSkip">패턴 없이 보기</button>
-            <button type="button" class="secondary" id="patternOnboardingNoCalendar">캘린더 없이 시작</button>
+            <button type="button" class="primary" id="patternOnboardingUse">교대 근무 템플릿</button>
+            <button type="button" class="secondary" id="patternOnboardingSkip">일반 일정 캘린더</button>
+            <button type="button" class="secondary" id="patternOnboardingNoCalendar">비어 있는 캘린더</button>
           </div>
         </div>
       </div>
@@ -34,17 +34,17 @@
     <div id="patternCalendarModal" class="modal" hidden>
       <div class="modal-content">
         <div class="modal-header">
-          <h2 id="patternCalendarTitle">패턴 캘린더 만들기</h2>
+          <h2 id="patternCalendarTitle">캘린더 만들기</h2>
           <button type="button" class="modal-close" id="patternCalendarClose">&times;</button>
         </div>
         <form class="modal-body pattern-calendar-form" id="patternCalendarForm">
-          <p class="onboarding-text" id="patternCalendarSubtitle">패턴을 적용할 캘린더 이름을 정해주세요.</p>
+          <p class="onboarding-text" id="patternCalendarSubtitle">시작할 캘린더 이름을 정해주세요.</p>
           <label>
             캘린더 이름
             <input type="text" id="patternCalendarName" placeholder="예: 내 근무표" maxlength="100" required />
           </label>
           <div class="onboarding-actions">
-            <button type="submit" class="primary" id="patternCalendarSubmit">패턴 캘린더 준비</button>
+            <button type="submit" class="primary" id="patternCalendarSubmit">캘린더 만들기</button>
             <button type="button" class="secondary" id="patternCalendarBack">이전</button>
           </div>
         </form>
@@ -52,10 +52,10 @@
     </div>
 
     <section id="pattern-setup" hidden>
-      <h2>근무 패턴 설정</h2>
+      <h2>교대 근무 패턴 설정</h2>
       <form class="pattern-form" id="patternForm">
         <div class="pattern-builder">
-          <h3>근무 사이클 설정</h3>
+          <h3>교대 근무 사이클 설정</h3>
 
           <div class="shift-group">
             <label>주간 (D)</label>
@@ -88,7 +88,7 @@
           </div>
 
           <div class="pattern-preview" id="patternPreview">
-            <strong>생성된 패턴:</strong>
+            <strong>생성된 사이클:</strong>
             <div id="patternPreviewText"></div>
           </div>
         </div>
@@ -104,7 +104,7 @@
         </div>
 
         <label>
-          패턴 시작일
+          사이클 시작일
           <input type="date" id="patternStartDate" required />
         </label>
 
@@ -113,7 +113,7 @@
           <span>이전 날짜까지 모두 적용</span>
         </label>
 
-        <button type="submit">패턴 저장</button>
+        <button type="submit">교대 패턴 저장</button>
       </form>
     </section>
 
@@ -166,11 +166,11 @@
 
           <form class="day-detail-form" id="dayDetailForm">
             <label>
-              근무 변경
+              일정 변경
               <select id="detailCode" data-pattern="true">
                 <option value="">패턴대로</option>
               </select>
-              <small class="hint" id="patternDisabledHint" hidden>이 캘린더는 패턴을 사용하지 않습니다. 근무코드는 읽기 전용입니다.</small>
+              <small class="hint" id="patternDisabledHint" hidden>이 캘린더는 자동 패턴을 사용하지 않습니다. 일정 코드는 읽기 전용입니다.</small>
             </label>
 
             <div class="divider"></div>
@@ -211,7 +211,7 @@
             <div class="settings-menu-icon">📅</div>
             <div class="settings-menu-content">
               <div class="settings-menu-title">캘린더 관리</div>
-              <div class="settings-menu-description">캘린더 및 패턴 관리</div>
+              <div class="settings-menu-description">캘린더 유형과 자동 패턴 설정 관리</div>
             </div>
             <div class="settings-menu-arrow">›</div>
           </button>
@@ -254,7 +254,7 @@
             <div class="settings-menu-icon">✏️</div>
             <div class="settings-menu-content">
               <div class="settings-menu-title">캘린더 수정</div>
-              <div class="settings-menu-description">이름, 패턴 설정 변경 및 삭제</div>
+              <div class="settings-menu-description">이름, 자동 패턴 사용 여부 변경 및 삭제</div>
             </div>
             <div class="settings-menu-arrow">›</div>
           </button>
@@ -262,8 +262,8 @@
           <button type="button" class="settings-menu-item" data-view="calendar-pattern">
             <div class="settings-menu-icon">🗓️</div>
             <div class="settings-menu-content">
-              <div class="settings-menu-title">패턴 관리</div>
-              <div class="settings-menu-description">근무 패턴 재설정</div>
+              <div class="settings-menu-title">교대 패턴 관리</div>
+              <div class="settings-menu-description">교대 근무 캘린더의 패턴 다시 설정</div>
             </div>
             <div class="settings-menu-arrow">›</div>
           </button>
@@ -277,7 +277,7 @@
             <div class="settings-section-icon" data-color="primary" aria-hidden="true">➕</div>
             <div>
               <h3>새 캘린더 만들기</h3>
-              <p class="settings-section-description">업무용, 개인용 등 용도별로 캘린더를 추가하세요.</p>
+              <p class="settings-section-description">교대 근무용, 일반 일정용 등 용도에 맞는 캘린더를 추가하세요.</p>
             </div>
           </div>
           <form id="createCalendarForm">
@@ -285,10 +285,15 @@
               캘린더 이름
               <input type="text" id="newCalendarName" placeholder="예: 개인 일정" maxlength="100" required />
             </label>
-            <label class="checkbox-label">
-              <input type="checkbox" id="newCalendarPatternEnabled" checked />
-              <span>근무 패턴 사용</span>
+            <label>
+              캘린더 유형
+              <select id="newCalendarTemplate">
+                <option value="general">일반 일정 캘린더</option>
+                <option value="shift">교대 근무 템플릿</option>
+                <option value="empty">비어 있는 캘린더</option>
+              </select>
             </label>
+            <small class="hint" id="newCalendarTemplateHint">일반 일정부터 수동으로 기록하는 캘린더입니다.</small>
             <button type="submit" class="full-width">캘린더 만들기</button>
           </form>
         </section>
@@ -301,7 +306,7 @@
             <div class="settings-section-icon" data-color="neutral" aria-hidden="true">✏️</div>
             <div>
               <h3>캘린더 수정</h3>
-              <p class="settings-section-description">선택한 캘린더의 이름을 바꾸거나 패턴 사용 여부를 조정합니다.</p>
+              <p class="settings-section-description">선택한 캘린더의 이름을 바꾸거나 자동 패턴 사용 여부를 조정합니다.</p>
             </div>
           </div>
           <form id="editCalendarForm">
@@ -311,7 +316,7 @@
             </label>
             <label class="checkbox-label">
               <input type="checkbox" id="editCalendarPatternEnabled" />
-              <span>근무 패턴 사용</span>
+              <span>자동 일정 패턴 사용</span>
             </label>
             <button type="submit" class="full-width" id="editCalendarSaveButton">변경사항 저장</button>
             <small class="hint" id="editCalendarHint" hidden>소유한 캘린더만 수정할 수 있습니다.</small>
@@ -327,10 +332,10 @@
             <div class="settings-section-icon" data-color="neutral" aria-hidden="true">🗓️</div>
             <div>
               <h3>패턴 관리</h3>
-              <p class="settings-section-description">패턴이 꼬였을 때 쉽게 초기화하고 처음부터 다시 설정할 수 있어요.</p>
+              <p class="settings-section-description">교대 근무 캘린더의 자동 패턴을 다시 설정할 수 있어요.</p>
             </div>
           </div>
-          <button type="button" id="resetPattern" class="secondary full-width">근무 패턴 재설정</button>
+          <button type="button" id="resetPattern" class="secondary full-width">교대 패턴 다시 설정</button>
         </section>
       </div>
 
