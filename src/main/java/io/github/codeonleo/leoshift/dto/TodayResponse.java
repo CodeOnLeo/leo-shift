@@ -5,6 +5,7 @@ import java.util.List;
 public record TodayResponse(
         boolean patternConfigured,
         SimpleDayDto today,
-        List<SimpleDayDto> upcoming
+        List<SimpleDayDto> upcoming,
+        List<ScheduleTypeResponse> scheduleTypes
 ) {
 }

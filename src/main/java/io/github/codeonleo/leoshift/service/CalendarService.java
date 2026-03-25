@@ -2,10 +2,10 @@ package io.github.codeonleo.leoshift.service;
 
 import io.github.codeonleo.leoshift.dto.CalendarDayDto;
 import io.github.codeonleo.leoshift.dto.CalendarResponse;
+import io.github.codeonleo.leoshift.dto.ScheduleTypeResponse;
 import io.github.codeonleo.leoshift.dto.AuthorDto;
 import io.github.codeonleo.leoshift.dto.MemoDto;
 import io.github.codeonleo.leoshift.entity.Calendar;
-import io.github.codeonleo.leoshift.entity.CalendarPattern;
 import io.github.codeonleo.leoshift.entity.ShiftException;
 import io.github.codeonleo.leoshift.repository.ShiftExceptionRepository;
 import io.github.codeonleo.leoshift.util.ColorTagUtil;
@@ -29,13 +29,15 @@ public class CalendarService {
     private final ShiftCalculationService calculationService;
     private final ShiftExceptionRepository exceptionRepository;
     private final DayMemoService dayMemoService;
+    private final ScheduleTypeService scheduleTypeService;
 
     @Transactional(readOnly = true)
     public CalendarResponse buildMonthlyCalendar(Calendar calendar, int year, int month) {
+        List<ScheduleTypeResponse> scheduleTypes = scheduleTypeService.listForCalendar(calendar);
         boolean usePattern = calendar.isPatternEnabled();
         boolean patternConfigured = usePattern && calendarPatternService.hasPattern(calendar);
         if (usePattern && !patternConfigured) {
-            return new CalendarResponse(false, year, month, Collections.emptyList(), Collections.emptyMap());
+            return new CalendarResponse(false, year, month, Collections.emptyList(), Collections.emptyMap(), scheduleTypes);
         }
         LocalDate monthStart = LocalDate.of(year, month, 1);
         LocalDate monthEnd = monthStart.withDayOfMonth(monthStart.lengthOfMonth());
@@ -73,10 +75,7 @@ public class CalendarService {
 
         List<CalendarDayDto> days = new ArrayList<>();
         Map<String, Long> summary = new LinkedHashMap<>();
-        summary.put("D", 0L);
-        summary.put("A", 0L);
-        summary.put("N", 0L);
-        summary.put("O", 0L);
+        scheduleTypes.forEach(type -> summary.put(type.code(), 0L));
 
         LocalDate cursor = calendarStart;
         while (!cursor.isAfter(calendarEnd)) {
@@ -137,6 +136,6 @@ public class CalendarService {
             cursor = cursor.plusDays(1);
         }
 
-        return new CalendarResponse(true, year, month, days, summary);
+        return new CalendarResponse(true, year, month, days, summary, scheduleTypes);
     }
 }

@@ -8,6 +8,7 @@ public record CalendarResponse(
         int year,
         int month,
         List<CalendarDayDto> days,
-        Map<String, Long> summary
+        Map<String, Long> summary,
+        List<ScheduleTypeResponse> scheduleTypes
 ) {
 }

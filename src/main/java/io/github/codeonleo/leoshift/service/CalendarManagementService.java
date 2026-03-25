@@ -23,6 +23,7 @@ public class CalendarManagementService {
     private final ShiftExceptionRepository shiftExceptionRepository;
     private final CalendarAccessService calendarAccessService;
     private final SettingsService settingsService;
+    private final ScheduleTypeService scheduleTypeService;
 
     @Transactional
     public Calendar createCalendar(CalendarCreateRequest request) {
@@ -39,6 +40,7 @@ public class CalendarManagementService {
                 .build();
 
         calendar = calendarRepository.save(calendar);
+        scheduleTypeService.ensureDefaults(calendar);
 
         // 첫 번째 캘린더인 경우 기본 캘린더로 설정
         UserSettings settings = settingsService.getOrCreate();
@@ -87,6 +89,7 @@ public class CalendarManagementService {
         calendarPatternRepository.deleteByCalendar(calendar);
         calendarShareRepository.deleteByCalendar(calendar);
         shiftExceptionRepository.deleteByCalendar(calendar);
+        scheduleTypeService.deleteByCalendar(calendar);
 
         // clear default calendar if needed
         UserSettings settings = settingsService.getOrCreate();

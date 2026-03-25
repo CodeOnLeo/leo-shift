@@ -17,33 +17,34 @@ public class TodayService {
     private final ScheduleService scheduleService;
     private final CalendarPatternService calendarPatternService;
     private final CalendarAccessService calendarAccessService;
+    private final ScheduleTypeService scheduleTypeService;
 
     public TodayResponse buildTodayView(Long calendarId) {
         CalendarAccessService.CalendarAccess access = calendarAccessService.requireView(calendarId);
         Calendar calendar = access.calendar();
+        var scheduleTypes = scheduleTypeService.listForCalendar(calendar);
         boolean configured = calendarPatternService.hasPattern(calendar);
         if (!configured) {
-            return new TodayResponse(false, null, List.of());
+            return new TodayResponse(false, null, List.of(), scheduleTypes);
         }
         LocalDate today = LocalDate.now(ZoneId.systemDefault());
         SimpleDayDto todayDto = scheduleService.resolveDay(today, calendar)
-                .map(this::toSimple)
+                .map(schedule -> toSimple(schedule, calendar))
                 .orElse(null);
         List<SimpleDayDto> upcoming = new ArrayList<>();
         for (int i = 1; i <= 3; i++) {
             LocalDate date = today.plusDays(i);
-            scheduleService.resolveDay(date, calendar).ifPresent(schedule -> upcoming.add(toSimple(schedule)));
+            scheduleService.resolveDay(date, calendar).ifPresent(schedule -> upcoming.add(toSimple(schedule, calendar)));
         }
-        return new TodayResponse(true, todayDto, upcoming);
+        return new TodayResponse(true, todayDto, upcoming, scheduleTypes);
     }
 
-    private SimpleDayDto toSimple(DaySchedule schedule) {
-        ShiftCodeDefinition definition = ShiftCodeDefinition.fromCode(schedule.effectiveCode());
+    private SimpleDayDto toSimple(DaySchedule schedule, Calendar calendar) {
         return new SimpleDayDto(
                 schedule.date(),
                 schedule.effectiveCode(),
-                definition.label(),
-                definition.timeRangeLabel(),
+                scheduleTypeService.resolveLabel(calendar, schedule.effectiveCode()),
+                scheduleTypeService.resolveTimeRange(calendar, schedule.effectiveCode()),
                 schedule.combinedMemos()
         );
     }

@@ -84,6 +84,10 @@
 - Security: JWT, OAuth2
 - Notification: Web Push API
 
+## 📚 설계 문서
+
+- [범용 일정 앱 확장 리팩터링 설계안](docs/generalization-refactor-plan.md)
+
 ## 📝 라이선스
 
 개인 사용 프로젝트

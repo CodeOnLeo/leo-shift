@@ -14,52 +14,65 @@ import org.springframework.util.StringUtils;
 @RequiredArgsConstructor
 public class DayDetailService {
 
-    private static final List<String> ALLOWED_CODES = List.of("D", "A", "N", "O");
-
     private final ScheduleService scheduleService;
     private final ExceptionService exceptionService;
     private final DayMemoService dayMemoService;
+    private final ScheduleTypeService scheduleTypeService;
 
     public DayDetailResponse load(LocalDate date, Calendar calendar) {
         return scheduleService.resolveDay(date, calendar)
                 .map(schedule -> toResponse(schedule, calendar))
                 .orElseGet(() -> {
                     List<MemoDto> dayMemos = dayMemoService.getMemos(date, calendar);
-                    return new DayDetailResponse(date, null, null, "", "", null, null, false, List.of(), null, null, dayMemos);
+                    return new DayDetailResponse(
+                            date,
+                            null,
+                            null,
+                            "",
+                            "",
+                            null,
+                            null,
+                            false,
+                            List.of(),
+                            null,
+                            null,
+                            dayMemos,
+                            scheduleTypeService.listForCalendar(calendar)
+                    );
                 });
     }
 
     public DayDetailResponse save(LocalDate date, ExceptionUpdateRequest request, Calendar calendar) {
-        String customCode = normalizeCode(request.customCode());
+        String customCode = normalizeCode(request.customCode(), calendar);
         exceptionService.saveOrUpdate(date, customCode, request.memo(), request.anniversaryMemo(), request.repeatYearly(), calendar);
         return load(date, calendar);
     }
 
     private DayDetailResponse toResponse(DaySchedule schedule, Calendar calendar) {
-        ShiftCodeDefinition definition = ShiftCodeDefinition.fromCode(schedule.effectiveCode());
         List<MemoDto> dayMemos = dayMemoService.getMemos(schedule.date(), calendar);
         return new DayDetailResponse(
                 schedule.date(),
                 schedule.baseCode(),
                 schedule.effectiveCode(),
-                definition.label(),
-                definition.timeRangeLabel(),
+                scheduleTypeService.resolveLabel(calendar, schedule.effectiveCode()),
+                scheduleTypeService.resolveTimeRange(calendar, schedule.effectiveCode()),
                 schedule.memo(),
                 schedule.anniversaryMemo(),
                 schedule.repeatYearly(),
                 schedule.yearlyMemos(),
                 schedule.author(),
                 schedule.updatedAt(),
-                dayMemos
+                dayMemos,
+                scheduleTypeService.listForCalendar(calendar)
         );
     }
 
-    private String normalizeCode(String code) {
+    private String normalizeCode(String code, Calendar calendar) {
         if (!StringUtils.hasText(code)) {
             return null;
         }
         String normalized = code.trim().toUpperCase();
-        if (!ALLOWED_CODES.contains(normalized)) {
+        if (!scheduleTypeService.supportsCode(calendar, normalized)) {
             throw new IllegalArgumentException("invalid_shift_code");
         }
         return normalized;
