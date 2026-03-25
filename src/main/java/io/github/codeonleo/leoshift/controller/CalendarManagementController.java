@@ -6,10 +6,13 @@ import io.github.codeonleo.leoshift.dto.CalendarShareInvitationRequest;
 import io.github.codeonleo.leoshift.dto.CalendarShareRequest;
 import io.github.codeonleo.leoshift.dto.CalendarShareResponse;
 import io.github.codeonleo.leoshift.dto.CalendarUpdateRequest;
+import io.github.codeonleo.leoshift.dto.ScheduleTypeResponse;
+import io.github.codeonleo.leoshift.dto.ScheduleTypeUpdateRequest;
 import io.github.codeonleo.leoshift.dto.ShareDecisionRequest;
 import io.github.codeonleo.leoshift.service.CalendarAccessService;
 import io.github.codeonleo.leoshift.service.CalendarManagementService;
 import io.github.codeonleo.leoshift.service.CalendarShareService;
+import io.github.codeonleo.leoshift.service.ScheduleTypeService;
 import io.github.codeonleo.leoshift.service.SettingsService;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -30,15 +33,18 @@ public class CalendarManagementController {
     private final CalendarShareService calendarShareService;
     private final CalendarManagementService calendarManagementService;
     private final SettingsService settingsService;
+    private final ScheduleTypeService scheduleTypeService;
 
     public CalendarManagementController(CalendarAccessService calendarAccessService,
                                         CalendarShareService calendarShareService,
                                         CalendarManagementService calendarManagementService,
-                                        SettingsService settingsService) {
+                                        SettingsService settingsService,
+                                        ScheduleTypeService scheduleTypeService) {
         this.calendarAccessService = calendarAccessService;
         this.calendarShareService = calendarShareService;
         this.calendarManagementService = calendarManagementService;
         this.settingsService = settingsService;
+        this.scheduleTypeService = scheduleTypeService;
     }
 
     @GetMapping
@@ -94,5 +100,18 @@ public class CalendarManagementController {
     public CalendarShareResponse respond(@PathVariable Long calendarId,
                                          @Valid @RequestBody ShareDecisionRequest request) {
         return calendarShareService.respond(calendarId, request);
+    }
+
+    @GetMapping("/{calendarId}/schedule-types")
+    public List<ScheduleTypeResponse> scheduleTypes(@PathVariable Long calendarId) {
+        var access = calendarAccessService.requireView(calendarId);
+        return scheduleTypeService.listForCalendar(access.calendar());
+    }
+
+    @PutMapping("/{calendarId}/schedule-types")
+    public List<ScheduleTypeResponse> updateScheduleTypes(@PathVariable Long calendarId,
+                                                          @Valid @RequestBody ScheduleTypeUpdateRequest request) {
+        var access = calendarAccessService.requireEdit(calendarId);
+        return scheduleTypeService.updateTypes(access.calendar(), request.scheduleTypes());
     }
 }

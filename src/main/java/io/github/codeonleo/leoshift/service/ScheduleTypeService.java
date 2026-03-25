@@ -1,6 +1,7 @@
 package io.github.codeonleo.leoshift.service;
 
 import io.github.codeonleo.leoshift.dto.ScheduleTypeResponse;
+import io.github.codeonleo.leoshift.dto.ScheduleTypeUpdateItemRequest;
 import io.github.codeonleo.leoshift.entity.Calendar;
 import io.github.codeonleo.leoshift.entity.ScheduleType;
 import io.github.codeonleo.leoshift.repository.ScheduleTypeRepository;
@@ -9,6 +10,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,6 +44,47 @@ public class ScheduleTypeService {
                         .build())
                 .toList();
         scheduleTypeRepository.saveAll(defaults);
+    }
+
+    @Transactional
+    public List<ScheduleTypeResponse> updateTypes(Calendar calendar, List<ScheduleTypeUpdateItemRequest> requests) {
+        if (calendar == null) {
+            throw new IllegalArgumentException("calendar_required");
+        }
+        if (requests == null || requests.isEmpty()) {
+            throw new IllegalArgumentException("schedule_types_required");
+        }
+
+        ensureDefaults(calendar);
+
+        Map<String, ScheduleTypeUpdateItemRequest> requestByCode = requests.stream()
+                .collect(Collectors.toMap(
+                        request -> request.code().trim().toUpperCase(),
+                        Function.identity(),
+                        (left, right) -> {
+                            throw new IllegalArgumentException("duplicate_schedule_type_code");
+                        },
+                        LinkedHashMap::new
+                ));
+
+        List<ScheduleType> existing = scheduleTypeRepository.findByCalendarOrderBySortOrderAscCodeAsc(calendar);
+        for (ScheduleType type : existing) {
+            ScheduleTypeUpdateItemRequest request = requestByCode.get(type.getCode().toUpperCase());
+            if (request == null) {
+                continue;
+            }
+            type.setName(request.name().trim());
+            type.setColor(normalizeColor(request.color(), legacyFallback(type.getCode()).color()));
+            if (type.isDefaultOff()) {
+                type.setStartTime(null);
+                type.setEndTime(null);
+            } else {
+                type.setStartTime(request.startTime());
+                type.setEndTime(request.endTime());
+            }
+        }
+        scheduleTypeRepository.saveAll(existing);
+        return listForCalendar(calendar);
     }
 
     @Transactional(readOnly = true)
@@ -124,6 +168,13 @@ public class ScheduleTypeService {
             return LEGACY_DEFAULTS.get("O");
         }
         return LEGACY_DEFAULTS.getOrDefault(code.trim().toUpperCase(), LEGACY_DEFAULTS.get("O"));
+    }
+
+    private String normalizeColor(String color, String fallback) {
+        if (!StringUtils.hasText(color)) {
+            return fallback;
+        }
+        return color.trim().toUpperCase();
     }
 
     private String formatTimeRange(String name, LocalTime startTime, LocalTime endTime, boolean defaultOff) {

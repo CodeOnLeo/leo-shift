@@ -285,14 +285,21 @@
               캘린더 이름
               <input type="text" id="newCalendarName" placeholder="예: 개인 일정" maxlength="100" required />
             </label>
-            <label>
-              캘린더 유형
-              <select id="newCalendarTemplate">
-                <option value="general">일반 일정 캘린더</option>
-                <option value="shift">교대 근무 템플릿</option>
-                <option value="empty">비어 있는 캘린더</option>
-              </select>
-            </label>
+            <div class="template-picker" id="newCalendarTemplatePicker" role="radiogroup" aria-label="캘린더 유형">
+              <button type="button" class="template-card is-active" data-template="general" aria-pressed="true">
+                <strong>일반 일정</strong>
+                <span>개인 일정, 가족 일정, 공부 계획</span>
+              </button>
+              <button type="button" class="template-card" data-template="shift" aria-pressed="false">
+                <strong>교대 근무</strong>
+                <span>주간·오후·야간 사이클 자동 관리</span>
+              </button>
+              <button type="button" class="template-card" data-template="empty" aria-pressed="false">
+                <strong>비어 있는 캘린더</strong>
+                <span>일단 빈 캘린더만 만들어두기</span>
+              </button>
+            </div>
+            <input type="hidden" id="newCalendarTemplate" value="general" />
             <small class="hint" id="newCalendarTemplateHint">일반 일정부터 수동으로 기록하는 캘린더입니다.</small>
             <button type="submit" class="full-width">캘린더 만들기</button>
           </form>
@@ -331,9 +338,17 @@
           <div class="settings-section-header">
             <div class="settings-section-icon" data-color="neutral" aria-hidden="true">🗓️</div>
             <div>
-              <h3>패턴 관리</h3>
+              <h3>교대 패턴 관리</h3>
               <p class="settings-section-description">교대 근무 캘린더의 자동 패턴을 다시 설정할 수 있어요.</p>
             </div>
+          </div>
+          <div id="scheduleTypeEditorSection" class="schedule-type-editor-section">
+            <div class="schedule-type-editor-header">
+              <strong>근무 코드 설정</strong>
+              <span>코드별 이름, 색상, 근무 시간을 조정할 수 있어요.</span>
+            </div>
+            <div id="scheduleTypeEditorList" class="schedule-type-editor-list"></div>
+            <button type="button" id="saveScheduleTypesButton" class="full-width">근무 코드 설정 저장</button>
           </div>
           <button type="button" id="resetPattern" class="secondary full-width">교대 패턴 다시 설정</button>
         </section>

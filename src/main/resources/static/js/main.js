@@ -49,6 +49,7 @@ const colorPicker = document.getElementById('colorPicker');
 const saveColorButton = document.getElementById('saveColorButton');
 const createCalendarForm = document.getElementById('createCalendarForm');
 const newCalendarNameInput = document.getElementById('newCalendarName');
+const newCalendarTemplatePicker = document.getElementById('newCalendarTemplatePicker');
 const newCalendarTemplateInput = document.getElementById('newCalendarTemplate');
 const newCalendarTemplateHint = document.getElementById('newCalendarTemplateHint');
 const editCalendarForm = document.getElementById('editCalendarForm');
@@ -70,6 +71,9 @@ const patternCalendarClose = document.getElementById('patternCalendarClose');
 const patternCalendarTitle = document.getElementById('patternCalendarTitle');
 const patternCalendarSubtitle = document.getElementById('patternCalendarSubtitle');
 const patternCalendarSubmit = document.getElementById('patternCalendarSubmit');
+const scheduleTypeEditorSection = document.getElementById('scheduleTypeEditorSection');
+const scheduleTypeEditorList = document.getElementById('scheduleTypeEditorList');
+const saveScheduleTypesButton = document.getElementById('saveScheduleTypesButton');
 
 const patternManager = initPatternForm({
   sectionEl: document.getElementById('pattern-setup'),
@@ -113,6 +117,7 @@ function setScheduleTypes(scheduleTypes = []) {
   state.scheduleTypes = Array.isArray(scheduleTypes) ? scheduleTypes : [];
   renderLegend();
   syncDetailCodeOptions();
+  renderScheduleTypeEditor();
 }
 
 function getScheduleType(code, scheduleTypes = null) {
@@ -261,6 +266,107 @@ function updateCreateCalendarTemplateUI() {
   }
   if (newCalendarNameInput && !newCalendarNameInput.value) {
     newCalendarNameInput.placeholder = config.placeholder;
+  }
+  if (newCalendarTemplatePicker) {
+    newCalendarTemplatePicker.querySelectorAll('.template-card').forEach((card) => {
+      const active = card.dataset.template === newCalendarTemplateInput.value;
+      card.classList.toggle('is-active', active);
+      card.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+  }
+}
+
+function renderScheduleTypeEditor(scheduleTypes = state.scheduleTypes) {
+  if (!scheduleTypeEditorSection || !scheduleTypeEditorList) {
+    return;
+  }
+  const current = getCurrentCalendar();
+  const canEdit = !!current && current.owned && current.patternEnabled !== false;
+  scheduleTypeEditorSection.hidden = !current || current.patternEnabled === false;
+  scheduleTypeEditorList.innerHTML = '';
+
+  getScheduleTypes(scheduleTypes).forEach((type) => {
+    const card = document.createElement('div');
+    card.className = 'schedule-type-card';
+    card.dataset.code = type.code;
+
+    const timeBlock = type.defaultOff
+      ? '<div class="schedule-type-note">휴무 성격의 코드는 시간을 사용하지 않습니다.</div>'
+      : `<div class="time-row">
+          <label>
+            시작
+            <input type="time" data-field="startTime" value="${type.startTime || ''}" ${canEdit ? '' : 'disabled'} />
+          </label>
+          <label>
+            종료
+            <input type="time" data-field="endTime" value="${type.endTime || ''}" ${canEdit ? '' : 'disabled'} />
+          </label>
+        </div>`;
+
+    card.innerHTML = `
+      <div class="schedule-type-card-header">
+        <div class="schedule-type-swatch" style="background:${type.color || '#94A3B8'}"></div>
+        <div>
+          <strong>${type.name}</strong>
+          <div class="schedule-type-code">${type.code}</div>
+        </div>
+      </div>
+      <div class="schedule-type-grid">
+        <label>
+          이름
+          <input type="text" data-field="name" value="${type.name || ''}" maxlength="100" ${canEdit ? '' : 'disabled'} />
+        </label>
+        <label>
+          색상
+          <input type="color" data-field="color" value="${type.color || '#94A3B8'}" ${canEdit ? '' : 'disabled'} />
+        </label>
+      </div>
+      ${timeBlock}
+    `;
+    scheduleTypeEditorList.appendChild(card);
+  });
+
+  if (saveScheduleTypesButton) {
+    saveScheduleTypesButton.hidden = !canEdit;
+    saveScheduleTypesButton.disabled = !canEdit;
+  }
+}
+
+function collectScheduleTypePayload() {
+  if (!scheduleTypeEditorList) {
+    return [];
+  }
+  return Array.from(scheduleTypeEditorList.querySelectorAll('.schedule-type-card')).map((card) => ({
+    code: card.dataset.code,
+    name: card.querySelector('[data-field="name"]')?.value?.trim() || card.dataset.code,
+    color: card.querySelector('[data-field="color"]')?.value || '#94A3B8',
+    startTime: card.querySelector('[data-field="startTime"]')?.value || null,
+    endTime: card.querySelector('[data-field="endTime"]')?.value || null
+  }));
+}
+
+async function saveScheduleTypes() {
+  if (!state.calendarId) {
+    showToast('캘린더를 먼저 선택하세요.');
+    return;
+  }
+  try {
+    const scheduleTypes = await api.updateScheduleTypes(state.calendarId, {
+      scheduleTypes: collectScheduleTypePayload()
+    });
+    setScheduleTypes(scheduleTypes || []);
+    if (state.calendarData) {
+      state.calendarData.scheduleTypes = scheduleTypes || [];
+    }
+    invalidateCache('calendar');
+    invalidateCache('day');
+    showToast('근무 코드 설정이 저장되었습니다.');
+    await loadCalendar(state.year, state.month, { force: true });
+    if (state.selectedDate) {
+      await selectDay(state.selectedDate);
+    }
+  } catch (e) {
+    showToast('근무 코드 설정 저장 실패: ' + (e.message || '오류'));
   }
 }
 
@@ -1050,6 +1156,15 @@ if (createCalendarForm) {
   });
 }
 
+if (newCalendarTemplatePicker && newCalendarTemplateInput) {
+  newCalendarTemplatePicker.querySelectorAll('.template-card').forEach((card) => {
+    card.addEventListener('click', () => {
+      newCalendarTemplateInput.value = card.dataset.template || 'general';
+      updateCreateCalendarTemplateUI();
+    });
+  });
+}
+
 if (editCalendarForm) {
   editCalendarForm.addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -1273,6 +1388,12 @@ if (patternOnboardingNoCalendar) {
 if (patternOnboardingClose) {
   patternOnboardingClose.addEventListener('click', () => {
     if (patternOnboardingModal) patternOnboardingModal.hidden = true;
+  });
+}
+
+if (saveScheduleTypesButton) {
+  saveScheduleTypesButton.addEventListener('click', async () => {
+    await saveScheduleTypes();
   });
 }
 
@@ -1674,6 +1795,9 @@ function showSettingsView(viewName) {
   // 개인 설정 뷰로 이동 시 프로필 정보 로드
   if (viewName === 'personal') {
     loadProfileInfo();
+  }
+  if (viewName === 'calendar-pattern') {
+    renderScheduleTypeEditor();
   }
 
   currentSettingsView = viewName;
