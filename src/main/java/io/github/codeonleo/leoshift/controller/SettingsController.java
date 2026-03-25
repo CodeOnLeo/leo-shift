@@ -12,6 +12,7 @@ import io.github.codeonleo.leoshift.service.CalendarAccessService;
 import io.github.codeonleo.leoshift.service.CalendarPatternService;
 import io.github.codeonleo.leoshift.service.CalendarWeeklyRuleService;
 import io.github.codeonleo.leoshift.service.NotificationPreferenceService;
+import io.github.codeonleo.leoshift.service.ScheduleTypeService;
 import io.github.codeonleo.leoshift.service.SettingsService;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -28,22 +29,23 @@ import org.springframework.util.StringUtils;
 @RequestMapping("/api/settings")
 public class SettingsController {
 
-    private static final List<String> ALLOWED_CODES = List.of("D", "A", "N", "V", "O");
-
     private final CalendarAccessService calendarAccessService;
     private final CalendarPatternService calendarPatternService;
     private final CalendarWeeklyRuleService calendarWeeklyRuleService;
+    private final ScheduleTypeService scheduleTypeService;
     private final SettingsService settingsService;
     private final NotificationPreferenceService preferenceService;
 
     public SettingsController(CalendarAccessService calendarAccessService,
                               CalendarPatternService calendarPatternService,
                               CalendarWeeklyRuleService calendarWeeklyRuleService,
+                              ScheduleTypeService scheduleTypeService,
                               SettingsService settingsService,
                               NotificationPreferenceService preferenceService) {
         this.calendarAccessService = calendarAccessService;
         this.calendarPatternService = calendarPatternService;
         this.calendarWeeklyRuleService = calendarWeeklyRuleService;
+        this.scheduleTypeService = scheduleTypeService;
         this.settingsService = settingsService;
         this.preferenceService = preferenceService;
     }
@@ -67,12 +69,12 @@ public class SettingsController {
     @PutMapping
     public ResponseEntity<PatternSettingsResponse> saveSettings(@RequestParam(required = false) Long calendarId,
                                                                 @Valid @RequestBody PatternSettingsRequest request) {
-        validatePattern(request.pattern());
         Integer minutes = request.defaultNotificationMinutes();
         if (minutes != null && (minutes < 5 || minutes > 240)) {
             throw new IllegalArgumentException("notification_minutes_out_of_range");
         }
         Calendar calendar = calendarAccessService.requireEdit(calendarId).calendar();
+        validatePattern(calendar, request.pattern());
         if (minutes != null) {
             settingsService.updateNotificationMinutes(minutes);
         }
@@ -103,12 +105,12 @@ public class SettingsController {
         return ResponseEntity.noContent().build();
     }
 
-    private void validatePattern(List<String> pattern) {
+    private void validatePattern(Calendar calendar, List<String> pattern) {
         if (pattern == null || pattern.isEmpty()) {
             throw new IllegalArgumentException("pattern_required");
         }
         for (String code : pattern) {
-            if (!StringUtils.hasText(code) || !ALLOWED_CODES.contains(code.trim().toUpperCase())) {
+            if (!StringUtils.hasText(code) || !scheduleTypeService.supportsCode(calendar, code.trim().toUpperCase())) {
                 throw new IllegalArgumentException("invalid_shift_code");
             }
         }

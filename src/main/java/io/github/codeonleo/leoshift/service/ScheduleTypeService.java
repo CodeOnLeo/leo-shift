@@ -101,6 +101,8 @@ public class ScheduleTypeService {
                 ));
 
         List<ScheduleType> existing = scheduleTypeRepository.findByCalendarOrderBySortOrderAscCodeAsc(calendar);
+        Map<String, ScheduleType> existingByCode = existing.stream()
+                .collect(Collectors.toMap(type -> type.getCode().toUpperCase(), Function.identity()));
         for (ScheduleType type : existing) {
             ScheduleTypeUpdateItemRequest request = requestByCode.get(type.getCode().toUpperCase());
             if (request == null) {
@@ -115,6 +117,30 @@ public class ScheduleTypeService {
                 type.setStartTime(request.startTime());
                 type.setEndTime(request.endTime());
             }
+        }
+        int nextSortOrder = existing.stream()
+                .map(ScheduleType::getSortOrder)
+                .filter(value -> value != null)
+                .max(Integer::compareTo)
+                .orElse(0) + 10;
+        for (Map.Entry<String, ScheduleTypeUpdateItemRequest> entry : requestByCode.entrySet()) {
+            if (existingByCode.containsKey(entry.getKey())) {
+                continue;
+            }
+            ScheduleTypeUpdateItemRequest request = entry.getValue();
+            boolean defaultOff = request.startTime() == null && request.endTime() == null;
+            existing.add(ScheduleType.builder()
+                    .calendar(calendar)
+                    .code(entry.getKey())
+                    .name(request.name().trim())
+                    .color(normalizeColor(request.color(), "#94A3B8"))
+                    .startTime(defaultOff ? null : request.startTime())
+                    .endTime(defaultOff ? null : request.endTime())
+                    .countsAsWork(!defaultOff)
+                    .defaultOff(defaultOff)
+                    .sortOrder(nextSortOrder)
+                    .build());
+            nextSortOrder += 10;
         }
         scheduleTypeRepository.saveAll(existing);
         return listForCalendar(calendar);

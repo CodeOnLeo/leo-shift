@@ -18,10 +18,9 @@ import org.springframework.util.StringUtils;
 @RequiredArgsConstructor
 public class CalendarPatternService {
 
-    private static final List<String> ALLOWED_CODES = List.of("D", "A", "N", "V", "O");
-
     private final CalendarPatternRepository repository;
     private final SettingsService settingsService;
+    private final ScheduleTypeService scheduleTypeService;
 
     public record ResolvedPattern(List<String> codes, LocalDate startDate) {
     }
@@ -62,7 +61,7 @@ public class CalendarPatternService {
         if (startDate == null) {
             throw new IllegalArgumentException("pattern_start_required");
         }
-        List<String> pattern = normalizePattern(rawPattern);
+        List<String> pattern = normalizePattern(calendar, rawPattern);
         if (pattern.isEmpty()) {
             throw new IllegalArgumentException("pattern_required");
         }
@@ -86,10 +85,10 @@ public class CalendarPatternService {
         if (pattern == null || !StringUtils.hasText(pattern.getPatternCodes())) {
             return Collections.emptyList();
         }
-        return normalizePattern(List.of(pattern.getPatternCodes().split(",")));
+        return normalizePattern(pattern.getCalendar(), List.of(pattern.getPatternCodes().split(",")));
     }
 
-    private List<String> normalizePattern(List<String> pattern) {
+    private List<String> normalizePattern(Calendar calendar, List<String> pattern) {
         if (pattern == null) {
             return Collections.emptyList();
         }
@@ -98,7 +97,7 @@ public class CalendarPatternService {
                 .filter(StringUtils::hasText)
                 .map(String::toUpperCase)
                 .peek(code -> {
-                    if (!ALLOWED_CODES.contains(code)) {
+                    if (!scheduleTypeService.supportsCode(calendar, code)) {
                         throw new IllegalArgumentException("invalid_shift_code");
                     }
                 })

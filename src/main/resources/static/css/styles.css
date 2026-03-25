@@ -1065,6 +1065,30 @@ button.secondary {
   color: #8e8e93;
 }
 
+.pattern-code-palette,
+.pattern-sequence {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 0.9rem;
+}
+
+.pattern-code-chip {
+  border: 1px solid #d7dce5;
+  background: #fff;
+  color: #1c1c1e;
+  border-radius: 999px;
+  padding: 0.7rem 0.95rem;
+  min-height: unset;
+  font-size: 0.92rem;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+}
+
+.pattern-code-chip.sequence {
+  background: #eff6ff;
+  border-color: #93c5fd;
+}
+
 .share-form {
   display: flex;
   flex-wrap: wrap;

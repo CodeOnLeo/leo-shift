@@ -52,39 +52,17 @@
     </div>
 
     <section id="pattern-setup" hidden>
-      <h2>교대 근무 패턴 설정</h2>
+      <h2>교대 패턴 구성</h2>
       <form class="pattern-form" id="patternForm">
         <div class="pattern-builder">
-          <h3>교대 근무 사이클 설정</h3>
+          <h3>먼저 만든 코드로 사이클 만들기</h3>
+          <p class="settings-section-description">근무 코드 설정에서 만든 코드들을 눌러서 순서를 쌓아보세요.</p>
 
-          <div class="shift-group">
-            <label>주간 (D)</label>
-            <div class="shift-input-group">
-              <input type="number" id="dDays" min="0" max="30" value="5" />
-              <span>일 근무</span>
-              <input type="number" id="dOff" min="0" max="10" value="1" />
-              <span>일 휴무</span>
-            </div>
-          </div>
-
-          <div class="shift-group">
-            <label>오후 (A)</label>
-            <div class="shift-input-group">
-              <input type="number" id="aDays" min="0" max="30" value="5" />
-              <span>일 근무</span>
-              <input type="number" id="aOff" min="0" max="10" value="1" />
-              <span>일 휴무</span>
-            </div>
-          </div>
-
-          <div class="shift-group">
-            <label>야간 (N)</label>
-            <div class="shift-input-group">
-              <input type="number" id="nDays" min="0" max="30" value="5" />
-              <span>일 근무</span>
-              <input type="number" id="nOff" min="0" max="10" value="3" />
-              <span>일 휴무</span>
-            </div>
+          <div class="pattern-code-palette" id="patternCodePalette"></div>
+          <div class="pattern-sequence" id="patternSequence"></div>
+          <div class="onboarding-actions">
+            <button type="button" class="secondary" id="patternUndoButton">마지막 코드 제거</button>
+            <button type="button" class="secondary" id="patternClearButton">전체 비우기</button>
           </div>
 
           <div class="pattern-preview" id="patternPreview">
@@ -344,21 +322,22 @@
           </div>
           <div id="scheduleTypeEditorSection" class="schedule-type-editor-section">
             <div class="schedule-type-editor-header">
-              <strong>근무 코드 설정</strong>
-              <span>코드별 이름, 색상, 근무 시간을 조정할 수 있어요.</span>
+              <strong>1. 시작 코드 세트 만들기</strong>
+              <span>기본 제공 코드는 시작용입니다. 이름, 색상, 시간은 자유롭게 바꾸고 새 코드도 추가할 수 있어요.</span>
             </div>
             <div id="scheduleTypeEditorList" class="schedule-type-editor-list"></div>
+            <button type="button" id="addScheduleTypeButton" class="secondary full-width">새 코드 추가</button>
             <button type="button" id="saveScheduleTypesButton" class="full-width">근무 코드 설정 저장</button>
           </div>
           <div id="weeklyRuleEditorSection" class="schedule-type-editor-section" hidden>
             <div class="schedule-type-editor-header">
-              <strong>주간 반복 일정</strong>
+              <strong>2. 주간 반복 일정 만들기</strong>
               <span>요일별 기본 일정을 정하면 일반 일정 캘린더가 자동으로 채워져요.</span>
             </div>
             <div id="weeklyRuleEditorList" class="schedule-type-editor-list"></div>
             <button type="button" id="saveWeeklyRulesButton" class="full-width">주간 일정 저장</button>
           </div>
-          <button type="button" id="resetPattern" class="secondary full-width">교대 패턴 다시 설정</button>
+          <button type="button" id="resetPattern" class="secondary full-width">2. 이 코드들로 교대 패턴 구성하기</button>
         </section>
       </div>
 
