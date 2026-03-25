@@ -2,6 +2,7 @@ import { api } from './api.js';
 import { renderCalendar } from './calendar.js';
 import { initPatternForm } from './pattern.js';
 import { setLoadingHooks } from './api.js';
+import { getLocalTodayIso, parseIsoDateLocal } from './date-utils.js';
 
 const calendarSection = document.getElementById('calendar-section');
 const calendarTitle = document.getElementById('calendarTitle');
@@ -301,7 +302,7 @@ async function bootstrap() {
           gridEl: calendarGrid,
           summaryEl: summaryList,
           data: calData,
-          today: new Date().toISOString().split('T')[0],
+          today: getLocalTodayIso(),
           selectedDate: state.selectedDate,
           onSelectDay: (date) => selectDay(date),
           usePattern: state.usePattern
@@ -631,7 +632,7 @@ async function loadCalendar(year, month, { calendarId = state.calendarId, force 
     gridEl: calendarGrid,
     summaryEl: summaryList,
     data,
-    today: new Date().toISOString().split('T')[0],
+    today: getLocalTodayIso(),
     selectedDate: state.selectedDate,
     onSelectDay: (date) => selectDay(date),
     usePattern: state.usePattern
@@ -784,7 +785,7 @@ async function selectDay(date) {
       gridEl: calendarGrid,
       summaryEl: summaryList,
       data: calendarData,
-      today: new Date().toISOString().split('T')[0],
+      today: getLocalTodayIso(),
       selectedDate: state.selectedDate,
       onSelectDay: (date) => selectDay(date),
       usePattern: state.usePattern
@@ -1418,7 +1419,7 @@ function formatDateTime(isoString) {
 }
 
 function formatKoreanDate(date) {
-  const d = new Date(date);
+  const d = parseIsoDateLocal(date);
   const year = d.getFullYear();
   const month = d.getMonth() + 1;
   const day = d.getDate();

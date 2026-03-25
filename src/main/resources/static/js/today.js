@@ -1,3 +1,5 @@
+import { parseIsoDateLocal } from './date-utils.js';
+
 export function renderToday({ sectionEl, cardEl, upcomingEl, data }) {
   if (!data.patternConfigured || !data.today) {
     sectionEl.hidden = true;
@@ -25,5 +27,5 @@ export function renderToday({ sectionEl, cardEl, upcomingEl, data }) {
 }
 
 function formatDate(date) {
-  return new Date(date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+  return parseIsoDateLocal(date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
 }

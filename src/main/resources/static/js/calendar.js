@@ -1,3 +1,5 @@
+import { parseIsoDateLocal } from './date-utils.js';
+
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 function initials(name) {
@@ -45,7 +47,7 @@ export function renderCalendar({
 
   // 백엔드에서 35일(5주)을 보내주므로 빈 셀 없이 바로 렌더링
   data.days.forEach((day) => {
-    const dayDate = new Date(day.date);
+    const dayDate = parseIsoDateLocal(day.date);
     const isCurrentMonth = dayDate.getMonth() === data.month - 1;
     const cell = document.createElement('div');
     cell.className = 'day-cell';
@@ -67,7 +69,7 @@ export function renderCalendar({
     }
     const dateLabel = document.createElement('div');
     dateLabel.className = 'date-label';
-    dateLabel.textContent = new Date(day.date).getDate();
+    dateLabel.textContent = dayDate.getDate();
     const codeLabel = document.createElement('div');
     codeLabel.className = 'shift-code';
     codeLabel.textContent = usePattern ? (day.effectiveCode || '-') : '';
