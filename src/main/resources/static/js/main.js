@@ -74,6 +74,9 @@ const patternCalendarSubmit = document.getElementById('patternCalendarSubmit');
 const scheduleTypeEditorSection = document.getElementById('scheduleTypeEditorSection');
 const scheduleTypeEditorList = document.getElementById('scheduleTypeEditorList');
 const saveScheduleTypesButton = document.getElementById('saveScheduleTypesButton');
+const weeklyRuleEditorSection = document.getElementById('weeklyRuleEditorSection');
+const weeklyRuleEditorList = document.getElementById('weeklyRuleEditorList');
+const saveWeeklyRulesButton = document.getElementById('saveWeeklyRulesButton');
 
 const patternManager = initPatternForm({
   sectionEl: document.getElementById('pattern-setup'),
@@ -103,7 +106,8 @@ const state = {
   calendars: [],
   me: null,
   calendarData: null,
-  scheduleTypes: []
+  scheduleTypes: [],
+  weeklyRules: []
 };
 
 function getScheduleTypes(preferred = null) {
@@ -118,6 +122,12 @@ function setScheduleTypes(scheduleTypes = []) {
   renderLegend();
   syncDetailCodeOptions();
   renderScheduleTypeEditor();
+  renderWeeklyRuleEditor();
+}
+
+function setWeeklyRules(weeklyRules = []) {
+  state.weeklyRules = Array.isArray(weeklyRules) ? weeklyRules : [];
+  renderWeeklyRuleEditor();
 }
 
 function getScheduleType(code, scheduleTypes = null) {
@@ -281,6 +291,7 @@ function renderScheduleTypeEditor(scheduleTypes = state.scheduleTypes) {
     return;
   }
   const current = getCurrentCalendar();
+  const isShift = !!current && getScheduleTypes(scheduleTypes).some((type) => ['D', 'A', 'N'].includes(type.code));
   const canEdit = !!current && current.owned && current.patternEnabled !== false;
   scheduleTypeEditorSection.hidden = !current || current.patternEnabled === false;
   scheduleTypeEditorList.innerHTML = '';
@@ -330,6 +341,65 @@ function renderScheduleTypeEditor(scheduleTypes = state.scheduleTypes) {
     saveScheduleTypesButton.hidden = !canEdit;
     saveScheduleTypesButton.disabled = !canEdit;
   }
+  if (resetPatternButton) {
+    resetPatternButton.hidden = !isShift;
+  }
+}
+
+function isGeneralCalendar(current = getCurrentCalendar()) {
+  const codes = getScheduleTypes().map((type) => type.code);
+  return !!current && current.patternEnabled !== false && codes.includes('WORK') && codes.includes('OFF') && !codes.includes('D');
+}
+
+function renderWeeklyRuleEditor(weeklyRules = state.weeklyRules) {
+  if (!weeklyRuleEditorSection || !weeklyRuleEditorList) {
+    return;
+  }
+  const current = getCurrentCalendar();
+  const visible = isGeneralCalendar(current);
+  weeklyRuleEditorSection.hidden = !visible;
+  if (!visible) {
+    weeklyRuleEditorList.innerHTML = '';
+    if (saveWeeklyRulesButton) {
+      saveWeeklyRulesButton.hidden = true;
+      saveWeeklyRulesButton.disabled = true;
+    }
+    return;
+  }
+  const canEdit = !!current && current.owned;
+  const ruleMap = new Map((weeklyRules || []).map((rule) => [rule.dayOfWeek, rule.scheduleTypeCode]));
+  const scheduleTypes = getScheduleTypes().filter((type) => !type.defaultOff || type.code === 'OFF' || type.code === 'O');
+  const weekdayLabels = ['월요일', '화요일', '수요일', '목요일', '금요일', '토요일', '일요일'];
+  weeklyRuleEditorList.innerHTML = '';
+
+  weekdayLabels.forEach((label, index) => {
+    const dayOfWeek = index + 1;
+    const wrap = document.createElement('div');
+    wrap.className = 'schedule-type-card';
+    const options = getScheduleTypes().map((type) => `
+      <option value="${type.code}" ${ruleMap.get(dayOfWeek) === type.code ? 'selected' : ''}>${formatScheduleTypeLabel(type)}</option>
+    `).join('');
+    wrap.innerHTML = `
+      <div class="schedule-type-card-header">
+        <div>
+          <strong>${label}</strong>
+          <div class="schedule-type-code">기본 일정 코드 선택</div>
+        </div>
+      </div>
+      <label>
+        일정
+        <select data-day-of-week="${dayOfWeek}" ${canEdit ? '' : 'disabled'}>
+          ${options}
+        </select>
+      </label>
+    `;
+    weeklyRuleEditorList.appendChild(wrap);
+  });
+
+  if (saveWeeklyRulesButton) {
+    saveWeeklyRulesButton.hidden = !canEdit;
+    saveWeeklyRulesButton.disabled = !canEdit;
+  }
 }
 
 function collectScheduleTypePayload() {
@@ -367,6 +437,38 @@ async function saveScheduleTypes() {
     }
   } catch (e) {
     showToast('근무 코드 설정 저장 실패: ' + (e.message || '오류'));
+  }
+}
+
+function collectWeeklyRulesPayload() {
+  if (!weeklyRuleEditorList) {
+    return [];
+  }
+  return Array.from(weeklyRuleEditorList.querySelectorAll('select[data-day-of-week]')).map((select) => ({
+    dayOfWeek: Number(select.dataset.dayOfWeek),
+    scheduleTypeCode: select.value
+  }));
+}
+
+async function saveWeeklyRules() {
+  if (!state.calendarId) {
+    showToast('캘린더를 먼저 선택하세요.');
+    return;
+  }
+  try {
+    const weeklyRules = await api.updateWeeklyRules(state.calendarId, {
+      rules: collectWeeklyRulesPayload()
+    });
+    setWeeklyRules(weeklyRules || []);
+    invalidateCache('calendar');
+    invalidateCache('day');
+    showToast('주간 일정이 저장되었습니다.');
+    await loadCalendar(state.year, state.month, { force: true });
+    if (state.selectedDate) {
+      await selectDay(state.selectedDate);
+    }
+  } catch (e) {
+    showToast('주간 일정 저장 실패: ' + (e.message || '오류'));
   }
 }
 
@@ -606,6 +708,7 @@ async function loadCalendars() {
   state.calendarData = null;
   if (!state.calendarId) {
     setScheduleTypes([]);
+    setWeeklyRules([]);
   }
   renderCalendarSelector();
   renderInvites();
@@ -1119,7 +1222,7 @@ if (createCalendarForm) {
     const template = newCalendarTemplateInput?.value || 'general';
     const patternEnabled = getCalendarTemplateConfig(template).patternEnabled;
     try {
-      const res = await api.createCalendar({ name, patternEnabled });
+      const res = await api.createCalendar({ name, patternEnabled, templateType: template });
       state.calendars = res.calendars || [];
       state.calendarId = res.defaultCalendarId || (state.calendars[0] ? state.calendars[0].id : null);
       invalidateCache('settings');
@@ -1162,6 +1265,12 @@ if (newCalendarTemplatePicker && newCalendarTemplateInput) {
       newCalendarTemplateInput.value = card.dataset.template || 'general';
       updateCreateCalendarTemplateUI();
     });
+  });
+}
+
+if (saveWeeklyRulesButton) {
+  saveWeeklyRulesButton.addEventListener('click', async () => {
+    await saveWeeklyRules();
   });
 }
 
@@ -1261,6 +1370,7 @@ if (deleteCalendarButton) {
         calendarGrid.innerHTML = '';
         summaryList.innerHTML = '';
         setScheduleTypes([]);
+        setWeeklyRules([]);
         if (shareList) shareList.innerHTML = '';
       }
       if (settingsModal) {
@@ -1312,6 +1422,7 @@ function startWithoutCalendar() {
   state.usePattern = false;
   state.patternConfigured = true;
   setScheduleTypes([]);
+  setWeeklyRules([]);
   patternManager.hide();
   if (patternOnboardingModal) patternOnboardingModal.hidden = true;
   if (patternCalendarModal) patternCalendarModal.hidden = true;
@@ -1331,10 +1442,12 @@ function handlePatternOnboarding(settings) {
 }
 
 async function ensureCalendar(name, patternEnabled) {
-  const template = patternEnabled ? 'shift' : 'general';
+  const template = patternCalendarMode === 'general' || patternCalendarMode === 'empty'
+    ? patternCalendarMode
+    : (patternEnabled ? 'shift' : 'general');
   const fallbackName = guessCalendarName(template);
   const targetName = (name || fallbackName).trim() || fallbackName;
-  const res = await api.createCalendar({ name: targetName, patternEnabled });
+  const res = await api.createCalendar({ name: targetName, patternEnabled, templateType: template });
   state.calendars = res.calendars || [];
   state.calendarId = res.defaultCalendarId || (state.calendars[0] ? state.calendars[0].id : null);
   invalidateCache('settings');
@@ -1381,7 +1494,7 @@ if (patternOnboardingSkip) {
 
 if (patternOnboardingNoCalendar) {
   patternOnboardingNoCalendar.addEventListener('click', () => {
-    startWithoutCalendar();
+    openPatternCalendarModal('empty');
   });
 }
 
@@ -1798,6 +1911,15 @@ function showSettingsView(viewName) {
   }
   if (viewName === 'calendar-pattern') {
     renderScheduleTypeEditor();
+    if (state.calendarId) {
+      Promise.all([
+        api.getScheduleTypes(state.calendarId).catch(() => state.scheduleTypes),
+        api.getWeeklyRules(state.calendarId).catch(() => state.weeklyRules)
+      ]).then(([scheduleTypes, weeklyRules]) => {
+        setScheduleTypes(scheduleTypes || []);
+        setWeeklyRules(weeklyRules || []);
+      }).catch(() => null);
+    }
   }
 
   currentSettingsView = viewName;

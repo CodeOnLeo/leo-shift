@@ -10,6 +10,7 @@ import io.github.codeonleo.leoshift.entity.CalendarPattern;
 import io.github.codeonleo.leoshift.entity.UserSettings;
 import io.github.codeonleo.leoshift.service.CalendarAccessService;
 import io.github.codeonleo.leoshift.service.CalendarPatternService;
+import io.github.codeonleo.leoshift.service.CalendarWeeklyRuleService;
 import io.github.codeonleo.leoshift.service.NotificationPreferenceService;
 import io.github.codeonleo.leoshift.service.SettingsService;
 import jakarta.validation.Valid;
@@ -31,15 +32,18 @@ public class SettingsController {
 
     private final CalendarAccessService calendarAccessService;
     private final CalendarPatternService calendarPatternService;
+    private final CalendarWeeklyRuleService calendarWeeklyRuleService;
     private final SettingsService settingsService;
     private final NotificationPreferenceService preferenceService;
 
     public SettingsController(CalendarAccessService calendarAccessService,
                               CalendarPatternService calendarPatternService,
+                              CalendarWeeklyRuleService calendarWeeklyRuleService,
                               SettingsService settingsService,
                               NotificationPreferenceService preferenceService) {
         this.calendarAccessService = calendarAccessService;
         this.calendarPatternService = calendarPatternService;
+        this.calendarWeeklyRuleService = calendarWeeklyRuleService;
         this.settingsService = settingsService;
         this.preferenceService = preferenceService;
     }
@@ -49,13 +53,13 @@ public class SettingsController {
         Calendar calendar = calendarAccessService.requireView(calendarId).calendar();
         CalendarPatternService.ResolvedPattern pattern = calendarPatternService.findLatest(calendar).orElse(null);
         UserSettings userSettings = settingsService.getOrCreate();
-        if (pattern == null) {
+        if (pattern == null && !calendarWeeklyRuleService.hasRules(calendar)) {
             return ResponseEntity.ok(new PatternSettingsResponse(false, List.of(), null, settingsService.resolveNotificationMinutes(userSettings)));
         }
         return ResponseEntity.ok(new PatternSettingsResponse(
                 true,
-                pattern.codes(),
-                pattern.startDate(),
+                pattern != null ? pattern.codes() : List.of(),
+                pattern != null ? pattern.startDate() : null,
                 settingsService.resolveNotificationMinutes(userSettings)
         ));
     }

@@ -18,12 +18,13 @@ public class TodayService {
     private final CalendarPatternService calendarPatternService;
     private final CalendarAccessService calendarAccessService;
     private final ScheduleTypeService scheduleTypeService;
+    private final CalendarWeeklyRuleService calendarWeeklyRuleService;
 
     public TodayResponse buildTodayView(Long calendarId) {
         CalendarAccessService.CalendarAccess access = calendarAccessService.requireView(calendarId);
         Calendar calendar = access.calendar();
         var scheduleTypes = scheduleTypeService.listForCalendar(calendar);
-        boolean configured = calendarPatternService.hasPattern(calendar);
+        boolean configured = calendarPatternService.hasPattern(calendar) || calendarWeeklyRuleService.hasRules(calendar);
         if (!configured) {
             return new TodayResponse(false, null, List.of(), scheduleTypes);
         }

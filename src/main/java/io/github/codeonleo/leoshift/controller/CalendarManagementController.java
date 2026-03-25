@@ -9,9 +9,12 @@ import io.github.codeonleo.leoshift.dto.CalendarUpdateRequest;
 import io.github.codeonleo.leoshift.dto.ScheduleTypeResponse;
 import io.github.codeonleo.leoshift.dto.ScheduleTypeUpdateRequest;
 import io.github.codeonleo.leoshift.dto.ShareDecisionRequest;
+import io.github.codeonleo.leoshift.dto.WeeklyRuleResponse;
+import io.github.codeonleo.leoshift.dto.WeeklyRuleUpdateRequest;
 import io.github.codeonleo.leoshift.service.CalendarAccessService;
 import io.github.codeonleo.leoshift.service.CalendarManagementService;
 import io.github.codeonleo.leoshift.service.CalendarShareService;
+import io.github.codeonleo.leoshift.service.CalendarWeeklyRuleService;
 import io.github.codeonleo.leoshift.service.ScheduleTypeService;
 import io.github.codeonleo.leoshift.service.SettingsService;
 import jakarta.validation.Valid;
@@ -34,17 +37,20 @@ public class CalendarManagementController {
     private final CalendarManagementService calendarManagementService;
     private final SettingsService settingsService;
     private final ScheduleTypeService scheduleTypeService;
+    private final CalendarWeeklyRuleService calendarWeeklyRuleService;
 
     public CalendarManagementController(CalendarAccessService calendarAccessService,
                                         CalendarShareService calendarShareService,
                                         CalendarManagementService calendarManagementService,
                                         SettingsService settingsService,
-                                        ScheduleTypeService scheduleTypeService) {
+                                        ScheduleTypeService scheduleTypeService,
+                                        CalendarWeeklyRuleService calendarWeeklyRuleService) {
         this.calendarAccessService = calendarAccessService;
         this.calendarShareService = calendarShareService;
         this.calendarManagementService = calendarManagementService;
         this.settingsService = settingsService;
         this.scheduleTypeService = scheduleTypeService;
+        this.calendarWeeklyRuleService = calendarWeeklyRuleService;
     }
 
     @GetMapping
@@ -113,5 +119,18 @@ public class CalendarManagementController {
                                                           @Valid @RequestBody ScheduleTypeUpdateRequest request) {
         var access = calendarAccessService.requireEdit(calendarId);
         return scheduleTypeService.updateTypes(access.calendar(), request.scheduleTypes());
+    }
+
+    @GetMapping("/{calendarId}/weekly-rules")
+    public List<WeeklyRuleResponse> weeklyRules(@PathVariable Long calendarId) {
+        var access = calendarAccessService.requireView(calendarId);
+        return calendarWeeklyRuleService.list(access.calendar());
+    }
+
+    @PutMapping("/{calendarId}/weekly-rules")
+    public List<WeeklyRuleResponse> updateWeeklyRules(@PathVariable Long calendarId,
+                                                      @Valid @RequestBody WeeklyRuleUpdateRequest request) {
+        var access = calendarAccessService.requireEdit(calendarId);
+        return calendarWeeklyRuleService.update(access.calendar(), request.rules());
     }
 }

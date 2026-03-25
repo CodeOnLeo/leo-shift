@@ -8,7 +8,8 @@ public record CalendarCreateRequest(
         @Size(min = 1, max = 100, message = "Calendar name must be between 1 and 100 characters")
         String name,
 
-        Boolean patternEnabled
+        Boolean patternEnabled,
+        String templateType
 ) {
     public CalendarCreateRequest {
         if (patternEnabled == null) {

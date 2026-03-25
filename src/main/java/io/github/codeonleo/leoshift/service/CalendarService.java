@@ -30,12 +30,13 @@ public class CalendarService {
     private final ShiftExceptionRepository exceptionRepository;
     private final DayMemoService dayMemoService;
     private final ScheduleTypeService scheduleTypeService;
+    private final CalendarWeeklyRuleService calendarWeeklyRuleService;
 
     @Transactional(readOnly = true)
     public CalendarResponse buildMonthlyCalendar(Calendar calendar, int year, int month) {
         List<ScheduleTypeResponse> scheduleTypes = scheduleTypeService.listForCalendar(calendar);
         boolean usePattern = calendar.isPatternEnabled();
-        boolean patternConfigured = usePattern && calendarPatternService.hasPattern(calendar);
+        boolean patternConfigured = usePattern && (calendarPatternService.hasPattern(calendar) || calendarWeeklyRuleService.hasRules(calendar));
         if (usePattern && !patternConfigured) {
             return new CalendarResponse(false, year, month, Collections.emptyList(), Collections.emptyMap(), scheduleTypes);
         }
@@ -87,6 +88,8 @@ public class CalendarService {
                         patternStartDate,
                         cursor
                 );
+            } else if (usePattern) {
+                baseCode = calendarWeeklyRuleService.resolveCode(calendar, cursor);
             }
             String effectiveCode = baseCode;
             if (dayException != null && StringUtils.hasText(dayException.getCustomCode())) {

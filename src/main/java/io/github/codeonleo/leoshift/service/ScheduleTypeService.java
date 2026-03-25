@@ -47,6 +47,39 @@ public class ScheduleTypeService {
     }
 
     @Transactional
+    public void ensureDefaults(Calendar calendar, String templateType) {
+        if (calendar == null || scheduleTypeRepository.existsByCalendar(calendar)) {
+            return;
+        }
+        if ("general".equalsIgnoreCase(templateType) || "empty".equalsIgnoreCase(templateType)) {
+            scheduleTypeRepository.saveAll(List.of(
+                    ScheduleType.builder()
+                            .calendar(calendar)
+                            .code("WORK")
+                            .name("일정")
+                            .color("#2563EB")
+                            .startTime(LocalTime.of(9, 0))
+                            .endTime(LocalTime.of(18, 0))
+                            .countsAsWork(true)
+                            .sortOrder(10)
+                            .defaultOff(false)
+                            .build(),
+                    ScheduleType.builder()
+                            .calendar(calendar)
+                            .code("OFF")
+                            .name("휴식")
+                            .color("#94A3B8")
+                            .countsAsWork(false)
+                            .sortOrder(20)
+                            .defaultOff(true)
+                            .build()
+            ));
+            return;
+        }
+        ensureDefaults(calendar);
+    }
+
+    @Transactional
     public List<ScheduleTypeResponse> updateTypes(Calendar calendar, List<ScheduleTypeUpdateItemRequest> requests) {
         if (calendar == null) {
             throw new IllegalArgumentException("calendar_required");
@@ -194,6 +227,8 @@ public class ScheduleTypeService {
         defaults.put("N", new LegacyScheduleType("N", "야간", "#7C3AED", LocalTime.of(22, 0), LocalTime.of(6, 0), true, false, 30));
         defaults.put("V", new LegacyScheduleType("V", "연차", "#14B8A6", null, null, false, false, 40));
         defaults.put("O", new LegacyScheduleType("O", "휴무", "#94A3B8", null, null, false, true, 50));
+        defaults.put("WORK", new LegacyScheduleType("WORK", "일정", "#2563EB", LocalTime.of(9, 0), LocalTime.of(18, 0), true, false, 10));
+        defaults.put("OFF", new LegacyScheduleType("OFF", "휴식", "#94A3B8", null, null, false, true, 20));
         return defaults;
     }
 

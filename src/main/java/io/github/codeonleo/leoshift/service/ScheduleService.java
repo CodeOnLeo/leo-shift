@@ -2,7 +2,6 @@ package io.github.codeonleo.leoshift.service;
 
 import io.github.codeonleo.leoshift.dto.AuthorDto;
 import io.github.codeonleo.leoshift.entity.Calendar;
-import io.github.codeonleo.leoshift.entity.CalendarPattern;
 import io.github.codeonleo.leoshift.entity.ShiftException;
 import io.github.codeonleo.leoshift.repository.ShiftExceptionRepository;
 import jakarta.transaction.Transactional;
@@ -20,13 +19,14 @@ import io.github.codeonleo.leoshift.util.ColorTagUtil;
 public class ScheduleService {
 
     private final CalendarPatternService calendarPatternService;
+    private final CalendarWeeklyRuleService calendarWeeklyRuleService;
     private final ShiftCalculationService calculationService;
     private final ShiftExceptionRepository exceptionRepository;
 
     @Transactional
     public Optional<DaySchedule> resolveDay(LocalDate date, Calendar calendar) {
         boolean usePattern = calendar.isPatternEnabled();
-        boolean patternConfigured = usePattern && calendarPatternService.hasPattern(calendar);
+        boolean patternConfigured = usePattern && (calendarPatternService.hasPattern(calendar) || calendarWeeklyRuleService.hasRules(calendar));
         if (usePattern && !patternConfigured) {
             return Optional.empty();
         }
@@ -40,6 +40,8 @@ public class ScheduleService {
                         pattern.startDate(),
                         date
                 );
+            } else {
+                baseCode = calendarWeeklyRuleService.resolveCode(calendar, date);
             }
         }
         ShiftException exception = exceptionRepository.findByCalendarAndDate(calendar, date).orElse(null);

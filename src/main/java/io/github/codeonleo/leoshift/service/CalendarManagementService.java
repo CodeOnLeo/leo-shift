@@ -24,6 +24,7 @@ public class CalendarManagementService {
     private final CalendarAccessService calendarAccessService;
     private final SettingsService settingsService;
     private final ScheduleTypeService scheduleTypeService;
+    private final CalendarWeeklyRuleService calendarWeeklyRuleService;
 
     @Transactional
     public Calendar createCalendar(CalendarCreateRequest request) {
@@ -33,14 +34,26 @@ public class CalendarManagementService {
 
         User currentUser = calendarAccessService.getCurrentUser();
 
+        String templateType = request.templateType() != null ? request.templateType().trim().toLowerCase() : "";
+        boolean patternEnabled = request.patternEnabled() != null ? request.patternEnabled() : true;
+        if ("general".equals(templateType)) {
+            patternEnabled = true;
+        }
+        if ("empty".equals(templateType)) {
+            patternEnabled = false;
+        }
+
         Calendar calendar = Calendar.builder()
                 .owner(currentUser)
                 .name(request.name().trim())
-                .patternEnabled(request.patternEnabled() != null ? request.patternEnabled() : true)
+                .patternEnabled(patternEnabled)
                 .build();
 
         calendar = calendarRepository.save(calendar);
-        scheduleTypeService.ensureDefaults(calendar);
+        scheduleTypeService.ensureDefaults(calendar, templateType);
+        if ("general".equals(templateType)) {
+            calendarWeeklyRuleService.ensureDefaultGeneralRules(calendar);
+        }
 
         // 첫 번째 캘린더인 경우 기본 캘린더로 설정
         UserSettings settings = settingsService.getOrCreate();
@@ -90,6 +103,7 @@ public class CalendarManagementService {
         calendarShareRepository.deleteByCalendar(calendar);
         shiftExceptionRepository.deleteByCalendar(calendar);
         scheduleTypeService.deleteByCalendar(calendar);
+        calendarWeeklyRuleService.deleteByCalendar(calendar);
 
         // clear default calendar if needed
         UserSettings settings = settingsService.getOrCreate();
