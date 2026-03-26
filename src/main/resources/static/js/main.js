@@ -1275,6 +1275,7 @@ if (saveColorButton && colorPicker) {
 if (createCalendarForm) {
   createCalendarForm.addEventListener('submit', async (event) => {
     event.preventDefault();
+    const previousCalendars = [...state.calendars];
     const name = (newCalendarNameInput.value || '').trim();
     if (!name) {
       alert('캘린더 이름을 입력하세요.');
@@ -1285,7 +1286,9 @@ if (createCalendarForm) {
     try {
       const res = await api.createCalendar({ name, patternEnabled, templateType: template });
       state.calendars = res.calendars || [];
-      state.calendarId = res.defaultCalendarId || (state.calendars[0] ? state.calendars[0].id : null);
+      state.calendarId = findNewCalendarId(previousCalendars, state.calendars)
+        || res.defaultCalendarId
+        || (state.calendars[0] ? state.calendars[0].id : null);
       invalidateCache('settings');
       invalidateCache('calendar');
       invalidateCache('shares');
@@ -1463,6 +1466,12 @@ function guessCalendarName(template = 'general') {
   return getCalendarTemplateConfig(template).defaultName;
 }
 
+function findNewCalendarId(previousCalendars, nextCalendars) {
+  const previousIds = new Set((previousCalendars || []).map((calendar) => calendar.id));
+  const created = (nextCalendars || []).find((calendar) => !previousIds.has(calendar.id));
+  return created?.id || null;
+}
+
 function openPatternChoice(settings) {
   hasPromptedPattern = true;
   patternManager.hide();
@@ -1513,6 +1522,7 @@ function handlePatternOnboarding(settings) {
 }
 
 async function ensureCalendar(name, patternEnabled) {
+  const previousCalendars = [...state.calendars];
   const template = patternCalendarMode === 'general' || patternCalendarMode === 'empty'
     ? patternCalendarMode
     : (patternEnabled ? 'shift' : 'general');
@@ -1520,7 +1530,9 @@ async function ensureCalendar(name, patternEnabled) {
   const targetName = (name || fallbackName).trim() || fallbackName;
   const res = await api.createCalendar({ name: targetName, patternEnabled, templateType: template });
   state.calendars = res.calendars || [];
-  state.calendarId = res.defaultCalendarId || (state.calendars[0] ? state.calendars[0].id : null);
+  state.calendarId = findNewCalendarId(previousCalendars, state.calendars)
+    || res.defaultCalendarId
+    || (state.calendars[0] ? state.calendars[0].id : null);
   invalidateCache('settings');
   invalidateCache('calendar');
   invalidateCache('shares');
