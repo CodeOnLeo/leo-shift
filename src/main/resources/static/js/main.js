@@ -79,6 +79,20 @@ const weeklyRuleEditorSection = document.getElementById('weeklyRuleEditorSection
 const weeklyRuleEditorList = document.getElementById('weeklyRuleEditorList');
 const saveWeeklyRulesButton = document.getElementById('saveWeeklyRulesButton');
 
+const state = {
+  year: new Date().getFullYear(),
+  month: new Date().getMonth() + 1,
+  patternConfigured: false,
+  usePattern: true,
+  selectedDate: null,
+  calendarId: null,
+  calendars: [],
+  me: null,
+  calendarData: null,
+  scheduleTypes: [],
+  weeklyRules: []
+};
+
 const patternManager = initPatternForm({
   sectionEl: document.getElementById('pattern-setup'),
   formEl: document.getElementById('patternForm'),
@@ -98,25 +112,11 @@ const patternManager = initPatternForm({
   }
 });
 
-const state = {
-  year: new Date().getFullYear(),
-  month: new Date().getMonth() + 1,
-  patternConfigured: false,
-  usePattern: true,
-  selectedDate: null,
-  calendarId: null,
-  calendars: [],
-  me: null,
-  calendarData: null,
-  scheduleTypes: [],
-  weeklyRules: []
-};
-
 function getScheduleTypes(preferred = null) {
   if (Array.isArray(preferred) && preferred.length > 0) {
     return preferred;
   }
-  if (typeof state === 'undefined' || !state) {
+  if (!state) {
     return [];
   }
   return Array.isArray(state.scheduleTypes) ? state.scheduleTypes : [];
