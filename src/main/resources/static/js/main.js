@@ -116,6 +116,9 @@ function getScheduleTypes(preferred = null) {
   if (Array.isArray(preferred) && preferred.length > 0) {
     return preferred;
   }
+  if (typeof state === 'undefined' || !state) {
+    return [];
+  }
   return Array.isArray(state.scheduleTypes) ? state.scheduleTypes : [];
 }
 
