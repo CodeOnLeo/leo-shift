@@ -880,6 +880,10 @@ button.secondary {
   margin-bottom: 1rem;
 }
 
+.settings-section-header > div:last-child {
+  min-width: 0;
+}
+
 .settings-section-header h3 {
   margin: 0;
   font-size: 1.1rem;
@@ -1016,6 +1020,7 @@ button.secondary {
   background: #fff;
   padding: 0.9rem;
   box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
+  overflow: hidden;
 }
 
 .schedule-type-card-header {
@@ -1042,21 +1047,25 @@ button.secondary {
   display: grid;
   grid-template-columns: 1fr 110px;
   gap: 0.75rem;
+  align-items: end;
 }
 
-.schedule-type-grid .time-row {
+.time-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.5rem;
+  margin-top: 0.75rem;
 }
 
 .schedule-type-card label {
   margin-bottom: 0;
+  min-width: 0;
 }
 
 .schedule-type-card input[type="color"] {
   height: 44px;
   padding: 0.2rem;
+  min-width: 0;
 }
 
 .schedule-type-note {
@@ -1082,6 +1091,10 @@ button.secondary {
   min-height: unset;
   font-size: 0.92rem;
   box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: left;
 }
 
 .pattern-code-chip.sequence {
@@ -1313,6 +1326,7 @@ button.secondary {
 .onboarding-actions .primary,
 .onboarding-actions .secondary {
   flex: 1;
+  min-width: 0;
 }
 
 .pattern-calendar-form {
@@ -1432,6 +1446,34 @@ button.secondary {
 
   .modal-body {
     padding: 1.25rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .settings-section-header {
+    align-items: flex-start;
+  }
+
+  .schedule-type-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .time-row {
+    grid-template-columns: 1fr;
+  }
+
+  .onboarding-actions {
+    flex-direction: column;
+  }
+
+  .onboarding-actions .primary,
+  .onboarding-actions .secondary {
+    width: 100%;
+  }
+
+  .pattern-code-chip {
+    width: 100%;
+    border-radius: 16px;
   }
 }
 
