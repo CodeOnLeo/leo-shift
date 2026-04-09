@@ -14,6 +14,12 @@ const nextMonthBtn = document.getElementById('nextMonth');
 const legendToggle = document.getElementById('legendToggle');
 const legendTooltip = document.getElementById('legendTooltip');
 const settingsMenuButton = document.getElementById('settingsMenuButton');
+const homeButton = document.getElementById('homeButton');
+if (homeButton) {
+  homeButton.addEventListener('click', () => {
+    showCalendarPicker();
+  });
+}
 const settingsModal = document.getElementById('settingsModal');
 const settingsModalClose = document.getElementById('settingsModalClose');
 const dayModal = document.getElementById('dayModal');
@@ -308,6 +314,7 @@ function showCalendarPicker() {
 
   calendarSection.hidden = true;
   settingsMenuButton.hidden = true;
+  if (homeButton) homeButton.hidden = true;
   patternManager.hide();
   hideCalendarCreationOverlays();
   calendarPickerSection.hidden = false;
@@ -866,6 +873,7 @@ async function bootstrap() {
       hideCalendarCreationOverlays();
       calendarSection.hidden = false;
       settingsMenuButton.hidden = false;
+      if (homeButton) homeButton.hidden = !(state.calendars && state.calendars.length > 1);
 
       scheduleIdle(() => {
         prefetchAdjacentMonths(state.year, state.month, state.calendarId);
@@ -893,6 +901,7 @@ async function bootstrap() {
     hideCalendarCreationOverlays();
     calendarSection.hidden = false;
     settingsMenuButton.hidden = false;
+    if (homeButton) homeButton.hidden = !(state.calendars && state.calendars.length > 1);
 
     // 부가 데이터와 prefetch는 렌더 이후로 지연 실행
     scheduleIdle(() => {
