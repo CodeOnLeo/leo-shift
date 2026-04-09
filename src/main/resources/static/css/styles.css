@@ -385,6 +385,14 @@ section h2 {
   cursor: default;
 }
 
+.day-cell.weekday.sunday {
+  color: #e14b5a;
+}
+
+.day-cell.weekday.saturday {
+  color: #2b6de0;
+}
+
 .day-cell.weekday:active {
   transform: none;
   background: transparent;
@@ -423,6 +431,14 @@ section h2 {
   font-weight: 600;
   font-size: 0.9rem;
   color: #1c1c1e;
+}
+
+.day-cell.sunday .date-label {
+  color: #e14b5a;
+}
+
+.day-cell.saturday .date-label {
+  color: #2b6de0;
 }
 
 .day-cell .shift-code {

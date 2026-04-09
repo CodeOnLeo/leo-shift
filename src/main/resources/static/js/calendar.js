@@ -1,6 +1,14 @@
 import { parseIsoDateLocal } from './date-utils.js';
 
-const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const WEEKDAYS = [
+  { label: 'Sun', className: 'sunday' },
+  { label: 'Mon', className: '' },
+  { label: 'Tue', className: '' },
+  { label: 'Wed', className: '' },
+  { label: 'Thu', className: '' },
+  { label: 'Fri', className: '' },
+  { label: 'Sat', className: 'saturday' }
+];
 
 function initials(name) {
   if (!name) return '';
@@ -40,8 +48,11 @@ export function renderCalendar({
 
   WEEKDAYS.forEach((day) => {
     const label = document.createElement('div');
-    label.textContent = day;
+    label.textContent = day.label;
     label.className = 'day-cell weekday';
+    if (day.className) {
+      label.classList.add(day.className);
+    }
     gridEl.appendChild(label);
   });
 
@@ -49,9 +60,15 @@ export function renderCalendar({
   data.days.forEach((day) => {
     const dayDate = parseIsoDateLocal(day.date);
     const isCurrentMonth = dayDate.getMonth() === data.month - 1;
+    const dayOfWeek = dayDate.getDay();
     const cell = document.createElement('div');
     cell.className = 'day-cell';
     cell.dataset.date = day.date;
+    if (dayOfWeek === 0) {
+      cell.classList.add('sunday');
+    } else if (dayOfWeek === 6) {
+      cell.classList.add('saturday');
+    }
 
     // 다른 월의 날짜는 other-month 클래스 추가
     if (!isCurrentMonth) {

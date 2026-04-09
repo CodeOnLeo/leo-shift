@@ -350,16 +350,6 @@ function getCalendarTemplateConfig(template) {
         hint: '교대 근무 사이클을 설정해서 자동으로 일정을 채우는 캘린더입니다.',
         defaultName: state.me?.name ? `${state.me.name}의 근무표` : '내 근무표'
       };
-    case 'empty':
-      return {
-        patternEnabled: false,
-        createTitle: '비어 있는 캘린더 만들기',
-        subtitle: '일정은 나중에 추가하고 지금은 이름만 정해둘게요.',
-        submitLabel: '빈 캘린더 만들기',
-        placeholder: '예: 아이디어 보드',
-        hint: '자동 패턴 없이 빈 상태로 시작하는 캘린더입니다.',
-        defaultName: state.me?.name ? `${state.me.name}의 새 캘린더` : '새 캘린더'
-      };
     case 'general':
     default:
       return {
@@ -1674,9 +1664,6 @@ function openPatternChoice(settings) {
     if (patternCalendarNameInput) {
       patternCalendarNameInput.value = guessCalendarName('shift');
     }
-    if (patternOnboardingNoCalendar) {
-      patternOnboardingNoCalendar.hidden = !!state.calendarId;
-    }
   } else {
     const baseSettings = settings || lastPatternSettings;
     patternManager.show(60, baseSettings);
@@ -1710,7 +1697,7 @@ function handlePatternOnboarding(settings) {
 
 async function ensureCalendar(name, patternEnabled) {
   const previousCalendars = [...state.calendars];
-  const template = patternCalendarMode === 'general' || patternCalendarMode === 'empty'
+  const template = patternCalendarMode === 'general'
     ? patternCalendarMode
     : (patternEnabled ? 'shift' : 'general');
   const fallbackName = guessCalendarName(template);
@@ -1759,12 +1746,6 @@ if (patternOnboardingUse) {
 if (patternOnboardingSkip) {
   patternOnboardingSkip.addEventListener('click', () => {
     openPatternCalendarModal('general');
-  });
-}
-
-if (patternOnboardingNoCalendar) {
-  patternOnboardingNoCalendar.addEventListener('click', () => {
-    openPatternCalendarModal('empty');
   });
 }
 
