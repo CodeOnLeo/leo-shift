@@ -218,6 +218,11 @@ function getCurrentCalendar() {
   return state.calendars.find((c) => c.id === state.calendarId) || null;
 }
 
+function currentCalendarUsesPattern() {
+  const current = getCurrentCalendar();
+  return current ? current.patternEnabled !== false : true;
+}
+
 function setCalendarCollections(res) {
   const calendars = Array.isArray(res?.calendars) ? res.calendars : [];
   const ownedCalendars = Array.isArray(res?.ownedCalendars)
@@ -821,7 +826,7 @@ async function bootstrap() {
       // 설정
       const settings = bootstrapData.settings || {};
       state.patternConfigured = state.usePattern ? (settings.configured || false) : true;
-      if (!state.patternConfigured) {
+      if (state.usePattern && !state.patternConfigured) {
         handlePatternOnboarding(settings);
         return;
       }
@@ -880,7 +885,7 @@ async function bootstrap() {
       loadMeColor().catch(() => null)
     ]);
 
-    if (!state.patternConfigured) {
+    if (state.usePattern && !state.patternConfigured) {
       handlePatternOnboarding(settings);
       return;
     }
@@ -1024,7 +1029,7 @@ function renderCalendarSelector() {
         state.calendarId = cal.id;
         calendarSelectorList.hidden = true;
         const settings = await loadPatternSettings();
-        if (!state.patternConfigured) {
+        if (currentCalendarUsesPattern() && !state.patternConfigured) {
           patternManager.show(60, settings);
           calendarSection.hidden = true;
           settingsMenuButton.hidden = true;
