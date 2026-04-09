@@ -260,6 +260,21 @@ function hideCalendarCreationOverlays() {
   }
 }
 
+function groupSharedCalendarsByOwner(calendars = []) {
+  const grouped = new Map();
+  calendars.forEach((calendar) => {
+    const ownerName = calendar.ownerName || '알 수 없는 소유자';
+    if (!grouped.has(ownerName)) {
+      grouped.set(ownerName, []);
+    }
+    grouped.get(ownerName).push(calendar);
+  });
+  return Array.from(grouped.entries()).map(([ownerName, ownerCalendars]) => ({
+    ownerName,
+    calendars: ownerCalendars
+  }));
+}
+
 function showCalendarPicker() {
   if (!calendarPickerSection || !calendarPickerList) {
     return;
@@ -279,34 +294,47 @@ function showCalendarPicker() {
     title.textContent = group.title;
     groupEl.appendChild(title);
 
-    group.calendars.forEach((cal) => {
-      const card = document.createElement('button');
-      card.type = 'button';
-      card.className = 'calendar-picker-card';
+    const sections = group.title === '공유받은 캘린더'
+      ? groupSharedCalendarsByOwner(group.calendars)
+      : [{ ownerName: null, calendars: group.calendars }];
 
-      const name = document.createElement('strong');
-      name.textContent = cal.name;
-
-      const meta = document.createElement('div');
-      meta.className = 'calendar-picker-meta';
-      meta.textContent = cal.owned ? '내가 소유' : `소유자 ${cal.ownerName || '-'}`;
-
-      card.append(name, meta);
-
-      if (!cal.owned) {
-        const badge = document.createElement('span');
-        badge.className = 'calendar-picker-badge';
-        badge.textContent = cal.permission === 'EDIT' ? '편집 가능' : '보기 전용';
-        card.appendChild(badge);
+    sections.forEach((section) => {
+      if (section.ownerName) {
+        const ownerTitle = document.createElement('div');
+        ownerTitle.className = 'calendar-picker-owner-title';
+        ownerTitle.textContent = section.ownerName;
+        groupEl.appendChild(ownerTitle);
       }
 
-      card.addEventListener('click', async () => {
-        state.calendarId = cal.id;
-        hideCalendarPicker();
-        await bootstrap();
-      });
+      section.calendars.forEach((cal) => {
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.className = 'calendar-picker-card';
 
-      groupEl.appendChild(card);
+        const name = document.createElement('strong');
+        name.textContent = cal.name;
+
+        const meta = document.createElement('div');
+        meta.className = 'calendar-picker-meta';
+        meta.textContent = cal.owned ? '내가 소유' : `소유자 ${cal.ownerName || '-'}`;
+
+        card.append(name, meta);
+
+        if (!cal.owned) {
+          const badge = document.createElement('span');
+          badge.className = 'calendar-picker-badge';
+          badge.textContent = cal.permission === 'EDIT' ? '편집 가능' : '보기 전용';
+          card.appendChild(badge);
+        }
+
+        card.addEventListener('click', async () => {
+          state.calendarId = cal.id;
+          hideCalendarPicker();
+          await bootstrap();
+        });
+
+        groupEl.appendChild(card);
+      });
     });
 
     calendarPickerList.appendChild(groupEl);
@@ -1030,36 +1058,49 @@ function renderCalendarSelector() {
     title.textContent = group.title;
     section.appendChild(title);
 
-    group.calendars.forEach((cal) => {
-      const item = document.createElement('button');
-      item.type = 'button';
-      item.className = 'calendar-selector-item';
-      if (cal.id === state.calendarId) {
-        item.classList.add('active');
+    const sections = group.title === '공유받은 캘린더'
+      ? groupSharedCalendarsByOwner(group.calendars)
+      : [{ ownerName: null, calendars: group.calendars }];
+
+    sections.forEach((sharedSection) => {
+      if (sharedSection.ownerName) {
+        const ownerTitle = document.createElement('div');
+        ownerTitle.className = 'calendar-selector-owner-title';
+        ownerTitle.textContent = sharedSection.ownerName;
+        section.appendChild(ownerTitle);
       }
-      const label = `${cal.name}${cal.owned ? '' : ` · ${cal.ownerName || ''}`}`;
-      item.textContent = label;
-      item.addEventListener('click', async () => {
-        state.calendarId = cal.id;
-        calendarSelectorList.hidden = true;
-        const settings = await loadPatternSettings();
-        if (currentCalendarUsesPattern() && !state.patternConfigured) {
-          patternManager.show(60, settings);
-          calendarSection.hidden = true;
-          settingsMenuButton.hidden = true;
-          return;
+
+      sharedSection.calendars.forEach((cal) => {
+        const item = document.createElement('button');
+        item.type = 'button';
+        item.className = 'calendar-selector-item';
+        if (cal.id === state.calendarId) {
+          item.classList.add('active');
         }
-        patternManager.hide();
-        hideCalendarCreationOverlays();
-        calendarSection.hidden = false;
-        settingsMenuButton.hidden = false;
-        await Promise.all([
-          loadCalendar(state.year, state.month),
-          loadShares()
-        ]);
-        renderCalendarSelector();
+        const label = `${cal.name}${cal.owned ? '' : ` · ${cal.ownerName || ''}`}`;
+        item.textContent = label;
+        item.addEventListener('click', async () => {
+          state.calendarId = cal.id;
+          calendarSelectorList.hidden = true;
+          const settings = await loadPatternSettings();
+          if (currentCalendarUsesPattern() && !state.patternConfigured) {
+            patternManager.show(60, settings);
+            calendarSection.hidden = true;
+            settingsMenuButton.hidden = true;
+            return;
+          }
+          patternManager.hide();
+          hideCalendarCreationOverlays();
+          calendarSection.hidden = false;
+          settingsMenuButton.hidden = false;
+          await Promise.all([
+            loadCalendar(state.year, state.month),
+            loadShares()
+          ]);
+          renderCalendarSelector();
+        });
+        section.appendChild(item);
       });
-      section.appendChild(item);
     });
 
     calendarSelectorList.appendChild(section);

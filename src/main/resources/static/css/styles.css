@@ -172,6 +172,13 @@ section h2 {
   letter-spacing: 0.02em;
 }
 
+.calendar-selector-owner-title {
+  padding: 8px 10px 2px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #8e8e93;
+}
+
 .calendar-selector-item {
   width: 100%;
   text-align: left;
@@ -239,6 +246,13 @@ section h2 {
   font-weight: 700;
   color: #6e6e73;
   letter-spacing: 0.02em;
+}
+
+.calendar-picker-owner-title {
+  padding: 0.2rem 0.15rem 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #8e8e93;
 }
 
 .calendar-picker-card {
