@@ -76,7 +76,10 @@ public class BootstrapController {
         // 추가 데이터
         var calendars = new CalendarListResponse(calendarAccessService.listAccessible(),
                 userSettings.getDefaultCalendar() != null ? userSettings.getDefaultCalendar().getId() : null);
-        List<CalendarShareResponse> shares = calendarShareService.listShares(calendar.getId());
+        List<CalendarShareResponse> shares = calendar.getOwner() != null
+                && calendar.getOwner().getId().equals(currentUser.getId())
+                ? calendarShareService.listShares(calendar.getId())
+                : List.of();
         AuthResponse.UserInfo me = authService.getCurrentUser(currentUser.getId());
 
         return new BootstrapResponse(

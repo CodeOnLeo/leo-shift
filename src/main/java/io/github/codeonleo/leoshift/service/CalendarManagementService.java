@@ -37,7 +37,7 @@ public class CalendarManagementService {
         String templateType = request.templateType() != null ? request.templateType().trim().toLowerCase() : "";
         boolean patternEnabled = request.patternEnabled() != null ? request.patternEnabled() : true;
         if ("general".equals(templateType)) {
-            patternEnabled = true;
+            patternEnabled = false;
         }
         if ("empty".equals(templateType)) {
             patternEnabled = false;
