@@ -203,6 +203,10 @@ section h2 {
   gap: 1rem;
 }
 
+.calendar-picker-section[hidden] {
+  display: none !important;
+}
+
 .calendar-picker-header {
   display: flex;
   flex-direction: column;
