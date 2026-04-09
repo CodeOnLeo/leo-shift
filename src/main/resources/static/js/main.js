@@ -296,7 +296,7 @@ function renderScheduleTypeEditor(scheduleTypes = state.scheduleTypes) {
     return;
   }
   const current = getCurrentCalendar();
-  const isShift = !!current && getScheduleTypes(scheduleTypes).some((type) => ['D', 'A', 'N'].includes(type.code));
+  const isShift = !!current && !isGeneralCalendar(current);
   const canEdit = !!current && current.owned && current.patternEnabled !== false;
   scheduleTypeEditorSection.hidden = !current || current.patternEnabled === false;
   scheduleTypeEditorList.innerHTML = '';
@@ -305,6 +305,7 @@ function renderScheduleTypeEditor(scheduleTypes = state.scheduleTypes) {
     const card = document.createElement('div');
     card.className = 'schedule-type-card';
     card.dataset.code = type.code;
+    card.dataset.originalCode = type.code;
     card.dataset.existing = 'true';
 
     const timeBlock = type.defaultOff
@@ -327,11 +328,12 @@ function renderScheduleTypeEditor(scheduleTypes = state.scheduleTypes) {
           <strong>${type.name}</strong>
           <div class="schedule-type-code">${type.code}</div>
         </div>
+        ${canEdit ? '<button type="button" class="schedule-type-remove-button secondary" data-action="remove-type">삭제</button>' : ''}
       </div>
       <div class="schedule-type-grid">
         <label>
           코드
-          <input type="text" data-field="code" value="${type.code}" maxlength="32" disabled />
+          <input type="text" data-field="code" value="${type.code}" maxlength="32" ${canEdit ? '' : 'disabled'} />
         </label>
         <label>
           이름
@@ -361,8 +363,7 @@ function renderScheduleTypeEditor(scheduleTypes = state.scheduleTypes) {
 }
 
 function isGeneralCalendar(current = getCurrentCalendar()) {
-  const codes = getScheduleTypes().map((type) => type.code);
-  return !!current && current.patternEnabled !== false && codes.includes('WORK') && codes.includes('OFF') && !codes.includes('D');
+  return !!current && current.patternEnabled !== false && Array.isArray(state.weeklyRules) && state.weeklyRules.length > 0;
 }
 
 function renderWeeklyRuleEditor(weeklyRules = state.weeklyRules) {
@@ -382,7 +383,6 @@ function renderWeeklyRuleEditor(weeklyRules = state.weeklyRules) {
   }
   const canEdit = !!current && current.owned;
   const ruleMap = new Map((weeklyRules || []).map((rule) => [rule.dayOfWeek, rule.scheduleTypeCode]));
-  const scheduleTypes = getScheduleTypes().filter((type) => !type.defaultOff || type.code === 'OFF' || type.code === 'O');
   const weekdayLabels = ['월요일', '화요일', '수요일', '목요일', '금요일', '토요일', '일요일'];
   weeklyRuleEditorList.innerHTML = '';
 
@@ -422,6 +422,7 @@ function collectScheduleTypePayload() {
   }
   return Array.from(scheduleTypeEditorList.querySelectorAll('.schedule-type-card'))
     .map((card) => ({
+      originalCode: (card.dataset.originalCode || '').trim().toUpperCase() || null,
       code: (card.querySelector('[data-field="code"]')?.value || card.dataset.code || '').trim().toUpperCase(),
       name: card.querySelector('[data-field="name"]')?.value?.trim(),
       color: card.querySelector('[data-field="color"]')?.value || '#94A3B8',
@@ -452,7 +453,7 @@ async function saveScheduleTypes() {
       await selectDay(state.selectedDate);
     }
   } catch (e) {
-    showToast('근무 코드 설정 저장 실패: ' + (e.message || '오류'));
+    showToast('근무 코드 설정 저장 실패: ' + formatScheduleTypeSaveError(e.message || '오류'));
   }
 }
 
@@ -471,6 +472,7 @@ function appendNewScheduleTypeCard() {
         <strong>새 코드</strong>
         <div class="schedule-type-code">직접 만든 일정 코드</div>
       </div>
+      <button type="button" class="schedule-type-remove-button secondary" data-action="remove-type">삭제</button>
     </div>
     <div class="schedule-type-grid">
       <label>
@@ -499,6 +501,32 @@ function appendNewScheduleTypeCard() {
     <div class="schedule-type-note">시간을 비워두면 휴식/메모 성격의 코드로 저장됩니다.</div>
   `;
   scheduleTypeEditorList.appendChild(card);
+}
+
+function removeScheduleTypeCard(button) {
+  const card = button?.closest('.schedule-type-card');
+  if (!card || !scheduleTypeEditorList) {
+    return;
+  }
+  if (scheduleTypeEditorList.querySelectorAll('.schedule-type-card').length <= 1) {
+    showToast('코드는 최소 1개 이상 필요합니다.');
+    return;
+  }
+  card.remove();
+}
+
+function formatScheduleTypeSaveError(message) {
+  if (!message) {
+    return '오류';
+  }
+  if (message.startsWith('schedule_type_in_use:')) {
+    const code = message.split(':')[1] || '';
+    return `${code} 코드는 현재 패턴이나 일정에서 사용 중이라 삭제할 수 없습니다.`;
+  }
+  if (message === 'schedule_types_required') {
+    return '코드는 최소 1개 이상 필요합니다.';
+  }
+  return message;
 }
 
 function collectWeeklyRulesPayload() {
@@ -1337,6 +1365,16 @@ if (newCalendarTemplatePicker && newCalendarTemplateInput) {
 if (addScheduleTypeButton) {
   addScheduleTypeButton.addEventListener('click', () => {
     appendNewScheduleTypeCard();
+  });
+}
+
+if (scheduleTypeEditorList) {
+  scheduleTypeEditorList.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-action="remove-type"]');
+    if (!button) {
+      return;
+    }
+    removeScheduleTypeCard(button);
   });
 }
 

@@ -11,6 +11,8 @@ import org.springframework.data.repository.query.Param;
 
 public interface ShiftExceptionRepository extends JpaRepository<ShiftException, Long> {
 
+    List<ShiftException> findByCalendar(Calendar calendar);
+
     @Query("select e from ShiftException e left join fetch e.author where e.calendar = :calendar and e.date = :date")
     Optional<ShiftException> findByCalendarAndDate(@Param("calendar") Calendar calendar, @Param("date") LocalDate date);
 

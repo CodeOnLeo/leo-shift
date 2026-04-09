@@ -134,6 +134,13 @@ async function request(url, options = {}) {
         }
       }
 
+      const contentType = response.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        const payload = await response.json().catch(() => null);
+        const message = payload?.error || payload?.message;
+        throw new Error(message || 'Request failed');
+      }
+
       const message = await response.text();
       throw new Error(message || 'Request failed');
     }

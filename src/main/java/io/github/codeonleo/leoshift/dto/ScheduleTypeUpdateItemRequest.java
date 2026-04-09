@@ -6,6 +6,9 @@ import jakarta.validation.constraints.Size;
 import java.time.LocalTime;
 
 public record ScheduleTypeUpdateItemRequest(
+        @Size(max = 32)
+        String originalCode,
+
         @NotBlank
         @Size(max = 32)
         String code,

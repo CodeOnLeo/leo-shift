@@ -1030,6 +1030,19 @@ button.secondary {
   margin-bottom: 0.75rem;
 }
 
+.schedule-type-card-header > div:nth-child(2) {
+  flex: 1;
+  min-width: 0;
+}
+
+.schedule-type-remove-button {
+  min-height: 36px;
+  padding: 0.5rem 0.85rem;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+  background: #ef4444 !important;
+}
+
 .schedule-type-swatch {
   width: 16px;
   height: 16px;
