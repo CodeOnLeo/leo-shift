@@ -245,6 +245,15 @@ function hideCalendarPicker() {
   }
 }
 
+function hideCalendarCreationOverlays() {
+  if (patternOnboardingModal) {
+    patternOnboardingModal.hidden = true;
+  }
+  if (patternCalendarModal) {
+    patternCalendarModal.hidden = true;
+  }
+}
+
 function showCalendarPicker() {
   if (!calendarPickerSection || !calendarPickerList) {
     return;
@@ -300,8 +309,7 @@ function showCalendarPicker() {
   calendarSection.hidden = true;
   settingsMenuButton.hidden = true;
   patternManager.hide();
-  if (patternOnboardingModal) patternOnboardingModal.hidden = true;
-  if (patternCalendarModal) patternCalendarModal.hidden = true;
+  hideCalendarCreationOverlays();
   calendarPickerSection.hidden = false;
 }
 
@@ -812,6 +820,7 @@ async function bootstrap() {
       const currentCalendar = state.calendars.find((c) => c.id === state.calendarId);
       state.usePattern = currentCalendar ? currentCalendar.patternEnabled !== false : true;
       hideCalendarPicker();
+      hideCalendarCreationOverlays();
       renderCalendarSelector();
       renderInvites();
 
@@ -864,6 +873,7 @@ async function bootstrap() {
       }
 
       patternManager.hide();
+      hideCalendarCreationOverlays();
       calendarSection.hidden = false;
       settingsMenuButton.hidden = false;
 
@@ -890,6 +900,7 @@ async function bootstrap() {
       return;
     }
     patternManager.hide();
+    hideCalendarCreationOverlays();
     calendarSection.hidden = false;
     settingsMenuButton.hidden = false;
 
@@ -1036,6 +1047,7 @@ function renderCalendarSelector() {
           return;
         }
         patternManager.hide();
+        hideCalendarCreationOverlays();
         calendarSection.hidden = false;
         settingsMenuButton.hidden = false;
         await Promise.all([
@@ -1645,6 +1657,7 @@ function openPatternChoice(settings) {
   hasPromptedPattern = true;
   patternManager.hide();
   hideCalendarPicker();
+  hideCalendarCreationOverlays();
   calendarSection.hidden = true;
   settingsMenuButton.hidden = true;
   dayModal.hidden = true;
@@ -1675,8 +1688,7 @@ function startWithoutCalendar() {
   setWeeklyRules([]);
   patternManager.hide();
   hideCalendarPicker();
-  if (patternOnboardingModal) patternOnboardingModal.hidden = true;
-  if (patternCalendarModal) patternCalendarModal.hidden = true;
+  hideCalendarCreationOverlays();
   calendarSection.hidden = false;
   settingsMenuButton.hidden = false;
   renderCalendarSelector();
