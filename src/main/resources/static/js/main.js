@@ -71,6 +71,8 @@ const patternCalendarClose = document.getElementById('patternCalendarClose');
 const patternCalendarTitle = document.getElementById('patternCalendarTitle');
 const patternCalendarSubtitle = document.getElementById('patternCalendarSubtitle');
 const patternCalendarSubmit = document.getElementById('patternCalendarSubmit');
+const calendarPickerSection = document.getElementById('calendarPickerSection');
+const calendarPickerList = document.getElementById('calendarPickerList');
 const scheduleTypeEditorSection = document.getElementById('scheduleTypeEditorSection');
 const scheduleTypeEditorList = document.getElementById('scheduleTypeEditorList');
 const addScheduleTypeButton = document.getElementById('addScheduleTypeButton');
@@ -230,6 +232,72 @@ function setCalendarCollections(res) {
     owned: ownedCalendars,
     shared: sharedCalendars
   };
+}
+
+function hideCalendarPicker() {
+  if (calendarPickerSection) {
+    calendarPickerSection.hidden = true;
+  }
+}
+
+function showCalendarPicker() {
+  if (!calendarPickerSection || !calendarPickerList) {
+    return;
+  }
+  calendarPickerList.innerHTML = '';
+  const groups = [
+    { title: '내 캘린더', calendars: state.calendarGroups.owned },
+    { title: '공유받은 캘린더', calendars: state.calendarGroups.shared }
+  ].filter((group) => group.calendars.length > 0);
+
+  groups.forEach((group) => {
+    const groupEl = document.createElement('div');
+    groupEl.className = 'calendar-picker-group';
+
+    const title = document.createElement('div');
+    title.className = 'calendar-picker-group-title';
+    title.textContent = group.title;
+    groupEl.appendChild(title);
+
+    group.calendars.forEach((cal) => {
+      const card = document.createElement('button');
+      card.type = 'button';
+      card.className = 'calendar-picker-card';
+
+      const name = document.createElement('strong');
+      name.textContent = cal.name;
+
+      const meta = document.createElement('div');
+      meta.className = 'calendar-picker-meta';
+      meta.textContent = cal.owned ? '내가 소유' : `소유자 ${cal.ownerName || '-'}`;
+
+      card.append(name, meta);
+
+      if (!cal.owned) {
+        const badge = document.createElement('span');
+        badge.className = 'calendar-picker-badge';
+        badge.textContent = cal.permission === 'EDIT' ? '편집 가능' : '보기 전용';
+        card.appendChild(badge);
+      }
+
+      card.addEventListener('click', async () => {
+        state.calendarId = cal.id;
+        hideCalendarPicker();
+        await bootstrap();
+      });
+
+      groupEl.appendChild(card);
+    });
+
+    calendarPickerList.appendChild(groupEl);
+  });
+
+  calendarSection.hidden = true;
+  settingsMenuButton.hidden = true;
+  patternManager.hide();
+  if (patternOnboardingModal) patternOnboardingModal.hidden = true;
+  if (patternCalendarModal) patternCalendarModal.hidden = true;
+  calendarPickerSection.hidden = false;
 }
 
 function isCalendarEditable() {
@@ -703,6 +771,25 @@ function scheduleIdle(task) {
 async function bootstrap() {
   const endLoading = startGlobalLoading();
   try {
+    if (!state.calendarId) {
+      const calendarsRes = await api.listCalendars();
+      setCalendarCollections(calendarsRes);
+      renderCalendarSelector();
+      renderInvites();
+
+      if (state.calendars.length > 1) {
+        showCalendarPicker();
+        return;
+      }
+
+      state.calendarId = calendarsRes.defaultCalendarId || (state.calendars[0] ? state.calendars[0].id : null);
+      if (!state.calendarId) {
+        hideCalendarPicker();
+        handlePatternOnboarding({});
+        return;
+      }
+    }
+
     // 우선 서버에서 한 번에 내려주는 bootstrap API 시도
     try {
       const bootstrapData = await api.bootstrap({
@@ -719,6 +806,7 @@ async function bootstrap() {
         || (state.calendars[0] ? state.calendars[0].id : null);
       const currentCalendar = state.calendars.find((c) => c.id === state.calendarId);
       state.usePattern = currentCalendar ? currentCalendar.patternEnabled !== false : true;
+      hideCalendarPicker();
       renderCalendarSelector();
       renderInvites();
 
@@ -785,6 +873,7 @@ async function bootstrap() {
 
     // fallback 경로: 필수 데이터만 먼저
     await loadCalendars();
+    hideCalendarPicker();
     const [settings] = await Promise.all([
       loadPatternSettings({ force: true }),
       loadCalendar(state.year, state.month, { force: true, prefetch: false }).catch(() => null),
@@ -1550,6 +1639,7 @@ function findNewCalendarId(previousCalendars, nextCalendars) {
 function openPatternChoice(settings) {
   hasPromptedPattern = true;
   patternManager.hide();
+  hideCalendarPicker();
   calendarSection.hidden = true;
   settingsMenuButton.hidden = true;
   dayModal.hidden = true;
@@ -1579,6 +1669,7 @@ function startWithoutCalendar() {
   setScheduleTypes([]);
   setWeeklyRules([]);
   patternManager.hide();
+  hideCalendarPicker();
   if (patternOnboardingModal) patternOnboardingModal.hidden = true;
   if (patternCalendarModal) patternCalendarModal.hidden = true;
   calendarSection.hidden = false;

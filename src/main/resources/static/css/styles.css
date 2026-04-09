@@ -197,6 +197,82 @@ section h2 {
   font-weight: 600;
 }
 
+.calendar-picker-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.calendar-picker-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.calendar-picker-header h2 {
+  margin: 0;
+}
+
+.calendar-picker-header p {
+  margin: 0;
+  color: #6e6e73;
+}
+
+.calendar-picker-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.calendar-picker-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.calendar-picker-group-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #6e6e73;
+  letter-spacing: 0.02em;
+}
+
+.calendar-picker-card {
+  width: 100%;
+  border: 1px solid #e5e5ea;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #ffffff 0%, #f7f8fb 100%);
+  padding: 1rem;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  color: #1c1c1e;
+}
+
+.calendar-picker-card strong {
+  font-size: 1rem;
+}
+
+.calendar-picker-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  color: #6e6e73;
+  font-size: 0.88rem;
+}
+
+.calendar-picker-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  background: #eef3ff;
+  color: #0a64ff;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
 .calendar-header > button:not(.secondary):not(.settings-icon-button) {
   background: #007AFF;
   color: white;
