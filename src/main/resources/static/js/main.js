@@ -87,6 +87,10 @@ const state = {
   selectedDate: null,
   calendarId: null,
   calendars: [],
+  calendarGroups: {
+    owned: [],
+    shared: []
+  },
   me: null,
   calendarData: null,
   scheduleTypes: [],
@@ -210,6 +214,22 @@ function renderDayDetailPanel(detail, date) {
 
 function getCurrentCalendar() {
   return state.calendars.find((c) => c.id === state.calendarId) || null;
+}
+
+function setCalendarCollections(res) {
+  const calendars = Array.isArray(res?.calendars) ? res.calendars : [];
+  const ownedCalendars = Array.isArray(res?.ownedCalendars)
+    ? res.ownedCalendars
+    : calendars.filter((calendar) => calendar.owned);
+  const sharedCalendars = Array.isArray(res?.sharedCalendars)
+    ? res.sharedCalendars
+    : calendars.filter((calendar) => !calendar.owned);
+
+  state.calendars = calendars;
+  state.calendarGroups = {
+    owned: ownedCalendars,
+    shared: sharedCalendars
+  };
 }
 
 function isCalendarEditable() {
@@ -693,7 +713,7 @@ async function bootstrap() {
 
       // 캘린더 목록/기본 캘린더
       const calendarsRes = bootstrapData.calendars || {};
-      state.calendars = calendarsRes.calendars || [];
+      setCalendarCollections(calendarsRes);
       state.calendarId = state.calendarId
         || calendarsRes.defaultCalendarId
         || (state.calendars[0] ? state.calendars[0].id : null);
@@ -791,7 +811,7 @@ async function bootstrap() {
 
 async function loadCalendars() {
   const res = await api.listCalendars();
-  state.calendars = res.calendars || [];
+  setCalendarCollections(res);
   state.calendarId = res.defaultCalendarId || (state.calendars[0] ? state.calendars[0].id : null);
   state.selectedDate = null;
   state.calendarData = null;
@@ -888,35 +908,52 @@ function updateCalendarEmptyState() {
 function renderCalendarSelector() {
   if (!calendarSelector || !calendarSelectorList) return;
   calendarSelectorList.innerHTML = '';
-  state.calendars.forEach((cal) => {
-    const item = document.createElement('button');
-    item.type = 'button';
-    item.className = 'calendar-selector-item';
-    if (cal.id === state.calendarId) {
-      item.classList.add('active');
-    }
-    const label = `${cal.name}${cal.owned ? '' : ` · ${cal.ownerName || ''}`}`;
-    item.textContent = label;
-    item.addEventListener('click', async () => {
-      state.calendarId = cal.id;
-      calendarSelectorList.hidden = true;
-      const settings = await loadPatternSettings();
-      if (!state.patternConfigured) {
-        patternManager.show(60, settings);
-        calendarSection.hidden = true;
-        settingsMenuButton.hidden = true;
-        return;
+  const groups = [
+    { title: '내 캘린더', calendars: state.calendarGroups.owned },
+    { title: '공유받은 캘린더', calendars: state.calendarGroups.shared }
+  ].filter((group) => group.calendars.length > 0);
+
+  groups.forEach((group) => {
+    const section = document.createElement('div');
+    section.className = 'calendar-selector-group';
+
+    const title = document.createElement('div');
+    title.className = 'calendar-selector-group-title';
+    title.textContent = group.title;
+    section.appendChild(title);
+
+    group.calendars.forEach((cal) => {
+      const item = document.createElement('button');
+      item.type = 'button';
+      item.className = 'calendar-selector-item';
+      if (cal.id === state.calendarId) {
+        item.classList.add('active');
       }
-      patternManager.hide();
-      calendarSection.hidden = false;
-      settingsMenuButton.hidden = false;
-      await Promise.all([
-        loadCalendar(state.year, state.month),
-        loadShares()
-      ]);
-      renderCalendarSelector();
+      const label = `${cal.name}${cal.owned ? '' : ` · ${cal.ownerName || ''}`}`;
+      item.textContent = label;
+      item.addEventListener('click', async () => {
+        state.calendarId = cal.id;
+        calendarSelectorList.hidden = true;
+        const settings = await loadPatternSettings();
+        if (!state.patternConfigured) {
+          patternManager.show(60, settings);
+          calendarSection.hidden = true;
+          settingsMenuButton.hidden = true;
+          return;
+        }
+        patternManager.hide();
+        calendarSection.hidden = false;
+        settingsMenuButton.hidden = false;
+        await Promise.all([
+          loadCalendar(state.year, state.month),
+          loadShares()
+        ]);
+        renderCalendarSelector();
+      });
+      section.appendChild(item);
     });
-    calendarSelectorList.appendChild(item);
+
+    calendarSelectorList.appendChild(section);
   });
   const current = state.calendars.find(c => c.id === state.calendarId);
   state.usePattern = current ? current.patternEnabled !== false : false;
@@ -1313,7 +1350,7 @@ if (createCalendarForm) {
     const patternEnabled = getCalendarTemplateConfig(template).patternEnabled;
     try {
       const res = await api.createCalendar({ name, patternEnabled, templateType: template });
-      state.calendars = res.calendars || [];
+      setCalendarCollections(res);
       state.calendarId = findNewCalendarId(previousCalendars, state.calendars)
         || res.defaultCalendarId
         || (state.calendars[0] ? state.calendars[0].id : null);
@@ -1404,7 +1441,7 @@ if (editCalendarForm) {
     const patternEnabled = editCalendarPatternEnabledInput.checked;
     try {
       const res = await api.updateCalendar(state.calendarId, { name, patternEnabled });
-      state.calendars = res.calendars || [];
+      setCalendarCollections(res);
       const stillExists = state.calendars.find(c => c.id === state.calendarId);
       if (!stillExists) {
         state.calendarId = res.defaultCalendarId || (state.calendars[0] ? state.calendars[0].id : null);
@@ -1455,7 +1492,7 @@ if (deleteCalendarButton) {
     }
     try {
       const res = await api.deleteCalendar(state.calendarId);
-      state.calendars = res.calendars || [];
+      setCalendarCollections(res);
       state.calendarId = res.defaultCalendarId || (state.calendars[0] ? state.calendars[0].id : null);
       invalidateCache('settings');
       invalidateCache('calendar');
@@ -1567,7 +1604,7 @@ async function ensureCalendar(name, patternEnabled) {
   const fallbackName = guessCalendarName(template);
   const targetName = (name || fallbackName).trim() || fallbackName;
   const res = await api.createCalendar({ name: targetName, patternEnabled, templateType: template });
-  state.calendars = res.calendars || [];
+  setCalendarCollections(res);
   state.calendarId = findNewCalendarId(previousCalendars, state.calendars)
     || res.defaultCalendarId
     || (state.calendars[0] ? state.calendars[0].id : null);

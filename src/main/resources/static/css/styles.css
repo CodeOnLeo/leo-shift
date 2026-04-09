@@ -152,6 +152,26 @@ section h2 {
   display: flex;
 }
 
+.calendar-selector-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.calendar-selector-group + .calendar-selector-group {
+  margin-top: 6px;
+  padding-top: 8px;
+  border-top: 1px solid #f0f0f4;
+}
+
+.calendar-selector-group-title {
+  padding: 6px 8px 2px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #6e6e73;
+  letter-spacing: 0.02em;
+}
+
 .calendar-selector-item {
   width: 100%;
   text-align: left;
