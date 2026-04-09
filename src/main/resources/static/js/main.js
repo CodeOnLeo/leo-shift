@@ -297,7 +297,7 @@ function renderScheduleTypeEditor(scheduleTypes = state.scheduleTypes) {
   }
   const current = getCurrentCalendar();
   const isShift = !!current && !isGeneralCalendar(current);
-  const canEdit = !!current && current.owned && current.patternEnabled !== false;
+  const canEdit = !!current && isCalendarEditable() && current.patternEnabled !== false;
   scheduleTypeEditorSection.hidden = !current || current.patternEnabled === false;
   scheduleTypeEditorList.innerHTML = '';
 
@@ -381,7 +381,7 @@ function renderWeeklyRuleEditor(weeklyRules = state.weeklyRules) {
     }
     return;
   }
-  const canEdit = !!current && current.owned;
+  const canEdit = !!current && isCalendarEditable();
   const ruleMap = new Map((weeklyRules || []).map((rule) => [rule.dayOfWeek, rule.scheduleTypeCode]));
   const weekdayLabels = ['월요일', '화요일', '수요일', '목요일', '금요일', '토요일', '일요일'];
   weeklyRuleEditorList.innerHTML = '';
