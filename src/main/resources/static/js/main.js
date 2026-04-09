@@ -917,7 +917,11 @@ async function bootstrap() {
 async function loadCalendars() {
   const res = await api.listCalendars();
   setCalendarCollections(res);
-  state.calendarId = res.defaultCalendarId || (state.calendars[0] ? state.calendars[0].id : null);
+  const currentId = state.calendarId;
+  const exists = currentId && state.calendars.some((c) => c.id === currentId);
+  state.calendarId = exists
+    ? currentId
+    : (res.defaultCalendarId || (state.calendars[0] ? state.calendars[0].id : null));
   state.selectedDate = null;
   state.calendarData = null;
   if (!state.calendarId) {
