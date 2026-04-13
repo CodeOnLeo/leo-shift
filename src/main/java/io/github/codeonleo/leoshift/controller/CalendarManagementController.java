@@ -1,17 +1,21 @@
 package io.github.codeonleo.leoshift.controller;
 
 import io.github.codeonleo.leoshift.dto.CalendarCreateRequest;
+import io.github.codeonleo.leoshift.dto.CalendarGrantPermissionRequest;
 import io.github.codeonleo.leoshift.dto.CalendarListResponse;
 import io.github.codeonleo.leoshift.dto.CalendarShareInvitationRequest;
+import io.github.codeonleo.leoshift.dto.CalendarShareGrantResponse;
 import io.github.codeonleo.leoshift.dto.CalendarShareRequest;
 import io.github.codeonleo.leoshift.dto.CalendarShareResponse;
 import io.github.codeonleo.leoshift.dto.CalendarUpdateRequest;
+import io.github.codeonleo.leoshift.dto.CalendarUserGrantRequest;
 import io.github.codeonleo.leoshift.dto.ScheduleTypeResponse;
 import io.github.codeonleo.leoshift.dto.ScheduleTypeUpdateRequest;
 import io.github.codeonleo.leoshift.dto.ShareDecisionRequest;
 import io.github.codeonleo.leoshift.dto.WeeklyRuleResponse;
 import io.github.codeonleo.leoshift.dto.WeeklyRuleUpdateRequest;
 import io.github.codeonleo.leoshift.service.CalendarAccessService;
+import io.github.codeonleo.leoshift.service.CalendarGrantService;
 import io.github.codeonleo.leoshift.service.CalendarManagementService;
 import io.github.codeonleo.leoshift.service.CalendarShareService;
 import io.github.codeonleo.leoshift.service.CalendarWeeklyRuleService;
@@ -34,6 +38,7 @@ public class CalendarManagementController {
 
     private final CalendarAccessService calendarAccessService;
     private final CalendarShareService calendarShareService;
+    private final CalendarGrantService calendarGrantService;
     private final CalendarManagementService calendarManagementService;
     private final SettingsService settingsService;
     private final ScheduleTypeService scheduleTypeService;
@@ -41,12 +46,14 @@ public class CalendarManagementController {
 
     public CalendarManagementController(CalendarAccessService calendarAccessService,
                                         CalendarShareService calendarShareService,
+                                        CalendarGrantService calendarGrantService,
                                         CalendarManagementService calendarManagementService,
                                         SettingsService settingsService,
                                         ScheduleTypeService scheduleTypeService,
                                         CalendarWeeklyRuleService calendarWeeklyRuleService) {
         this.calendarAccessService = calendarAccessService;
         this.calendarShareService = calendarShareService;
+        this.calendarGrantService = calendarGrantService;
         this.calendarManagementService = calendarManagementService;
         this.settingsService = settingsService;
         this.scheduleTypeService = scheduleTypeService;
@@ -100,6 +107,34 @@ public class CalendarManagementController {
     @GetMapping("/{calendarId}/shares")
     public List<CalendarShareResponse> shares(@PathVariable Long calendarId) {
         return calendarShareService.listShares(calendarId);
+    }
+
+    @GetMapping("/{calendarId}/grants")
+    public List<CalendarShareGrantResponse> grants(@PathVariable Long calendarId) {
+        return calendarGrantService.listGrants(calendarId);
+    }
+
+    @PostMapping("/{calendarId}/grants/users")
+    public CalendarShareGrantResponse grantUser(@PathVariable Long calendarId,
+                                                @Valid @RequestBody CalendarUserGrantRequest request) {
+        return calendarGrantService.grantUser(calendarId, request.email(), request.permission());
+    }
+
+    @DeleteMapping("/{calendarId}/grants/users/{userId}")
+    public void revokeUser(@PathVariable Long calendarId, @PathVariable Long userId) {
+        calendarGrantService.revokeUser(calendarId, userId);
+    }
+
+    @PutMapping("/{calendarId}/grants/groups/{groupId}")
+    public CalendarShareGrantResponse grantGroup(@PathVariable Long calendarId,
+                                                 @PathVariable Long groupId,
+                                                 @Valid @RequestBody CalendarGrantPermissionRequest request) {
+        return calendarGrantService.grantGroup(calendarId, groupId, request.permission());
+    }
+
+    @DeleteMapping("/{calendarId}/grants/groups/{groupId}")
+    public void revokeGroup(@PathVariable Long calendarId, @PathVariable Long groupId) {
+        calendarGrantService.revokeGroup(calendarId, groupId);
     }
 
     @PostMapping("/{calendarId}/shares/respond")

@@ -355,16 +355,65 @@
               <p class="settings-section-description">이메일로 초대하고 보기/편집 권한을 설정하세요.</p>
             </div>
           </div>
-          <div class="share-form">
-            <input type="email" id="shareEmail" placeholder="이메일 입력" />
-            <select id="sharePermission">
-              <option value="VIEW">보기</option>
-              <option value="EDIT">편집</option>
-            </select>
-            <button type="button" id="shareInviteButton">초대 보내기</button>
+          <div class="share-context-card" id="shareContextCard">
+            <strong id="shareContextTitle">선택한 캘린더</strong>
+            <span id="shareContextSubtitle">공유할 캘린더를 확인하세요.</span>
           </div>
-          <div class="share-list" id="shareList"></div>
-          <div class="invite-list" id="inviteList"></div>
+
+          <div class="share-owner-only-note" id="shareOwnerOnlyNote" hidden>
+            현재 캘린더를 소유한 사용자만 공유 권한을 관리할 수 있습니다.
+          </div>
+
+          <div class="share-panel" id="shareInvitePanel">
+            <div class="share-panel-header">
+              <strong>사용자 초대</strong>
+              <span>개별 사용자에게 보기 또는 편집 권한을 보냅니다.</span>
+            </div>
+            <div class="share-form">
+              <input type="email" id="shareEmail" placeholder="이메일 입력" />
+              <select id="sharePermission">
+                <option value="VIEW">보기</option>
+                <option value="EDIT">편집</option>
+              </select>
+              <button type="button" id="shareInviteButton">초대 보내기</button>
+            </div>
+            <div class="share-list" id="shareList"></div>
+            <div class="invite-list" id="inviteList"></div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="share-panel">
+            <div class="share-panel-header">
+              <strong>공유 그룹</strong>
+              <span>여러 사람을 그룹으로 묶어서 반복되는 공유 설정을 줄입니다.</span>
+            </div>
+            <div class="share-form">
+              <input type="text" id="shareGroupName" placeholder="예: 운영팀" maxlength="100" />
+              <button type="button" id="shareGroupCreateButton">그룹 만들기</button>
+            </div>
+            <div class="share-list" id="shareGroupList"></div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="share-panel" id="shareGrantPanel">
+            <div class="share-panel-header">
+              <strong>현재 캘린더에 적용된 그룹 권한</strong>
+              <span>선택한 캘린더에 내 공유 그룹을 연결합니다.</span>
+            </div>
+            <div class="share-form">
+              <select id="shareGrantGroupSelect">
+                <option value="">그룹 선택</option>
+              </select>
+              <select id="shareGrantPermissionSelect">
+                <option value="VIEW">보기</option>
+                <option value="EDIT">편집</option>
+              </select>
+              <button type="button" id="shareGrantGroupButton">그룹 공유</button>
+            </div>
+            <div class="share-list" id="shareGrantList"></div>
+          </div>
         </section>
       </div>
 

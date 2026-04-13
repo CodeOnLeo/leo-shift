@@ -50,6 +50,18 @@ const sharePermissionSelect = document.getElementById('sharePermission');
 const shareInviteButton = document.getElementById('shareInviteButton');
 const shareList = document.getElementById('shareList');
 const inviteList = document.getElementById('inviteList');
+const shareContextTitle = document.getElementById('shareContextTitle');
+const shareContextSubtitle = document.getElementById('shareContextSubtitle');
+const shareOwnerOnlyNote = document.getElementById('shareOwnerOnlyNote');
+const shareInvitePanel = document.getElementById('shareInvitePanel');
+const shareGroupNameInput = document.getElementById('shareGroupName');
+const shareGroupCreateButton = document.getElementById('shareGroupCreateButton');
+const shareGroupList = document.getElementById('shareGroupList');
+const shareGrantGroupSelect = document.getElementById('shareGrantGroupSelect');
+const shareGrantPermissionSelect = document.getElementById('shareGrantPermissionSelect');
+const shareGrantGroupButton = document.getElementById('shareGrantGroupButton');
+const shareGrantList = document.getElementById('shareGrantList');
+const shareGrantPanel = document.getElementById('shareGrantPanel');
 const patternFields = document.querySelectorAll('[data-pattern="true"]');
 const colorPicker = document.getElementById('colorPicker');
 const saveColorButton = document.getElementById('saveColorButton');
@@ -352,6 +364,40 @@ function isCalendarEditable() {
   const current = getCurrentCalendar();
   if (!current) return true;
   return current.owned || current.editable || current.permission === 'EDIT';
+}
+
+function isCurrentCalendarOwned() {
+  const current = getCurrentCalendar();
+  return !!current && current.owned;
+}
+
+function syncShareManagementUI() {
+  const current = getCurrentCalendar();
+  const isOwner = isCurrentCalendarOwned();
+
+  if (shareContextTitle) {
+    shareContextTitle.textContent = current
+      ? current.name
+      : '선택한 캘린더가 없습니다';
+  }
+  if (shareContextSubtitle) {
+    if (!current) {
+      shareContextSubtitle.textContent = '먼저 공유할 캘린더를 선택하세요.';
+    } else if (isOwner) {
+      shareContextSubtitle.textContent = '이 캘린더는 내가 소유하고 있어서 공유 권한을 관리할 수 있습니다.';
+    } else {
+      shareContextSubtitle.textContent = `${current.ownerName || '다른 사용자'} 소유 캘린더입니다. 현재는 읽기만 가능합니다.`;
+    }
+  }
+  if (shareOwnerOnlyNote) {
+    shareOwnerOnlyNote.hidden = isOwner || !current;
+  }
+  if (shareInvitePanel) {
+    shareInvitePanel.hidden = !isOwner;
+  }
+  if (shareGrantPanel) {
+    shareGrantPanel.hidden = !isOwner;
+  }
 }
 
 const CACHE_TTL_MS = 3 * 60 * 1000; // 3분 캐시
@@ -1117,14 +1163,26 @@ function renderCalendarSelector() {
 
 async function loadShares({ force = false } = {}) {
   if (!shareList) return;
+  syncShareManagementUI();
   const current = state.calendars.find(c => c.id === state.calendarId);
   if (!current || !current.owned) {
     shareList.innerHTML = '';
+    if (inviteList) {
+      inviteList.innerHTML = '';
+    }
+    if (shareGrantList) shareGrantList.innerHTML = '';
+    await Promise.all([
+      loadShareGroups(),
+      loadCalendarGrants()
+    ]);
     return;
   }
   const key = state.calendarId;
   const shares = await fetchWithCache('shares', key, () => api.listShares(state.calendarId), { force });
   shareList.innerHTML = '';
+  if (!shares || shares.length === 0) {
+    shareList.innerHTML = '<div class="share-empty">초대한 사용자가 없습니다.</div>';
+  }
   shares.forEach((s) => {
     const item = document.createElement('div');
     item.className = 'share-item';
@@ -1143,6 +1201,182 @@ async function loadShares({ force = false } = {}) {
     badges.append(perm, status);
     item.append(meta, badges);
     shareList.appendChild(item);
+  });
+
+  await Promise.all([
+    loadShareGroups(),
+    loadCalendarGrants()
+  ]);
+}
+
+async function loadShareGroups() {
+  if (!shareGroupList || !shareGrantGroupSelect) return;
+
+  const groups = await api.listShareGroups();
+  shareGroupList.innerHTML = '';
+  shareGrantGroupSelect.innerHTML = '<option value="">그룹 선택</option>';
+
+  if (!groups || groups.length === 0) {
+    shareGroupList.innerHTML = '<div class="share-empty">공유 그룹이 없습니다.</div>';
+    return;
+  }
+
+  groups.forEach((group) => {
+    const option = document.createElement('option');
+    option.value = group.id;
+    option.textContent = group.name;
+    shareGrantGroupSelect.appendChild(option);
+
+    const item = document.createElement('div');
+    item.className = 'share-group-item';
+
+    const header = document.createElement('div');
+    header.className = 'share-group-header';
+
+    const meta = document.createElement('div');
+    meta.className = 'meta';
+    meta.innerHTML = `<strong>${group.name}</strong><span>멤버 ${group.members?.length || 0}명</span>`;
+
+    const actions = document.createElement('div');
+    actions.className = 'invite-actions';
+
+    const renameButton = document.createElement('button');
+    renameButton.type = 'button';
+    renameButton.className = 'secondary';
+    renameButton.textContent = '이름 변경';
+    renameButton.addEventListener('click', async () => {
+      const name = prompt('새 그룹 이름을 입력하세요.', group.name);
+      if (!name || name.trim() === group.name) return;
+      try {
+        await api.updateShareGroup(group.id, { name: name.trim() });
+        showToast('그룹 이름을 변경했습니다.');
+        await Promise.all([loadShareGroups(), loadCalendarGrants()]);
+      } catch (e) {
+        showToast('그룹 이름 변경 실패: ' + (e.message || '오류'));
+      }
+    });
+
+    const deleteButton = document.createElement('button');
+    deleteButton.type = 'button';
+    deleteButton.className = 'danger';
+    deleteButton.textContent = '삭제';
+    deleteButton.addEventListener('click', async () => {
+      if (!confirm(`"${group.name}" 그룹을 삭제하시겠습니까?`)) return;
+      try {
+        await api.deleteShareGroup(group.id);
+        showToast('그룹을 삭제했습니다.');
+        await Promise.all([loadShareGroups(), loadCalendarGrants()]);
+      } catch (e) {
+        showToast('그룹 삭제 실패: ' + (e.message || '오류'));
+      }
+    });
+
+    actions.append(renameButton, deleteButton);
+    header.append(meta, actions);
+
+    const memberForm = document.createElement('div');
+    memberForm.className = 'share-form share-group-member-form';
+    memberForm.innerHTML = `
+      <input type="email" placeholder="멤버 이메일 입력" />
+      <button type="button">멤버 추가</button>
+    `;
+    const memberEmailInput = memberForm.querySelector('input');
+    const memberAddButton = memberForm.querySelector('button');
+    memberAddButton.addEventListener('click', async () => {
+      const email = (memberEmailInput.value || '').trim();
+      if (!email) {
+        alert('이메일을 입력하세요.');
+        return;
+      }
+      try {
+        await api.addShareGroupMember(group.id, { email });
+        memberEmailInput.value = '';
+        showToast('멤버를 추가했습니다.');
+        await Promise.all([loadShareGroups(), loadCalendarGrants()]);
+      } catch (e) {
+        showToast('멤버 추가 실패: ' + (e.message || '오류'));
+      }
+    });
+
+    const memberList = document.createElement('div');
+    memberList.className = 'share-group-member-list';
+    if (!group.members || group.members.length === 0) {
+      memberList.innerHTML = '<div class="share-empty">멤버가 없습니다.</div>';
+    } else {
+      group.members.forEach((member) => {
+        const memberItem = document.createElement('div');
+        memberItem.className = 'share-item';
+        const memberMeta = document.createElement('div');
+        memberMeta.className = 'meta';
+        memberMeta.innerHTML = `<strong>${member.userName}</strong><span>${member.userEmail}</span>`;
+        const memberActions = document.createElement('div');
+        memberActions.className = 'invite-actions';
+        const removeButton = document.createElement('button');
+        removeButton.type = 'button';
+        removeButton.className = 'danger';
+        removeButton.textContent = '제거';
+        removeButton.addEventListener('click', async () => {
+          try {
+            await api.removeShareGroupMember(group.id, member.userId);
+            showToast('멤버를 제거했습니다.');
+            await Promise.all([loadShareGroups(), loadCalendarGrants()]);
+          } catch (e) {
+            showToast('멤버 제거 실패: ' + (e.message || '오류'));
+          }
+        });
+        memberActions.appendChild(removeButton);
+        memberItem.append(memberMeta, memberActions);
+        memberList.appendChild(memberItem);
+      });
+    }
+
+    item.append(header, memberForm, memberList);
+    shareGroupList.appendChild(item);
+  });
+}
+
+async function loadCalendarGrants() {
+  if (!shareGrantList) return;
+  if (!isCurrentCalendarOwned() || !state.calendarId) {
+    shareGrantList.innerHTML = '';
+    return;
+  }
+  const grants = await api.listCalendarGrants(state.calendarId);
+  const groupGrants = (grants || []).filter((grant) => grant.targetType === 'GROUP');
+  shareGrantList.innerHTML = '';
+
+  if (groupGrants.length === 0) {
+    shareGrantList.innerHTML = '<div class="share-empty">그룹 권한이 없습니다.</div>';
+    return;
+  }
+
+  groupGrants.forEach((grant) => {
+    const item = document.createElement('div');
+    item.className = 'share-item';
+    const meta = document.createElement('div');
+    meta.className = 'meta';
+    meta.innerHTML = `<strong>${grant.targetName}</strong><span>그룹 권한</span>`;
+    const actions = document.createElement('div');
+    actions.className = 'badges';
+    const permission = document.createElement('span');
+    permission.className = 'badge';
+    permission.textContent = grant.permission === 'EDIT' ? '편집' : '보기';
+    const removeButton = document.createElement('button');
+    removeButton.type = 'button';
+    removeButton.className = 'danger';
+    removeButton.textContent = '회수';
+    removeButton.addEventListener('click', async () => {
+      try {
+        await api.revokeCalendarGroup(state.calendarId, grant.targetId);
+        showToast('그룹 권한을 회수했습니다.');
+        await loadCalendarGrants();
+      } catch (e) {
+        showToast('그룹 권한 회수 실패: ' + (e.message || '오류'));
+      }
+    });
+    actions.append(permission, removeButton);
+    item.append(meta, actions);
+    shareGrantList.appendChild(item);
   });
 }
 
@@ -1470,6 +1704,48 @@ if (shareInviteButton) {
       await loadShares({ force: true });
     } catch (e) {
       showToast('초대 전송 실패: ' + (e.message || '오류'));
+    }
+  });
+}
+
+if (shareGroupCreateButton) {
+  shareGroupCreateButton.addEventListener('click', async () => {
+    const name = (shareGroupNameInput?.value || '').trim();
+    if (!name) {
+      alert('그룹 이름을 입력하세요.');
+      return;
+    }
+    try {
+      await api.createShareGroup({ name });
+      if (shareGroupNameInput) {
+        shareGroupNameInput.value = '';
+      }
+      showToast('공유 그룹을 만들었습니다.');
+      await loadShareGroups();
+    } catch (e) {
+      showToast('공유 그룹 생성 실패: ' + (e.message || '오류'));
+    }
+  });
+}
+
+if (shareGrantGroupButton) {
+  shareGrantGroupButton.addEventListener('click', async () => {
+    if (!state.calendarId) {
+      alert('캘린더를 먼저 선택하세요.');
+      return;
+    }
+    const groupId = shareGrantGroupSelect?.value;
+    const permission = shareGrantPermissionSelect?.value || 'VIEW';
+    if (!groupId) {
+      alert('공유할 그룹을 선택하세요.');
+      return;
+    }
+    try {
+      await api.grantCalendarGroup(state.calendarId, groupId, { permission });
+      showToast('그룹 권한을 부여했습니다.');
+      await loadCalendarGrants();
+    } catch (e) {
+      showToast('그룹 권한 부여 실패: ' + (e.message || '오류'));
     }
   });
 }
@@ -2209,6 +2485,9 @@ function showSettingsView(viewName) {
   // 개인 설정 뷰로 이동 시 프로필 정보 로드
   if (viewName === 'personal') {
     loadProfileInfo();
+  }
+  if (viewName === 'share') {
+    loadShares({ force: true }).catch(() => null);
   }
   if (viewName === 'calendar-pattern') {
     renderScheduleTypeEditor();
