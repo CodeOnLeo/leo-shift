@@ -2190,12 +2190,65 @@ button.secondary {
 }
 
 @media (max-width: 768px) {
+  .calendar-grid {
+    gap: 0;
+    border-top: 1px solid #e5e5ea;
+    border-left: 1px solid #e5e5ea;
+  }
+
+  .day-cell {
+    border-top: 0;
+    border-left: 0;
+    border-right: 1px solid #e5e5ea;
+    border-bottom: 1px solid #e5e5ea;
+    border-radius: 0;
+    padding: 0.35rem 0.15rem;
+  }
+
+  .day-cell.today,
+  .day-cell.selected {
+    border-width: 0 1px 1px 0;
+  }
+
+  .day-cell.today {
+    box-shadow: inset 0 0 0 1px #007AFF;
+  }
+
+  .day-cell.selected {
+    box-shadow: inset 0 0 0 1px #5856D6;
+  }
+
+  .day-cell.external-date-styled {
+    border-width: 0 1px 1px 0;
+  }
+
+  .day-cell.today .date-label {
+    color: #007AFF;
+  }
+
+  .day-cell.weekday {
+    border-right: 1px solid transparent;
+    border-bottom: 1px solid #e5e5ea;
+    border-radius: 0;
+  }
+
   .leave-entry {
     font-size: 0.6rem;
+    border-radius: 2px;
+    padding: 1px 3px;
+    line-height: 1.15;
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    word-break: keep-all;
   }
 
   .external-event {
     font-size: 0.6rem;
+    border-radius: 2px;
+    padding: 1px 3px;
+    line-height: 1.15;
   }
 
   .external-calendar-list .share-item {
