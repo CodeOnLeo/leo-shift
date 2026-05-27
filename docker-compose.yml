@@ -1,0 +1,19 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: leo_shift
+      POSTGRES_USER: leo_shift
+      POSTGRES_PASSWORD: leo_shift
+    ports:
+      - "5432:5432"
+    volumes:
+      - leo_shift_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U leo_shift -d leo_shift"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  leo_shift_postgres_data:

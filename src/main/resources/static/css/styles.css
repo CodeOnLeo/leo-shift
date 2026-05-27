@@ -2076,6 +2076,28 @@ button.secondary {
   margin-top: 1rem;
 }
 
+.external-calendar-list .invite-actions {
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.external-calendar-list .invite-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  min-height: 36px;
+  padding: 0 0.75rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
+.external-calendar-list .invite-actions .secondary {
+  background: #eef4ff;
+  color: #175cd3;
+}
+
 .external-color-dot {
   display: inline-block;
   width: 0.75rem;

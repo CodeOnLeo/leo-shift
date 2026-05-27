@@ -1,5 +1,6 @@
-spring.datasource.url=jdbc:postgresql://localhost:5432/leo_shift
-spring.datasource.username=postgres
-spring.datasource.password=postgres
-spring.security.oauth2.client.registration.google.client-id=local-dev
-spring.security.oauth2.client.registration.google.client-secret=local-dev
+LOCAL_DATABASE_URL=jdbc:postgresql://localhost:5432/leo_shift
+LOCAL_DATABASE_USERNAME=leo_shift
+LOCAL_DATABASE_PASSWORD=leo_shift
+LOCAL_JWT_SECRET=local-development-secret-key-change-before-sharing
+LOCAL_GOOGLE_CLIENT_ID=local-dev
+LOCAL_GOOGLE_CLIENT_SECRET=local-dev
