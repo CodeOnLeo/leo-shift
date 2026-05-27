@@ -9,6 +9,7 @@ import io.github.codeonleo.leoshift.dto.CalendarShareRequest;
 import io.github.codeonleo.leoshift.dto.CalendarShareResponse;
 import io.github.codeonleo.leoshift.dto.CalendarUpdateRequest;
 import io.github.codeonleo.leoshift.dto.CalendarUserGrantRequest;
+import io.github.codeonleo.leoshift.dto.ExternalCalendarDisplayRequest;
 import io.github.codeonleo.leoshift.dto.ExternalCalendarSourceRequest;
 import io.github.codeonleo.leoshift.dto.ExternalCalendarSourceResponse;
 import io.github.codeonleo.leoshift.dto.ScheduleTypeResponse;
@@ -193,6 +194,14 @@ public class CalendarManagementController {
                                                                @PathVariable Long sourceId) {
         var access = calendarAccessService.requireEdit(calendarId);
         return externalCalendarService.syncSource(access.calendar(), sourceId);
+    }
+
+    @PutMapping("/{calendarId}/external-calendars/{sourceId}")
+    public ExternalCalendarSourceResponse updateExternalCalendarDisplay(@PathVariable Long calendarId,
+                                                                        @PathVariable Long sourceId,
+                                                                        @Valid @RequestBody ExternalCalendarDisplayRequest request) {
+        var access = calendarAccessService.requireEdit(calendarId);
+        return externalCalendarService.updateDisplay(access.calendar(), sourceId, request);
     }
 
     @DeleteMapping("/{calendarId}/external-calendars/{sourceId}")

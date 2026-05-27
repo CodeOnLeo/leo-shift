@@ -1,6 +1,7 @@
 package io.github.codeonleo.leoshift.service;
 
 import io.github.codeonleo.leoshift.dto.ExternalCalendarEventDto;
+import io.github.codeonleo.leoshift.dto.ExternalCalendarDisplayRequest;
 import io.github.codeonleo.leoshift.dto.ExternalCalendarSourceRequest;
 import io.github.codeonleo.leoshift.dto.ExternalCalendarSourceResponse;
 import io.github.codeonleo.leoshift.entity.Calendar;
@@ -48,9 +49,17 @@ public class ExternalCalendarService {
         source.setName(request.name().trim());
         source.setFeedUrl(validateFeedUrl(request.feedUrl()));
         source.setColor(normalizeColor(request.color()));
+        applyDisplayOptions(source, request.displayMode(), request.color(), request.dateTextColor(), request.borderColor());
         source.setActive(true);
         source = sourceRepository.save(source);
         syncSource(source);
+        return toSourceResponse(source);
+    }
+
+    @Transactional
+    public ExternalCalendarSourceResponse updateDisplay(Calendar calendar, Long sourceId, ExternalCalendarDisplayRequest request) {
+        ExternalCalendarSource source = findSource(calendar, sourceId);
+        applyDisplayOptions(source, request.displayMode(), request.color(), request.dateTextColor(), request.borderColor());
         return toSourceResponse(source);
     }
 
@@ -154,11 +163,44 @@ public class ExternalCalendarService {
         return normalized.matches("^#[0-9A-Fa-f]{6}$") ? normalized : DEFAULT_COLOR;
     }
 
+    private ExternalCalendarSource.DisplayMode normalizeDisplayMode(String displayMode) {
+        if (!StringUtils.hasText(displayMode)) {
+            return ExternalCalendarSource.DisplayMode.TAG;
+        }
+        try {
+            return ExternalCalendarSource.DisplayMode.valueOf(displayMode.trim().toUpperCase());
+        } catch (RuntimeException e) {
+            return ExternalCalendarSource.DisplayMode.TAG;
+        }
+    }
+
+    private void applyDisplayOptions(ExternalCalendarSource source,
+                                     String displayMode,
+                                     String color,
+                                     String dateTextColor,
+                                     String borderColor) {
+        source.setDisplayMode(normalizeDisplayMode(displayMode));
+        source.setColor(normalizeColor(color));
+        source.setDateTextColor(normalizeColorOrDefault(dateTextColor, "#FF3B30"));
+        source.setBorderColor(normalizeColorOrDefault(borderColor, source.getDateTextColor()));
+    }
+
+    private String normalizeColorOrDefault(String color, String defaultColor) {
+        if (!StringUtils.hasText(color)) {
+            return defaultColor;
+        }
+        String normalized = color.trim();
+        return normalized.matches("^#[0-9A-Fa-f]{6}$") ? normalized : defaultColor;
+    }
+
     private ExternalCalendarSourceResponse toSourceResponse(ExternalCalendarSource source) {
         return new ExternalCalendarSourceResponse(
                 source.getId(),
                 source.getName(),
                 source.getColor(),
+                source.getDisplayMode().name(),
+                source.getDateTextColor(),
+                source.getBorderColor(),
                 source.isActive(),
                 source.getLastSyncedAt(),
                 source.getLastError()
@@ -171,6 +213,9 @@ public class ExternalCalendarService {
                 source.getId(),
                 source.getName(),
                 source.getColor(),
+                source.getDisplayMode().name(),
+                source.getDateTextColor(),
+                source.getBorderColor(),
                 event.getTitle(),
                 event.getStartDate(),
                 event.getEndDate(),

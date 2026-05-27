@@ -70,7 +70,11 @@ const externalCalendarForm = document.getElementById('externalCalendarForm');
 const externalCalendarNameInput = document.getElementById('externalCalendarName');
 const externalCalendarUrlInput = document.getElementById('externalCalendarUrl');
 const externalCalendarColorInput = document.getElementById('externalCalendarColor');
+const externalCalendarDisplayModeSelect = document.getElementById('externalCalendarDisplayMode');
+const externalCalendarDateTextColorInput = document.getElementById('externalCalendarDateTextColor');
+const externalCalendarBorderColorInput = document.getElementById('externalCalendarBorderColor');
 const externalCalendarList = document.getElementById('externalCalendarList');
+const externalCalendarFormColorFields = document.querySelectorAll('[data-external-color-field]');
 const patternFields = document.querySelectorAll('[data-pattern="true"]');
 const colorPicker = document.getElementById('colorPicker');
 const saveColorButton = document.getElementById('saveColorButton');
@@ -190,6 +194,20 @@ function formatScheduleValue(code, scheduleTypes = null) {
 function displayUserName(user) {
   if (!user) return '';
   return user.nickname || user.name || '';
+}
+
+function syncExternalColorFields(mode, fields) {
+  const showTagColor = mode === 'TAG';
+  const showDateColor = mode === 'DATE_TEXT' || mode === 'DATE_STYLE';
+  const showBorderColor = mode === 'DATE_STYLE';
+
+  fields.forEach((field) => {
+    const fieldType = field.dataset.externalColorField;
+    const visible = (fieldType === 'tag' && showTagColor)
+      || (fieldType === 'date' && showDateColor)
+      || (fieldType === 'border' && showBorderColor);
+    field.hidden = !visible;
+  });
 }
 
 function formatLeaveSummary(entries = []) {
@@ -1428,13 +1446,62 @@ async function loadExternalCalendars() {
     const meta = document.createElement('div');
     meta.className = 'meta';
     const syncText = source.lastSyncedAt ? `마지막 동기화: ${formatDateTime(source.lastSyncedAt)}` : '아직 동기화되지 않음';
+    const displayModeLabel = source.displayMode === 'DATE_TEXT'
+      ? '날짜 색상'
+      : source.displayMode === 'DATE_STYLE' ? '날짜+테두리' : '태그 표시';
     meta.innerHTML = `
       <strong><span class="external-color-dot" style="background:${source.color || '#5E5CE6'}"></span>${source.name}</strong>
-      <span>${source.lastError ? '오류: ' + source.lastError : syncText}</span>
+      <span>${displayModeLabel} · ${source.lastError ? '오류: ' + source.lastError : syncText}</span>
     `;
 
     const actions = document.createElement('div');
     actions.className = 'invite-actions';
+
+    const displayControls = document.createElement('div');
+    displayControls.className = 'external-display-controls';
+    displayControls.innerHTML = `
+      <select aria-label="표시 방식">
+        <option value="TAG">태그</option>
+        <option value="DATE_TEXT">날짜</option>
+        <option value="DATE_STYLE">날짜+선</option>
+      </select>
+      <input type="color" aria-label="태그 색상" data-external-color-field="tag" value="${source.color || '#5E5CE6'}" />
+      <input type="color" aria-label="날짜 색상" data-external-color-field="date" value="${source.dateTextColor || '#FF3B30'}" />
+      <input type="color" aria-label="테두리 색상" data-external-color-field="border" value="${source.borderColor || '#FF3B30'}" />
+      <button type="button" class="secondary">저장</button>
+    `;
+    const modeSelect = displayControls.querySelector('select');
+    const colorInput = displayControls.querySelector('input[aria-label="태그 색상"]');
+    const dateColorInput = displayControls.querySelector('input[aria-label="날짜 색상"]');
+    const borderColorInput = displayControls.querySelector('input[aria-label="테두리 색상"]');
+    const saveDisplayButton = displayControls.querySelector('button');
+    modeSelect.value = source.displayMode || 'TAG';
+    const rowColorFields = displayControls.querySelectorAll('[data-external-color-field]');
+    syncExternalColorFields(modeSelect.value, rowColorFields);
+    modeSelect.addEventListener('change', () => {
+      syncExternalColorFields(modeSelect.value, rowColorFields);
+    });
+    [modeSelect, colorInput, dateColorInput, borderColorInput, saveDisplayButton].forEach((control) => {
+      control.disabled = !canEdit;
+    });
+    saveDisplayButton.addEventListener('click', async () => {
+      try {
+        await api.updateExternalCalendar(state.calendarId, source.id, {
+          displayMode: modeSelect.value,
+          color: colorInput.value,
+          dateTextColor: dateColorInput.value,
+          borderColor: borderColorInput.value
+        });
+        invalidateCache('calendar');
+        showToast('표시 설정을 저장했습니다.');
+        await Promise.all([
+          loadExternalCalendars(),
+          loadCalendar(state.year, state.month, { force: true })
+        ]);
+      } catch (e) {
+        showToast('표시 설정 저장 실패: ' + (e.message || '오류'));
+      }
+    });
 
     const syncButton = document.createElement('button');
     syncButton.type = 'button';
@@ -1476,7 +1543,7 @@ async function loadExternalCalendars() {
     });
 
     actions.append(syncButton, deleteButton);
-    item.append(meta, actions);
+    item.append(meta, displayControls, actions);
     externalCalendarList.appendChild(item);
   });
 }
@@ -1953,6 +2020,11 @@ if (shareGrantGroupButton) {
 }
 
 if (externalCalendarForm) {
+  syncExternalColorFields(externalCalendarDisplayModeSelect?.value || 'TAG', externalCalendarFormColorFields);
+  externalCalendarDisplayModeSelect?.addEventListener('change', () => {
+    syncExternalColorFields(externalCalendarDisplayModeSelect.value, externalCalendarFormColorFields);
+  });
+
   externalCalendarForm.addEventListener('submit', async (event) => {
     event.preventDefault();
     if (!state.calendarId) {
@@ -1966,15 +2038,27 @@ if (externalCalendarForm) {
     const name = (externalCalendarNameInput?.value || '').trim();
     const feedUrl = (externalCalendarUrlInput?.value || '').trim();
     const color = externalCalendarColorInput?.value || '#5E5CE6';
+    const displayMode = externalCalendarDisplayModeSelect?.value || 'TAG';
+    const dateTextColor = externalCalendarDateTextColorInput?.value || '#FF3B30';
+    const borderColor = externalCalendarBorderColorInput?.value || '#FF3B30';
     if (!name || !feedUrl) {
       alert('이름과 ICS URL을 입력하세요.');
       return;
     }
     try {
-      const created = await api.addExternalCalendar(state.calendarId, { name, feedUrl, color });
+      const created = await api.addExternalCalendar(state.calendarId, { name, feedUrl, color, displayMode, dateTextColor, borderColor });
       externalCalendarForm.reset();
       if (externalCalendarColorInput) {
         externalCalendarColorInput.value = '#5E5CE6';
+      }
+      if (externalCalendarDisplayModeSelect) {
+        externalCalendarDisplayModeSelect.value = 'TAG';
+      }
+      if (externalCalendarDateTextColorInput) {
+        externalCalendarDateTextColorInput.value = '#FF3B30';
+      }
+      if (externalCalendarBorderColorInput) {
+        externalCalendarBorderColorInput.value = '#FF3B30';
       }
       invalidateCache('calendar');
       showToast(created.lastError ? '추가했지만 동기화에 실패했습니다: ' + created.lastError : '외부 캘린더를 추가했습니다.');

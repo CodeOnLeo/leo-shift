@@ -225,6 +225,7 @@ export const api = {
   },
   listExternalCalendars: (calendarId) => request(`/api/calendars/${calendarId}/external-calendars`),
   addExternalCalendar: (calendarId, payload) => request(`/api/calendars/${calendarId}/external-calendars`, { method: 'POST', body: JSON.stringify(payload) }),
+  updateExternalCalendar: (calendarId, sourceId, payload) => request(`/api/calendars/${calendarId}/external-calendars/${sourceId}`, { method: 'PUT', body: JSON.stringify(payload) }),
   syncExternalCalendar: (calendarId, sourceId) => request(`/api/calendars/${calendarId}/external-calendars/${sourceId}/sync`, { method: 'POST' }),
   deleteExternalCalendar: (calendarId, sourceId) => request(`/api/calendars/${calendarId}/external-calendars/${sourceId}`, { method: 'DELETE' })
 };

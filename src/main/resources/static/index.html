@@ -461,9 +461,25 @@
               ICS URL
               <input type="url" id="externalCalendarUrl" placeholder="https://example.com/calendar.ics" required />
             </label>
-            <label>
+            <label data-external-color-field="tag">
               색상
               <input type="color" id="externalCalendarColor" value="#5E5CE6" />
+            </label>
+            <label>
+              표시 방식
+              <select id="externalCalendarDisplayMode">
+                <option value="TAG">태그로 표시</option>
+                <option value="DATE_TEXT">날짜 색상만</option>
+                <option value="DATE_STYLE">날짜 색상 + 테두리</option>
+              </select>
+            </label>
+            <label data-external-color-field="date">
+              날짜 색상
+              <input type="color" id="externalCalendarDateTextColor" value="#FF3B30" />
+            </label>
+            <label data-external-color-field="border">
+              테두리 색상
+              <input type="color" id="externalCalendarBorderColor" value="#FF3B30" />
             </label>
             <button type="submit" class="full-width">외부 캘린더 추가</button>
           </form>

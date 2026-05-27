@@ -136,10 +136,33 @@ export function renderCalendar({
       cell.append(leaveContainer);
     }
 
-    if (day.externalEvents && day.externalEvents.length > 0) {
+    const externalEvents = day.externalEvents || [];
+    const dateStyleEvent = externalEvents.find((event) => event.displayMode === 'DATE_STYLE' || event.displayMode === 'DATE_TEXT');
+    const dateTextEvents = externalEvents.filter((event) => event.displayMode === 'DATE_STYLE' || event.displayMode === 'DATE_TEXT');
+    const tagExternalEvents = externalEvents.filter((event) => event.displayMode !== 'DATE_STYLE' && event.displayMode !== 'DATE_TEXT');
+    if (dateStyleEvent) {
+      cell.classList.add(dateStyleEvent.displayMode === 'DATE_STYLE' ? 'external-date-styled' : 'external-date-text-only');
+      dateLabel.style.color = dateStyleEvent.dateTextColor || '#FF3B30';
+      if (dateStyleEvent.displayMode === 'DATE_STYLE') {
+        cell.style.borderColor = dateStyleEvent.borderColor || dateStyleEvent.dateTextColor || '#FF3B30';
+      }
+      cell.title = `${dateStyleEvent.sourceName} · ${dateStyleEvent.title}${dateStyleEvent.location ? ' · ' + dateStyleEvent.location : ''}`;
+    }
+
+    if (dateTextEvents.length > 0) {
+      const text = document.createElement('div');
+      text.className = 'external-event-text';
+      const visibleTexts = dateTextEvents.slice(0, 2).map((event) => event.title);
+      text.textContent = visibleTexts.join(' • ') + (dateTextEvents.length > visibleTexts.length ? ` +${dateTextEvents.length - visibleTexts.length}` : '');
+      text.title = dateTextEvents.map((event) => `${event.sourceName} · ${event.title}`).join('\n');
+      text.style.color = dateStyleEvent?.dateTextColor || '#FF3B30';
+      cell.append(text);
+    }
+
+    if (tagExternalEvents.length > 0) {
       const externalContainer = document.createElement('div');
       externalContainer.className = 'external-event-list';
-      const visibleEvents = day.externalEvents.slice(0, 2);
+      const visibleEvents = tagExternalEvents.slice(0, 2);
 
       visibleEvents.forEach((event) => {
         const item = document.createElement('div');
@@ -151,11 +174,11 @@ export function renderCalendar({
         externalContainer.appendChild(item);
       });
 
-      if (day.externalEvents.length > visibleEvents.length) {
+      if (tagExternalEvents.length > visibleEvents.length) {
         const more = document.createElement('div');
         more.className = 'external-event external-event-more';
-        more.textContent = `+${day.externalEvents.length - visibleEvents.length}`;
-        more.title = day.externalEvents.map((event) => `${event.sourceName} · ${event.title}`).join('\n');
+        more.textContent = `+${tagExternalEvents.length - visibleEvents.length}`;
+        more.title = tagExternalEvents.map((event) => `${event.sourceName} · ${event.title}`).join('\n');
         externalContainer.appendChild(more);
       }
 
