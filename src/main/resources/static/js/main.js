@@ -31,6 +31,10 @@ const repeatYearly = document.getElementById('repeatYearly');
 const anniversaryMemo = document.getElementById('anniversaryMemo');
 const clearAnniversaryButton = document.getElementById('clearAnniversary');
 const patternDisabledHint = document.getElementById('patternDisabledHint');
+const leaveList = document.getElementById('leaveList');
+const leaveAddForm = document.getElementById('leaveAddForm');
+const leaveUserSelect = document.getElementById('leaveUserSelect');
+const leaveTypeSelect = document.getElementById('leaveTypeSelect');
 const memoList = document.getElementById('memoList');
 const memoAddForm = document.getElementById('memoAddForm');
 const newMemoText = document.getElementById('newMemoText');
@@ -178,6 +182,18 @@ function formatScheduleValue(code, scheduleTypes = null) {
   return formatScheduleTypeLabel(type) || code;
 }
 
+function displayUserName(user) {
+  if (!user) return '';
+  return user.nickname || user.name || '';
+}
+
+function formatLeaveSummary(entries = []) {
+  if (!Array.isArray(entries) || entries.length === 0) {
+    return '';
+  }
+  return entries.map((entry) => `${displayUserName(entry.user)} ${entry.leaveBadge}`).join(' • ');
+}
+
 function renderLegend(scheduleTypes = state.scheduleTypes) {
   if (!legendTooltip) return;
   legendTooltip.innerHTML = '';
@@ -222,11 +238,13 @@ function syncDetailCodeOptions(scheduleTypes = state.scheduleTypes, selectedValu
 function renderDayDetailPanel(detail, date) {
   const activeTypes = detail?.scheduleTypes || state.scheduleTypes;
   const hasMemo = detail.memo || detail.anniversaryMemo || (detail.yearlyMemos && detail.yearlyMemos.length > 0);
+  const leaveSummary = formatLeaveSummary(detail.leaveEntries || []);
   dayDetailPanel.innerHTML = `
     <strong>${formatKoreanDate(date)}</strong>
     <span>기본 일정: ${formatScheduleValue(detail.baseCode, activeTypes)}</span>
     <span>실제 일정: ${formatScheduleValue(detail.effectiveCode, activeTypes)}</span>
     <span>${detail.shiftLabel || ''}${detail.timeRange ? ` · ${detail.timeRange}` : ''}</span>
+    ${leaveSummary ? `<span>휴가: ${leaveSummary}</span>` : ''}
     <small>${[detail.memo, detail.anniversaryMemo, ...(detail.yearlyMemos || [])].filter(Boolean).join(' • ')}</small>
     ${hasMemo && detail.memoAuthor ? `<div class="memo-author-line">작성: ${detail.memoAuthor.nickname || detail.memoAuthor.name}${detail.updatedAt ? ` · ${formatDateTime(detail.updatedAt)}` : ''}</div>` : ''}
   `;
@@ -1506,6 +1524,13 @@ async function loadCalendar(year, month, { calendarId = state.calendarId, force 
   return data;
 }
 
+async function refreshCalendar() {
+  if (!state.calendarId) {
+    return null;
+  }
+  return loadCalendar(state.year, state.month, { force: true });
+}
+
 function setMemoFormEnabled(enabled) {
   if (!memoAddForm) return;
   memoAddForm.classList.toggle('disabled', !enabled);
@@ -1516,6 +1541,79 @@ function setMemoFormEnabled(enabled) {
   if (newMemoText) {
     newMemoText.disabled = !enabled;
   }
+}
+
+function setLeaveFormEnabled(enabled) {
+  if (!leaveAddForm) return;
+  leaveAddForm.classList.toggle('disabled', !enabled);
+  const submitBtn = leaveAddForm.querySelector('button[type="submit"]');
+  if (submitBtn) {
+    submitBtn.disabled = !enabled;
+  }
+  if (leaveUserSelect) {
+    leaveUserSelect.disabled = !enabled;
+  }
+  if (leaveTypeSelect) {
+    leaveTypeSelect.disabled = !enabled;
+  }
+}
+
+function populateLeaveParticipants(participants = []) {
+  if (!leaveUserSelect) return;
+  const previousValue = leaveUserSelect.value;
+  leaveUserSelect.innerHTML = '<option value="">사용자 선택</option>';
+  (participants || []).forEach((participant) => {
+    const option = document.createElement('option');
+    option.value = participant.id;
+    option.textContent = displayUserName(participant);
+    leaveUserSelect.appendChild(option);
+  });
+  if (previousValue && Array.from(leaveUserSelect.options).some((option) => option.value === previousValue)) {
+    leaveUserSelect.value = previousValue;
+  } else if (state.me && Array.from(leaveUserSelect.options).some((option) => option.value === String(state.me.id))) {
+    leaveUserSelect.value = String(state.me.id);
+  }
+}
+
+function renderLeaveEntries(entries, canEdit = true) {
+  if (!leaveList) return;
+  leaveList.innerHTML = '';
+  if (!entries || entries.length === 0) {
+    leaveList.innerHTML = '<div class="memo-empty">등록된 휴가가 없습니다</div>';
+    return;
+  }
+
+  entries.forEach((entry) => {
+    const item = document.createElement('div');
+    item.className = `leave-item leave-${(entry.leaveType || '').toLowerCase()}`;
+
+    const content = document.createElement('div');
+    content.className = 'memo-content';
+
+    const text = document.createElement('div');
+    text.className = 'memo-text';
+    text.textContent = `${displayUserName(entry.user)} · ${entry.leaveLabel}`;
+
+    const meta = document.createElement('div');
+    meta.className = 'memo-meta';
+    const createdBy = displayUserName(entry.createdBy);
+    const timeStr = entry.updatedAt ? formatDateTime(entry.updatedAt) : '';
+    meta.textContent = createdBy ? `등록: ${createdBy}${timeStr ? ' · ' + timeStr : ''}` : (timeStr || '');
+
+    content.append(text, meta);
+    item.append(content);
+
+    if (canEdit) {
+      const deleteBtn = document.createElement('button');
+      deleteBtn.className = 'memo-delete-btn';
+      deleteBtn.textContent = '삭제';
+      deleteBtn.type = 'button';
+      deleteBtn.addEventListener('click', () => deleteLeaveEntry(entry.id));
+      item.append(deleteBtn);
+    }
+
+    leaveList.append(item);
+  });
 }
 
 function renderMemos(memos, canEdit = true) {
@@ -1558,6 +1656,24 @@ function renderMemos(memos, canEdit = true) {
   });
 }
 
+async function deleteLeaveEntry(leaveEntryId) {
+  if (!isCalendarEditable()) {
+    showToast('읽기 전용 캘린더입니다.');
+    return;
+  }
+  if (!confirm('휴가 표기를 삭제하시겠습니까?')) return;
+
+  try {
+    await api.deleteLeaveEntry(state.selectedDate, leaveEntryId, state.calendarId);
+    invalidateDayCache(state.selectedDate);
+    await selectDay(state.selectedDate);
+    await loadCalendar(state.year, state.month, { force: true });
+    showToast('휴가가 삭제되었습니다.');
+  } catch (e) {
+    showToast('휴가 삭제 실패: ' + (e.message || '오류'));
+  }
+}
+
 async function deleteMemo(memoId) {
   if (!isCalendarEditable()) {
     showToast('읽기 전용 캘린더입니다.');
@@ -1593,6 +1709,8 @@ async function selectDay(date) {
     setScheduleTypes(detail.scheduleTypes || calendarData.scheduleTypes || state.scheduleTypes);
     renderDayDetailPanel(detail, date);
     syncDetailCodeOptions(detail.scheduleTypes || calendarData.scheduleTypes, detail.effectiveCode || '');
+    populateLeaveParticipants(detail.calendarParticipants || []);
+    renderLeaveEntries(detail.leaveEntries || [], canEdit);
 
     // 다중 사용자 메모 렌더링
     renderMemos(detail.dayMemos || [], canEdit);
@@ -1632,6 +1750,7 @@ async function selectDay(date) {
     }
 
     // 메모 추가/수정 가능 여부 표시
+    setLeaveFormEnabled(canEdit);
     setMemoFormEnabled(canEdit);
 
     // 선택된 날짜를 표시하기 위해 캘린더 렌더링
@@ -2259,6 +2378,8 @@ async function saveDayDetail(showSuccessToast = true) {
     setScheduleTypes(detail.scheduleTypes || state.scheduleTypes);
     renderDayDetailPanel(detail, state.selectedDate);
     syncDetailCodeOptions(detail.scheduleTypes || state.scheduleTypes, detail.effectiveCode || '');
+    populateLeaveParticipants(detail.calendarParticipants || []);
+    renderLeaveEntries(detail.leaveEntries || [], isCalendarEditable());
 
     // 기념일 메모 지우기 버튼 표시 여부 업데이트
     clearAnniversaryButton.style.display = (detail.anniversaryMemo || (detail.yearlyMemos && detail.yearlyMemos.length > 0)) ? 'block' : 'none';
@@ -2328,6 +2449,36 @@ legendToggle.addEventListener('click', () => {
 document.addEventListener('click', (e) => {
   if (!legendTooltip.hidden && !legendToggle.contains(e.target) && !legendTooltip.contains(e.target)) {
     legendTooltip.hidden = true;
+  }
+});
+
+// 메모 추가 폼
+leaveAddForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  if (!isCalendarEditable()) {
+    showToast('읽기 전용 캘린더입니다.');
+    return;
+  }
+
+  const userId = leaveUserSelect.value;
+  const leaveType = leaveTypeSelect.value;
+  if (!userId) {
+    showToast('사용자를 선택해주세요.');
+    return;
+  }
+  if (!leaveType) {
+    showToast('휴가 종류를 선택해주세요.');
+    return;
+  }
+
+  try {
+    await api.saveLeaveEntry(state.selectedDate, { userId: Number(userId), leaveType }, state.calendarId);
+    invalidateDayCache(state.selectedDate);
+    await selectDay(state.selectedDate);
+    await loadCalendar(state.year, state.month, { force: true });
+    showToast('휴가가 저장되었습니다.');
+  } catch (e) {
+    showToast('휴가 저장 실패: ' + (e.message || '오류'));
   }
 });
 

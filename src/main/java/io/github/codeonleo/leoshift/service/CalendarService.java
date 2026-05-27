@@ -2,9 +2,10 @@ package io.github.codeonleo.leoshift.service;
 
 import io.github.codeonleo.leoshift.dto.CalendarDayDto;
 import io.github.codeonleo.leoshift.dto.CalendarResponse;
-import io.github.codeonleo.leoshift.dto.ScheduleTypeResponse;
 import io.github.codeonleo.leoshift.dto.AuthorDto;
+import io.github.codeonleo.leoshift.dto.LeaveEntryDto;
 import io.github.codeonleo.leoshift.dto.MemoDto;
+import io.github.codeonleo.leoshift.dto.ScheduleTypeResponse;
 import io.github.codeonleo.leoshift.entity.Calendar;
 import io.github.codeonleo.leoshift.entity.ShiftException;
 import io.github.codeonleo.leoshift.repository.ShiftExceptionRepository;
@@ -29,6 +30,7 @@ public class CalendarService {
     private final ShiftCalculationService calculationService;
     private final ShiftExceptionRepository exceptionRepository;
     private final DayMemoService dayMemoService;
+    private final CalendarLeaveService calendarLeaveService;
     private final ScheduleTypeService scheduleTypeService;
     private final CalendarWeeklyRuleService calendarWeeklyRuleService;
 
@@ -61,6 +63,10 @@ public class CalendarService {
         List<MemoDto> allDayMemos = dayMemoService.getMemosInRange(calendarStart, calendarEnd, calendar);
         Map<LocalDate, List<MemoDto>> memosByDate = allDayMemos.stream()
                 .collect(Collectors.groupingBy(MemoDto::date));
+
+        List<LeaveEntryDto> allLeaveEntries = calendarLeaveService.getEntriesInRange(calendarStart, calendarEnd, calendar);
+        Map<LocalDate, List<LeaveEntryDto>> leaveEntriesByDate = allLeaveEntries.stream()
+                .collect(Collectors.groupingBy(LeaveEntryDto::date));
 
         // 패턴을 한 번만 조회 (N+1 문제 해결)
         List<String> patternCodes = null;
@@ -130,8 +136,9 @@ public class CalendarService {
 
             // 다중 사용자 메모 추가
             List<MemoDto> dayMemos = memosByDate.getOrDefault(cursor, Collections.emptyList());
+            List<LeaveEntryDto> leaveEntries = leaveEntriesByDate.getOrDefault(cursor, Collections.emptyList());
 
-            days.add(new CalendarDayDto(cursor, baseCode, effectiveCode, memos, anniversaryMemos, yearlyMemos, dayException != null, author, dayException != null ? dayException.getUpdatedAt() : null, dayMemos));
+            days.add(new CalendarDayDto(cursor, baseCode, effectiveCode, memos, anniversaryMemos, yearlyMemos, dayException != null, author, dayException != null ? dayException.getUpdatedAt() : null, dayMemos, leaveEntries));
             // summary는 현재 월의 날짜만 카운트
             if (effectiveCode != null && !cursor.isBefore(monthStart) && !cursor.isAfter(monthEnd)) {
                 summary.merge(effectiveCode, 1L, Long::sum);

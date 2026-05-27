@@ -3,9 +3,11 @@ package io.github.codeonleo.leoshift.controller;
 import io.github.codeonleo.leoshift.dto.CalendarResponse;
 import io.github.codeonleo.leoshift.dto.DayDetailResponse;
 import io.github.codeonleo.leoshift.dto.ExceptionUpdateRequest;
+import io.github.codeonleo.leoshift.dto.LeaveEntrySaveRequest;
 import io.github.codeonleo.leoshift.dto.MemoSaveRequest;
 import io.github.codeonleo.leoshift.dto.TodayResponse;
 import io.github.codeonleo.leoshift.service.CalendarAccessService;
+import io.github.codeonleo.leoshift.service.CalendarLeaveService;
 import io.github.codeonleo.leoshift.service.CalendarService;
 import io.github.codeonleo.leoshift.service.DayDetailService;
 import io.github.codeonleo.leoshift.service.DayMemoService;
@@ -32,13 +34,15 @@ public class CalendarController {
     private final TodayService todayService;
     private final DayDetailService dayDetailService;
     private final DayMemoService dayMemoService;
+    private final CalendarLeaveService calendarLeaveService;
     private final CalendarAccessService calendarAccessService;
 
-    public CalendarController(CalendarService calendarService, TodayService todayService, DayDetailService dayDetailService, DayMemoService dayMemoService, CalendarAccessService calendarAccessService) {
+    public CalendarController(CalendarService calendarService, TodayService todayService, DayDetailService dayDetailService, DayMemoService dayMemoService, CalendarLeaveService calendarLeaveService, CalendarAccessService calendarAccessService) {
         this.calendarService = calendarService;
         this.todayService = todayService;
         this.dayDetailService = dayDetailService;
         this.dayMemoService = dayMemoService;
+        this.calendarLeaveService = calendarLeaveService;
         this.calendarAccessService = calendarAccessService;
     }
 
@@ -88,6 +92,24 @@ public class CalendarController {
                                          @RequestParam(required = false) Long calendarId) {
         CalendarAccessService.CalendarAccess access = calendarAccessService.requireEdit(calendarId);
         dayMemoService.deleteById(memoId, calendarAccessService.getCurrentUser());
+        return dayDetailService.load(date, access.calendar());
+    }
+
+    @PostMapping("/days/{date}/leave-entries")
+    public DayDetailResponse saveLeaveEntry(@PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+                                            @Valid @RequestBody LeaveEntrySaveRequest request,
+                                            @RequestParam(required = false) Long calendarId) {
+        CalendarAccessService.CalendarAccess access = calendarAccessService.requireEdit(calendarId);
+        calendarLeaveService.saveOrUpdate(date, request.userId(), request.leaveType(), access.calendar());
+        return dayDetailService.load(date, access.calendar());
+    }
+
+    @DeleteMapping("/days/{date}/leave-entries/{leaveEntryId}")
+    public DayDetailResponse deleteLeaveEntry(@PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+                                              @PathVariable Long leaveEntryId,
+                                              @RequestParam(required = false) Long calendarId) {
+        CalendarAccessService.CalendarAccess access = calendarAccessService.requireEdit(calendarId);
+        calendarLeaveService.deleteById(date, leaveEntryId, access.calendar());
         return dayDetailService.load(date, access.calendar());
     }
 }

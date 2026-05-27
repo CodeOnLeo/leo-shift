@@ -5,9 +5,10 @@ import io.github.codeonleo.leoshift.dto.CalendarUpdateRequest;
 import io.github.codeonleo.leoshift.entity.Calendar;
 import io.github.codeonleo.leoshift.entity.User;
 import io.github.codeonleo.leoshift.entity.UserSettings;
+import io.github.codeonleo.leoshift.repository.CalendarLeaveEntryRepository;
 import io.github.codeonleo.leoshift.repository.CalendarPatternRepository;
-import io.github.codeonleo.leoshift.repository.CalendarShareRepository;
 import io.github.codeonleo.leoshift.repository.CalendarRepository;
+import io.github.codeonleo.leoshift.repository.CalendarShareRepository;
 import io.github.codeonleo.leoshift.repository.ShiftExceptionRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,7 @@ public class CalendarManagementService {
     private final CalendarRepository calendarRepository;
     private final CalendarPatternRepository calendarPatternRepository;
     private final CalendarShareRepository calendarShareRepository;
+    private final CalendarLeaveEntryRepository calendarLeaveEntryRepository;
     private final ShiftExceptionRepository shiftExceptionRepository;
     private final CalendarAccessService calendarAccessService;
     private final SettingsService settingsService;
@@ -102,6 +104,7 @@ public class CalendarManagementService {
         calendarPatternRepository.deleteByCalendar(calendar);
         calendarShareRepository.deleteByCalendar(calendar);
         shiftExceptionRepository.deleteByCalendar(calendar);
+        calendarLeaveEntryRepository.deleteByCalendar(calendar);
         scheduleTypeService.deleteByCalendar(calendar);
         calendarWeeklyRuleService.deleteByCalendar(calendar);
 

@@ -210,5 +210,17 @@ export const api = {
     if (calendarId) params.append('calendarId', calendarId);
     const query = params.toString();
     return request(`/api/days/${date}/memos/${memoId}${query ? `?${query}` : ''}`, { method: 'DELETE' });
+  },
+  saveLeaveEntry: (date, payload, calendarId) => {
+    const params = new URLSearchParams();
+    if (calendarId) params.append('calendarId', calendarId);
+    const query = params.toString();
+    return request(`/api/days/${date}/leave-entries${query ? `?${query}` : ''}`, { method: 'POST', body: JSON.stringify(payload) });
+  },
+  deleteLeaveEntry: (date, leaveEntryId, calendarId) => {
+    const params = new URLSearchParams();
+    if (calendarId) params.append('calendarId', calendarId);
+    const query = params.toString();
+    return request(`/api/days/${date}/leave-entries/${leaveEntryId}${query ? `?${query}` : ''}`, { method: 'DELETE' });
   }
 };

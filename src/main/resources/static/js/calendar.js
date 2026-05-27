@@ -28,6 +28,11 @@ function formatDate(dateTimeString) {
   }
 }
 
+function displayName(user) {
+  if (!user) return '';
+  return user.nickname || user.name || '';
+}
+
 export function renderCalendar({
   gridEl,
   summaryEl,
@@ -94,6 +99,30 @@ export function renderCalendar({
     cell.append(dateLabel);
     if (usePattern) {
       cell.append(codeLabel);
+    }
+
+    if (day.leaveEntries && day.leaveEntries.length > 0) {
+      const leaveContainer = document.createElement('div');
+      leaveContainer.className = 'leave-entry-list';
+      const visibleEntries = day.leaveEntries.slice(0, 3);
+
+      visibleEntries.forEach((entry) => {
+        const item = document.createElement('div');
+        item.className = `leave-entry leave-${(entry.leaveType || '').toLowerCase()}`;
+        item.textContent = `${displayName(entry.user)} ${entry.leaveBadge}`;
+        item.title = `${displayName(entry.user)} · ${entry.leaveLabel}`;
+        leaveContainer.appendChild(item);
+      });
+
+      if (day.leaveEntries.length > visibleEntries.length) {
+        const more = document.createElement('div');
+        more.className = 'leave-entry leave-more';
+        more.textContent = `+${day.leaveEntries.length - visibleEntries.length}`;
+        more.title = day.leaveEntries.map((entry) => `${displayName(entry.user)} · ${entry.leaveLabel}`).join('\n');
+        leaveContainer.appendChild(more);
+      }
+
+      cell.append(leaveContainer);
     }
 
     // 기념일 메모를 먼저 표시 (당일 + 반복)

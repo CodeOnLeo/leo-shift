@@ -539,6 +539,46 @@ section h2 {
   white-space: nowrap;
 }
 
+.leave-entry-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  width: 100%;
+  margin-top: 0.35rem;
+}
+
+.leave-entry {
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 1.25;
+  text-align: center;
+  border-radius: 8px;
+  padding: 2px 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.leave-annual {
+  background: #ffe2e0;
+  color: #b42318;
+}
+
+.leave-half_am {
+  background: #fff0d5;
+  color: #b54708;
+}
+
+.leave-half_pm {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.leave-more {
+  background: #f2f4f7;
+  color: #475467;
+}
+
 /* Legend Tooltip */
 #calendar-section {
   position: relative;
@@ -1863,10 +1903,12 @@ button.secondary {
 }
 
 /* 다중 사용자 메모 스타일 */
+.leave-list-section,
 .memo-list-section {
   margin-bottom: 1.5rem;
 }
 
+.leave-list-section h3,
 .memo-list-section h3 {
   margin: 0 0 1rem;
   font-size: 1.2rem;
@@ -1874,6 +1916,7 @@ button.secondary {
   color: #1c1c1e;
 }
 
+.leave-list,
 .memo-list {
   display: flex;
   flex-direction: column;
@@ -1881,6 +1924,29 @@ button.secondary {
   margin-bottom: 1rem;
   max-height: 300px;
   overflow-y: auto;
+}
+
+.leave-item,
+.memo-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid #e5e5ea;
+  border-radius: 10px;
+}
+
+.leave-item.leave-annual {
+  background: #fff5f5;
+}
+
+.leave-item.leave-half_am {
+  background: #fffbf0;
+}
+
+.leave-item.leave-half_pm {
+  background: #f5f9ff;
 }
 
 .memo-empty {
@@ -1893,14 +1959,7 @@ button.secondary {
 }
 
 .memo-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
   background: #f9f9f9;
-  border: 1px solid #e5e5ea;
-  border-radius: 10px;
 }
 
 .memo-content {
@@ -1940,21 +1999,28 @@ button.secondary {
   transform: scale(0.95);
 }
 
+.leave-add-form,
 .memo-add-form {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
 }
 
+.leave-add-form select,
 .memo-add-form textarea {
   width: 100%;
   padding: 0.75rem;
   border: 1px solid #d1d1d6;
   border-radius: 10px;
   font-size: 0.95rem;
+  background: #fff;
+}
+
+.memo-add-form textarea {
   resize: vertical;
 }
 
+.leave-add-form button,
 .memo-add-form button {
   background: #007AFF;
   color: white;
@@ -1964,4 +2030,17 @@ button.secondary {
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
+}
+
+.leave-add-form select:focus,
+.memo-add-form textarea:focus {
+  outline: none;
+  border-color: #007AFF;
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+}
+
+@media (max-width: 768px) {
+  .leave-entry {
+    font-size: 0.6rem;
+  }
 }

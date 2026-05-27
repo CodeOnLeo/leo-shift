@@ -15,12 +15,14 @@ import io.github.codeonleo.leoshift.repository.ShareGroupMemberRepository;
 import io.github.codeonleo.leoshift.repository.UserRepository;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -132,6 +134,43 @@ public class CalendarAccessService {
                 .sorted(Comparator.comparing(CalendarSummaryResponse::owned).reversed()
                         .thenComparing(CalendarSummaryResponse::ownerName, Comparator.nullsLast(String::compareToIgnoreCase))
                         .thenComparing(CalendarSummaryResponse::name, Comparator.nullsLast(String::compareToIgnoreCase)))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<User> listParticipants(Calendar calendar) {
+        LinkedHashMap<Long, User> participants = new LinkedHashMap<>();
+        User owner = calendar.getOwner();
+        if (owner != null) {
+            participants.put(owner.getId(), owner);
+        }
+
+        calendarShareRepository.findByCalendar(calendar).stream()
+                .filter(share -> share.getStatus() == CalendarShare.ShareStatus.ACCEPTED)
+                .map(CalendarShare::getUser)
+                .forEach(user -> participants.putIfAbsent(user.getId(), user));
+
+        List<CalendarShareGrant> grants = calendarShareGrantRepository.findByCalendar(calendar);
+        grants.stream()
+                .filter(grant -> grant.getTargetType() == CalendarShareGrant.TargetType.USER && grant.getTargetUser() != null)
+                .map(CalendarShareGrant::getTargetUser)
+                .forEach(user -> participants.putIfAbsent(user.getId(), user));
+
+        LinkedHashSet<ShareGroup> groups = grants.stream()
+                .filter(grant -> grant.getTargetType() == CalendarShareGrant.TargetType.GROUP && grant.getTargetGroup() != null)
+                .map(CalendarShareGrant::getTargetGroup)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+
+        groups.forEach(group -> shareGroupMemberRepository.findByGroup(group).stream()
+                .map(ShareGroupMember::getUser)
+                .forEach(user -> participants.putIfAbsent(user.getId(), user)));
+
+        return participants.values().stream()
+                .sorted(Comparator.comparing((User user) -> {
+                            String nickname = user.getNickname();
+                            return (nickname != null && !nickname.isBlank()) ? nickname : user.getName();
+                        }, String.CASE_INSENSITIVE_ORDER)
+                        .thenComparing(User::getId))
                 .toList();
     }
 

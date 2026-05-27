@@ -17,6 +17,7 @@ public class DayDetailService {
     private final ScheduleService scheduleService;
     private final ExceptionService exceptionService;
     private final DayMemoService dayMemoService;
+    private final CalendarLeaveService calendarLeaveService;
     private final ScheduleTypeService scheduleTypeService;
 
     public DayDetailResponse load(LocalDate date, Calendar calendar) {
@@ -37,6 +38,8 @@ public class DayDetailService {
                             null,
                             null,
                             dayMemos,
+                            calendarLeaveService.getEntries(date, calendar),
+                            calendarLeaveService.getParticipants(calendar),
                             scheduleTypeService.listForCalendar(calendar)
                     );
                 });
@@ -63,6 +66,8 @@ public class DayDetailService {
                 schedule.author(),
                 schedule.updatedAt(),
                 dayMemos,
+                calendarLeaveService.getEntries(schedule.date(), calendar),
+                calendarLeaveService.getParticipants(calendar),
                 scheduleTypeService.listForCalendar(calendar)
         );
     }

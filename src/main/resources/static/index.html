@@ -138,6 +138,22 @@
         <div class="modal-body">
           <div class="day-detail-panel" id="dayDetailPanel"></div>
 
+          <div class="leave-list-section" id="leaveListSection">
+            <h3>휴가</h3>
+            <div id="leaveList" class="leave-list"></div>
+            <form class="leave-add-form" id="leaveAddForm">
+              <select id="leaveUserSelect">
+                <option value="">사용자 선택</option>
+              </select>
+              <select id="leaveTypeSelect">
+                <option value="ANNUAL">연차</option>
+                <option value="HALF_AM">오전 반차</option>
+                <option value="HALF_PM">오후 반차</option>
+              </select>
+              <button type="submit">휴가 추가</button>
+            </form>
+          </div>
+
           <!-- 다중 사용자 메모 목록 -->
           <div class="memo-list-section" id="memoListSection">
             <h3>메모</h3>
