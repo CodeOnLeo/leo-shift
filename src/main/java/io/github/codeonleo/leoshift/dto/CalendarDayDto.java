@@ -15,6 +15,7 @@ public record CalendarDayDto(
         AuthorDto memoAuthor,  // 기존 호환성 유지 (deprecated)
         LocalDateTime updatedAt,
         List<MemoDto> dayMemos,  // 새로운 다중 메모 필드
-        List<LeaveEntryDto> leaveEntries
+        List<LeaveEntryDto> leaveEntries,
+        List<ExternalCalendarEventDto> externalEvents
 ) {
 }

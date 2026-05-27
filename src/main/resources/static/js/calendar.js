@@ -33,6 +33,17 @@ function displayName(user) {
   return user.nickname || user.name || '';
 }
 
+function contrastTextColor(hexColor) {
+  if (!hexColor || !hexColor.match(/^#[0-9A-Fa-f]{6}$/)) {
+    return '#1c1c1e';
+  }
+  const red = parseInt(hexColor.slice(1, 3), 16);
+  const green = parseInt(hexColor.slice(3, 5), 16);
+  const blue = parseInt(hexColor.slice(5, 7), 16);
+  const luminance = (0.299 * red + 0.587 * green + 0.114 * blue) / 255;
+  return luminance > 0.65 ? '#1c1c1e' : '#fff';
+}
+
 export function renderCalendar({
   gridEl,
   summaryEl,
@@ -123,6 +134,32 @@ export function renderCalendar({
       }
 
       cell.append(leaveContainer);
+    }
+
+    if (day.externalEvents && day.externalEvents.length > 0) {
+      const externalContainer = document.createElement('div');
+      externalContainer.className = 'external-event-list';
+      const visibleEvents = day.externalEvents.slice(0, 2);
+
+      visibleEvents.forEach((event) => {
+        const item = document.createElement('div');
+        item.className = 'external-event';
+        item.textContent = event.title;
+        item.title = `${event.sourceName} · ${event.title}${event.location ? ' · ' + event.location : ''}`;
+        item.style.background = event.color || '#5E5CE6';
+        item.style.color = contrastTextColor(event.color || '#5E5CE6');
+        externalContainer.appendChild(item);
+      });
+
+      if (day.externalEvents.length > visibleEvents.length) {
+        const more = document.createElement('div');
+        more.className = 'external-event external-event-more';
+        more.textContent = `+${day.externalEvents.length - visibleEvents.length}`;
+        more.title = day.externalEvents.map((event) => `${event.sourceName} · ${event.title}`).join('\n');
+        externalContainer.appendChild(more);
+      }
+
+      cell.append(externalContainer);
     }
 
     // 기념일 메모를 먼저 표시 (당일 + 반복)

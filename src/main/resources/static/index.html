@@ -227,6 +227,15 @@
             <div class="settings-menu-arrow">›</div>
           </button>
 
+          <button type="button" class="settings-menu-item" data-view="external-calendars">
+            <div class="settings-menu-icon">🔗</div>
+            <div class="settings-menu-content">
+              <div class="settings-menu-title">외부 캘린더</div>
+              <div class="settings-menu-description">ICS/iCal 피드를 달력 위에 표시</div>
+            </div>
+            <div class="settings-menu-arrow">›</div>
+          </button>
+
           <button type="button" class="settings-menu-item" data-view="personal">
             <div class="settings-menu-icon">👤</div>
             <div class="settings-menu-content">
@@ -430,6 +439,35 @@
             </div>
             <div class="share-list" id="shareGrantList"></div>
           </div>
+        </section>
+      </div>
+
+      <!-- 외부 캘린더 화면 -->
+      <div id="settingsExternalCalendarsView" class="settings-view" hidden>
+        <section class="settings-section" data-tone="neutral">
+          <div class="settings-section-header">
+            <div class="settings-section-icon" data-color="neutral" aria-hidden="true">🔗</div>
+            <div>
+              <h3>외부 캘린더</h3>
+              <p class="settings-section-description">공개 ICS/iCal URL을 등록하면 읽기 전용 일정으로 표시됩니다.</p>
+            </div>
+          </div>
+          <form class="external-calendar-form" id="externalCalendarForm">
+            <label>
+              이름
+              <input type="text" id="externalCalendarName" placeholder="예: 공휴일" maxlength="100" required />
+            </label>
+            <label>
+              ICS URL
+              <input type="url" id="externalCalendarUrl" placeholder="https://example.com/calendar.ics" required />
+            </label>
+            <label>
+              색상
+              <input type="color" id="externalCalendarColor" value="#5E5CE6" />
+            </label>
+            <button type="submit" class="full-width">외부 캘린더 추가</button>
+          </form>
+          <div class="share-list external-calendar-list" id="externalCalendarList"></div>
         </section>
       </div>
 

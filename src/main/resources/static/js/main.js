@@ -66,6 +66,11 @@ const shareGrantPermissionSelect = document.getElementById('shareGrantPermission
 const shareGrantGroupButton = document.getElementById('shareGrantGroupButton');
 const shareGrantList = document.getElementById('shareGrantList');
 const shareGrantPanel = document.getElementById('shareGrantPanel');
+const externalCalendarForm = document.getElementById('externalCalendarForm');
+const externalCalendarNameInput = document.getElementById('externalCalendarName');
+const externalCalendarUrlInput = document.getElementById('externalCalendarUrl');
+const externalCalendarColorInput = document.getElementById('externalCalendarColor');
+const externalCalendarList = document.getElementById('externalCalendarList');
 const patternFields = document.querySelectorAll('[data-pattern="true"]');
 const colorPicker = document.getElementById('colorPicker');
 const saveColorButton = document.getElementById('saveColorButton');
@@ -239,12 +244,14 @@ function renderDayDetailPanel(detail, date) {
   const activeTypes = detail?.scheduleTypes || state.scheduleTypes;
   const hasMemo = detail.memo || detail.anniversaryMemo || (detail.yearlyMemos && detail.yearlyMemos.length > 0);
   const leaveSummary = formatLeaveSummary(detail.leaveEntries || []);
+  const externalSummary = (detail.externalEvents || []).map((event) => event.title).join(' • ');
   dayDetailPanel.innerHTML = `
     <strong>${formatKoreanDate(date)}</strong>
     <span>기본 일정: ${formatScheduleValue(detail.baseCode, activeTypes)}</span>
     <span>실제 일정: ${formatScheduleValue(detail.effectiveCode, activeTypes)}</span>
     <span>${detail.shiftLabel || ''}${detail.timeRange ? ` · ${detail.timeRange}` : ''}</span>
     ${leaveSummary ? `<span>휴가: ${leaveSummary}</span>` : ''}
+    ${externalSummary ? `<span>외부 일정: ${externalSummary}</span>` : ''}
     <small>${[detail.memo, detail.anniversaryMemo, ...(detail.yearlyMemos || [])].filter(Boolean).join(' • ')}</small>
     ${hasMemo && detail.memoAuthor ? `<div class="memo-author-line">작성: ${detail.memoAuthor.nickname || detail.memoAuthor.name}${detail.updatedAt ? ` · ${formatDateTime(detail.updatedAt)}` : ''}</div>` : ''}
   `;
@@ -1398,6 +1405,82 @@ async function loadCalendarGrants() {
   });
 }
 
+async function loadExternalCalendars() {
+  if (!externalCalendarList) return;
+  if (!state.calendarId) {
+    externalCalendarList.innerHTML = '<div class="share-empty">캘린더를 먼저 선택하세요.</div>';
+    return;
+  }
+
+  const canEdit = isCalendarEditable();
+  const sources = await api.listExternalCalendars(state.calendarId);
+  externalCalendarList.innerHTML = '';
+
+  if (!sources || sources.length === 0) {
+    externalCalendarList.innerHTML = '<div class="share-empty">등록된 외부 캘린더가 없습니다.</div>';
+    return;
+  }
+
+  sources.forEach((source) => {
+    const item = document.createElement('div');
+    item.className = 'share-item';
+
+    const meta = document.createElement('div');
+    meta.className = 'meta';
+    const syncText = source.lastSyncedAt ? `마지막 동기화: ${formatDateTime(source.lastSyncedAt)}` : '아직 동기화되지 않음';
+    meta.innerHTML = `
+      <strong><span class="external-color-dot" style="background:${source.color || '#5E5CE6'}"></span>${source.name}</strong>
+      <span>${source.lastError ? '오류: ' + source.lastError : syncText}</span>
+    `;
+
+    const actions = document.createElement('div');
+    actions.className = 'invite-actions';
+
+    const syncButton = document.createElement('button');
+    syncButton.type = 'button';
+    syncButton.className = 'secondary';
+    syncButton.textContent = '동기화';
+    syncButton.disabled = !canEdit;
+    syncButton.addEventListener('click', async () => {
+      try {
+        const synced = await api.syncExternalCalendar(state.calendarId, source.id);
+        invalidateCache('calendar');
+        showToast(synced.lastError ? '동기화에 실패했습니다: ' + synced.lastError : '외부 캘린더를 동기화했습니다.');
+        await Promise.all([
+          loadExternalCalendars(),
+          loadCalendar(state.year, state.month, { force: true })
+        ]);
+      } catch (e) {
+        showToast('동기화 실패: ' + (e.message || '오류'));
+      }
+    });
+
+    const deleteButton = document.createElement('button');
+    deleteButton.type = 'button';
+    deleteButton.className = 'danger';
+    deleteButton.textContent = '삭제';
+    deleteButton.disabled = !canEdit;
+    deleteButton.addEventListener('click', async () => {
+      if (!confirm(`"${source.name}" 외부 캘린더를 삭제하시겠습니까?`)) return;
+      try {
+        await api.deleteExternalCalendar(state.calendarId, source.id);
+        invalidateCache('calendar');
+        showToast('외부 캘린더를 삭제했습니다.');
+        await Promise.all([
+          loadExternalCalendars(),
+          loadCalendar(state.year, state.month, { force: true })
+        ]);
+      } catch (e) {
+        showToast('삭제 실패: ' + (e.message || '오류'));
+      }
+    });
+
+    actions.append(syncButton, deleteButton);
+    item.append(meta, actions);
+    externalCalendarList.appendChild(item);
+  });
+}
+
 function renderInvites() {
   if (!inviteList) return;
   inviteList.innerHTML = '';
@@ -1865,6 +1948,42 @@ if (shareGrantGroupButton) {
       await loadCalendarGrants();
     } catch (e) {
       showToast('그룹 권한 부여 실패: ' + (e.message || '오류'));
+    }
+  });
+}
+
+if (externalCalendarForm) {
+  externalCalendarForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!state.calendarId) {
+      alert('캘린더를 먼저 선택하세요.');
+      return;
+    }
+    if (!isCalendarEditable()) {
+      showToast('읽기 전용 캘린더입니다.');
+      return;
+    }
+    const name = (externalCalendarNameInput?.value || '').trim();
+    const feedUrl = (externalCalendarUrlInput?.value || '').trim();
+    const color = externalCalendarColorInput?.value || '#5E5CE6';
+    if (!name || !feedUrl) {
+      alert('이름과 ICS URL을 입력하세요.');
+      return;
+    }
+    try {
+      const created = await api.addExternalCalendar(state.calendarId, { name, feedUrl, color });
+      externalCalendarForm.reset();
+      if (externalCalendarColorInput) {
+        externalCalendarColorInput.value = '#5E5CE6';
+      }
+      invalidateCache('calendar');
+      showToast(created.lastError ? '추가했지만 동기화에 실패했습니다: ' + created.lastError : '외부 캘린더를 추가했습니다.');
+      await Promise.all([
+        loadExternalCalendars(),
+        loadCalendar(state.year, state.month, { force: true })
+      ]);
+    } catch (e) {
+      showToast('외부 캘린더 추가 실패: ' + (e.message || '오류'));
     }
   });
 }
@@ -2591,6 +2710,7 @@ const settingsViews = {
   'calendar-edit': document.getElementById('settingsCalendarEditView'),
   'calendar-pattern': document.getElementById('settingsCalendarPatternView'),
   share: document.getElementById('settingsShareView'),
+  'external-calendars': document.getElementById('settingsExternalCalendarsView'),
   personal: document.getElementById('settingsPersonalView')
 };
 
@@ -2601,6 +2721,7 @@ const viewTitles = {
   'calendar-edit': '캘린더 수정',
   'calendar-pattern': '코드와 규칙 관리',
   share: '공유 관리',
+  'external-calendars': '외부 캘린더',
   personal: '개인 설정'
 };
 
@@ -2639,6 +2760,9 @@ function showSettingsView(viewName) {
   }
   if (viewName === 'share') {
     loadShares({ force: true }).catch(() => null);
+  }
+  if (viewName === 'external-calendars') {
+    loadExternalCalendars().catch(() => null);
   }
   if (viewName === 'calendar-pattern') {
     renderScheduleTypeEditor();

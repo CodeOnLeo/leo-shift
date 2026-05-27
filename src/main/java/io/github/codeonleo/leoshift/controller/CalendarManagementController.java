@@ -9,6 +9,8 @@ import io.github.codeonleo.leoshift.dto.CalendarShareRequest;
 import io.github.codeonleo.leoshift.dto.CalendarShareResponse;
 import io.github.codeonleo.leoshift.dto.CalendarUpdateRequest;
 import io.github.codeonleo.leoshift.dto.CalendarUserGrantRequest;
+import io.github.codeonleo.leoshift.dto.ExternalCalendarSourceRequest;
+import io.github.codeonleo.leoshift.dto.ExternalCalendarSourceResponse;
 import io.github.codeonleo.leoshift.dto.ScheduleTypeResponse;
 import io.github.codeonleo.leoshift.dto.ScheduleTypeUpdateRequest;
 import io.github.codeonleo.leoshift.dto.ShareDecisionRequest;
@@ -19,6 +21,7 @@ import io.github.codeonleo.leoshift.service.CalendarGrantService;
 import io.github.codeonleo.leoshift.service.CalendarManagementService;
 import io.github.codeonleo.leoshift.service.CalendarShareService;
 import io.github.codeonleo.leoshift.service.CalendarWeeklyRuleService;
+import io.github.codeonleo.leoshift.service.ExternalCalendarService;
 import io.github.codeonleo.leoshift.service.ScheduleTypeService;
 import io.github.codeonleo.leoshift.service.SettingsService;
 import jakarta.validation.Valid;
@@ -43,6 +46,7 @@ public class CalendarManagementController {
     private final SettingsService settingsService;
     private final ScheduleTypeService scheduleTypeService;
     private final CalendarWeeklyRuleService calendarWeeklyRuleService;
+    private final ExternalCalendarService externalCalendarService;
 
     public CalendarManagementController(CalendarAccessService calendarAccessService,
                                         CalendarShareService calendarShareService,
@@ -50,7 +54,8 @@ public class CalendarManagementController {
                                         CalendarManagementService calendarManagementService,
                                         SettingsService settingsService,
                                         ScheduleTypeService scheduleTypeService,
-                                        CalendarWeeklyRuleService calendarWeeklyRuleService) {
+                                        CalendarWeeklyRuleService calendarWeeklyRuleService,
+                                        ExternalCalendarService externalCalendarService) {
         this.calendarAccessService = calendarAccessService;
         this.calendarShareService = calendarShareService;
         this.calendarGrantService = calendarGrantService;
@@ -58,6 +63,7 @@ public class CalendarManagementController {
         this.settingsService = settingsService;
         this.scheduleTypeService = scheduleTypeService;
         this.calendarWeeklyRuleService = calendarWeeklyRuleService;
+        this.externalCalendarService = externalCalendarService;
     }
 
     @GetMapping
@@ -167,5 +173,31 @@ public class CalendarManagementController {
                                                       @Valid @RequestBody WeeklyRuleUpdateRequest request) {
         var access = calendarAccessService.requireEdit(calendarId);
         return calendarWeeklyRuleService.update(access.calendar(), request.rules());
+    }
+
+    @GetMapping("/{calendarId}/external-calendars")
+    public List<ExternalCalendarSourceResponse> externalCalendars(@PathVariable Long calendarId) {
+        var access = calendarAccessService.requireView(calendarId);
+        return externalCalendarService.listSources(access.calendar());
+    }
+
+    @PostMapping("/{calendarId}/external-calendars")
+    public ExternalCalendarSourceResponse addExternalCalendar(@PathVariable Long calendarId,
+                                                              @Valid @RequestBody ExternalCalendarSourceRequest request) {
+        var access = calendarAccessService.requireEdit(calendarId);
+        return externalCalendarService.createSource(access.calendar(), request);
+    }
+
+    @PostMapping("/{calendarId}/external-calendars/{sourceId}/sync")
+    public ExternalCalendarSourceResponse syncExternalCalendar(@PathVariable Long calendarId,
+                                                               @PathVariable Long sourceId) {
+        var access = calendarAccessService.requireEdit(calendarId);
+        return externalCalendarService.syncSource(access.calendar(), sourceId);
+    }
+
+    @DeleteMapping("/{calendarId}/external-calendars/{sourceId}")
+    public void deleteExternalCalendar(@PathVariable Long calendarId, @PathVariable Long sourceId) {
+        var access = calendarAccessService.requireEdit(calendarId);
+        externalCalendarService.deleteSource(access.calendar(), sourceId);
     }
 }

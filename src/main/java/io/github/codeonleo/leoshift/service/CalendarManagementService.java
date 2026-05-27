@@ -24,6 +24,7 @@ public class CalendarManagementService {
     private final CalendarLeaveEntryRepository calendarLeaveEntryRepository;
     private final ShiftExceptionRepository shiftExceptionRepository;
     private final CalendarAccessService calendarAccessService;
+    private final ExternalCalendarService externalCalendarService;
     private final SettingsService settingsService;
     private final ScheduleTypeService scheduleTypeService;
     private final CalendarWeeklyRuleService calendarWeeklyRuleService;
@@ -105,6 +106,7 @@ public class CalendarManagementService {
         calendarShareRepository.deleteByCalendar(calendar);
         shiftExceptionRepository.deleteByCalendar(calendar);
         calendarLeaveEntryRepository.deleteByCalendar(calendar);
+        externalCalendarService.deleteByCalendar(calendar);
         scheduleTypeService.deleteByCalendar(calendar);
         calendarWeeklyRuleService.deleteByCalendar(calendar);
 

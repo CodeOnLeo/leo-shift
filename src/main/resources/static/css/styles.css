@@ -547,6 +547,31 @@ section h2 {
   margin-top: 0.35rem;
 }
 
+.external-event-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  width: 100%;
+  margin-top: 0.35rem;
+}
+
+.external-event {
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 1.25;
+  text-align: center;
+  border-radius: 8px;
+  padding: 2px 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.external-event-more {
+  background: #f2f4f7 !important;
+  color: #475467 !important;
+}
+
 .leave-entry {
   font-size: 0.65rem;
   font-weight: 700;
@@ -2000,12 +2025,21 @@ button.secondary {
 }
 
 .leave-add-form,
+.external-calendar-form,
 .memo-add-form {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
 }
 
+.external-calendar-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-weight: 600;
+}
+
+.external-calendar-form input,
 .leave-add-form select,
 .memo-add-form textarea {
   width: 100%;
@@ -2016,11 +2050,17 @@ button.secondary {
   background: #fff;
 }
 
+.external-calendar-form input[type="color"] {
+  min-height: 44px;
+  padding: 0.25rem;
+}
+
 .memo-add-form textarea {
   resize: vertical;
 }
 
 .leave-add-form button,
+.external-calendar-form button,
 .memo-add-form button {
   background: #007AFF;
   color: white;
@@ -2032,7 +2072,21 @@ button.secondary {
   cursor: pointer;
 }
 
+.external-calendar-list {
+  margin-top: 1rem;
+}
+
+.external-color-dot {
+  display: inline-block;
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+  margin-right: 0.4rem;
+  vertical-align: -0.05rem;
+}
+
 .leave-add-form select:focus,
+.external-calendar-form input:focus,
 .memo-add-form textarea:focus {
   outline: none;
   border-color: #007AFF;
@@ -2041,6 +2095,10 @@ button.secondary {
 
 @media (max-width: 768px) {
   .leave-entry {
+    font-size: 0.6rem;
+  }
+
+  .external-event {
     font-size: 0.6rem;
   }
 }

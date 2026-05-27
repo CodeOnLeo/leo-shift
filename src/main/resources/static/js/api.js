@@ -222,5 +222,9 @@ export const api = {
     if (calendarId) params.append('calendarId', calendarId);
     const query = params.toString();
     return request(`/api/days/${date}/leave-entries/${leaveEntryId}${query ? `?${query}` : ''}`, { method: 'DELETE' });
-  }
+  },
+  listExternalCalendars: (calendarId) => request(`/api/calendars/${calendarId}/external-calendars`),
+  addExternalCalendar: (calendarId, payload) => request(`/api/calendars/${calendarId}/external-calendars`, { method: 'POST', body: JSON.stringify(payload) }),
+  syncExternalCalendar: (calendarId, sourceId) => request(`/api/calendars/${calendarId}/external-calendars/${sourceId}/sync`, { method: 'POST' }),
+  deleteExternalCalendar: (calendarId, sourceId) => request(`/api/calendars/${calendarId}/external-calendars/${sourceId}`, { method: 'DELETE' })
 };

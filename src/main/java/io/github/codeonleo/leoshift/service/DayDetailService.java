@@ -18,6 +18,7 @@ public class DayDetailService {
     private final ExceptionService exceptionService;
     private final DayMemoService dayMemoService;
     private final CalendarLeaveService calendarLeaveService;
+    private final ExternalCalendarService externalCalendarService;
     private final ScheduleTypeService scheduleTypeService;
 
     public DayDetailResponse load(LocalDate date, Calendar calendar) {
@@ -40,7 +41,8 @@ public class DayDetailService {
                             dayMemos,
                             calendarLeaveService.getEntries(date, calendar),
                             calendarLeaveService.getParticipants(calendar),
-                            scheduleTypeService.listForCalendar(calendar)
+                            scheduleTypeService.listForCalendar(calendar),
+                            externalCalendarService.getEventsInRange(calendar, date, date)
                     );
                 });
     }
@@ -68,7 +70,8 @@ public class DayDetailService {
                 dayMemos,
                 calendarLeaveService.getEntries(schedule.date(), calendar),
                 calendarLeaveService.getParticipants(calendar),
-                scheduleTypeService.listForCalendar(calendar)
+                scheduleTypeService.listForCalendar(calendar),
+                externalCalendarService.getEventsInRange(calendar, schedule.date(), schedule.date())
         );
     }
 

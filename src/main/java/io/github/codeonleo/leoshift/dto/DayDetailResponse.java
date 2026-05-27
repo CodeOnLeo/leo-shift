@@ -19,6 +19,7 @@ public record DayDetailResponse(
         List<MemoDto> dayMemos,  // 새로운 다중 메모 필드
         List<LeaveEntryDto> leaveEntries,
         List<CalendarParticipantDto> calendarParticipants,
-        List<ScheduleTypeResponse> scheduleTypes
+        List<ScheduleTypeResponse> scheduleTypes,
+        List<ExternalCalendarEventDto> externalEvents
 ) {
 }
