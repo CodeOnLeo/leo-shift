@@ -24,6 +24,7 @@ const settingsModal = document.getElementById('settingsModal');
 const settingsModalClose = document.getElementById('settingsModalClose');
 const dayModal = document.getElementById('dayModal');
 const modalClose = document.getElementById('modalClose');
+const modalCloseBottom = document.getElementById('modalCloseBottom');
 const dayDetailPanel = document.getElementById('dayDetailPanel');
 const dayDetailForm = document.getElementById('dayDetailForm');
 const detailCode = document.getElementById('detailCode');
@@ -263,11 +264,17 @@ function renderDayDetailPanel(detail, date) {
   const hasMemo = detail.memo || detail.anniversaryMemo || (detail.yearlyMemos && detail.yearlyMemos.length > 0);
   const leaveSummary = formatLeaveSummary(detail.leaveEntries || []);
   const externalSummary = (detail.externalEvents || []).map((event) => event.title).join(' • ');
+  const showScheduleSummary = currentCalendarUsesPattern();
+  const scheduleSummary = showScheduleSummary
+    ? `
+      <span>기본 일정: ${formatScheduleValue(detail.baseCode, activeTypes)}</span>
+      <span>실제 일정: ${formatScheduleValue(detail.effectiveCode, activeTypes)}</span>
+      <span>${detail.shiftLabel || ''}${detail.timeRange ? ` · ${detail.timeRange}` : ''}</span>
+    `
+    : '';
   dayDetailPanel.innerHTML = `
     <strong>${formatKoreanDate(date)}</strong>
-    <span>기본 일정: ${formatScheduleValue(detail.baseCode, activeTypes)}</span>
-    <span>실제 일정: ${formatScheduleValue(detail.effectiveCode, activeTypes)}</span>
-    <span>${detail.shiftLabel || ''}${detail.timeRange ? ` · ${detail.timeRange}` : ''}</span>
+    ${scheduleSummary}
     ${leaveSummary ? `<span>휴가: ${leaveSummary}</span>` : ''}
     ${externalSummary ? `<span>외부 일정: ${externalSummary}</span>` : ''}
     <small>${[detail.memo, detail.anniversaryMemo, ...(detail.yearlyMemos || [])].filter(Boolean).join(' • ')}</small>
@@ -1710,18 +1717,16 @@ function setLeaveFormEnabled(enabled) {
 
 function populateLeaveParticipants(participants = []) {
   if (!leaveUserSelect) return;
-  const previousValue = leaveUserSelect.value;
-  leaveUserSelect.innerHTML = '<option value="">사용자 선택</option>';
-  (participants || []).forEach((participant) => {
+  leaveUserSelect.innerHTML = '<option value="">내 휴가</option>';
+  const me = state.me
+    ? (participants || []).find((participant) => participant.id === state.me.id)
+    : null;
+  if (me) {
     const option = document.createElement('option');
-    option.value = participant.id;
-    option.textContent = displayUserName(participant);
+    option.value = me.id;
+    option.textContent = displayUserName(me);
     leaveUserSelect.appendChild(option);
-  });
-  if (previousValue && Array.from(leaveUserSelect.options).some((option) => option.value === previousValue)) {
-    leaveUserSelect.value = previousValue;
-  } else if (state.me && Array.from(leaveUserSelect.options).some((option) => option.value === String(state.me.id))) {
-    leaveUserSelect.value = String(state.me.id);
+    leaveUserSelect.value = String(me.id);
   }
 }
 
@@ -1753,7 +1758,7 @@ function renderLeaveEntries(entries, canEdit = true) {
     content.append(text, meta);
     item.append(content);
 
-    if (canEdit) {
+    if (entry.ownEntry && canEdit) {
       const deleteBtn = document.createElement('button');
       deleteBtn.className = 'memo-delete-btn';
       deleteBtn.textContent = '삭제';
@@ -2467,6 +2472,7 @@ if (patternCalendarForm) {
 }
 
 modalClose.addEventListener('click', closeModal);
+modalCloseBottom.addEventListener('click', closeModal);
 
 dayModal.addEventListener('click', (e) => {
   if (e.target === dayModal) {
@@ -2665,8 +2671,12 @@ leaveAddForm.addEventListener('submit', async (event) => {
 
   const userId = leaveUserSelect.value;
   const leaveType = leaveTypeSelect.value;
+  if (state.me && Number(userId) !== state.me.id) {
+    showToast('본인의 휴가만 등록할 수 있습니다.');
+    return;
+  }
   if (!userId) {
-    showToast('사용자를 선택해주세요.');
+    showToast('내 계정 정보를 확인할 수 없습니다.');
     return;
   }
   if (!leaveType) {

@@ -25,6 +25,9 @@ public class CalendarLeaveService {
     @Transactional
     public CalendarLeaveEntry saveOrUpdate(LocalDate date, Long targetUserId, String leaveType, Calendar calendar) {
         User currentUser = calendarAccessService.getCurrentUser();
+        if (!currentUser.getId().equals(targetUserId)) {
+            throw new IllegalArgumentException("leave_entry_self_only");
+        }
         Map<Long, User> participants = calendarAccessService.listParticipants(calendar).stream()
                 .collect(Collectors.toMap(User::getId, user -> user));
 
@@ -50,10 +53,14 @@ public class CalendarLeaveService {
 
     @Transactional
     public void deleteById(LocalDate date, Long leaveEntryId, Calendar calendar) {
+        User currentUser = calendarAccessService.getCurrentUser();
         CalendarLeaveEntry entry = repository.findById(leaveEntryId)
                 .orElseThrow(() -> new IllegalArgumentException("leave_entry_not_found"));
         if (!entry.getCalendar().getId().equals(calendar.getId()) || !entry.getDate().equals(date)) {
             throw new IllegalArgumentException("leave_entry_not_found");
+        }
+        if (!entry.getTargetUser().getId().equals(currentUser.getId())) {
+            throw new IllegalArgumentException("leave_entry_self_only");
         }
         repository.delete(entry);
     }
