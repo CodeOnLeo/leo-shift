@@ -34,7 +34,6 @@ const clearAnniversaryButton = document.getElementById('clearAnniversary');
 const patternDisabledHint = document.getElementById('patternDisabledHint');
 const leaveList = document.getElementById('leaveList');
 const leaveAddForm = document.getElementById('leaveAddForm');
-const leaveUserSelect = document.getElementById('leaveUserSelect');
 const leaveTypeSelect = document.getElementById('leaveTypeSelect');
 const memoList = document.getElementById('memoList');
 const memoAddForm = document.getElementById('memoAddForm');
@@ -1707,26 +1706,8 @@ function setLeaveFormEnabled(enabled) {
   if (submitBtn) {
     submitBtn.disabled = !enabled;
   }
-  if (leaveUserSelect) {
-    leaveUserSelect.disabled = !enabled;
-  }
   if (leaveTypeSelect) {
     leaveTypeSelect.disabled = !enabled;
-  }
-}
-
-function populateLeaveParticipants(participants = []) {
-  if (!leaveUserSelect) return;
-  leaveUserSelect.innerHTML = '<option value="">내 휴가</option>';
-  const me = state.me
-    ? (participants || []).find((participant) => participant.id === state.me.id)
-    : null;
-  if (me) {
-    const option = document.createElement('option');
-    option.value = me.id;
-    option.textContent = displayUserName(me);
-    leaveUserSelect.appendChild(option);
-    leaveUserSelect.value = String(me.id);
   }
 }
 
@@ -1864,7 +1845,6 @@ async function selectDay(date) {
     setScheduleTypes(detail.scheduleTypes || calendarData.scheduleTypes || state.scheduleTypes);
     renderDayDetailPanel(detail, date);
     syncDetailCodeOptions(detail.scheduleTypes || calendarData.scheduleTypes, detail.effectiveCode || '');
-    populateLeaveParticipants(detail.calendarParticipants || []);
     renderLeaveEntries(detail.leaveEntries || [], canEdit);
 
     // 다중 사용자 메모 렌더링
@@ -2587,7 +2567,6 @@ async function saveDayDetail(showSuccessToast = true) {
     setScheduleTypes(detail.scheduleTypes || state.scheduleTypes);
     renderDayDetailPanel(detail, state.selectedDate);
     syncDetailCodeOptions(detail.scheduleTypes || state.scheduleTypes, detail.effectiveCode || '');
-    populateLeaveParticipants(detail.calendarParticipants || []);
     renderLeaveEntries(detail.leaveEntries || [], isCalendarEditable());
 
     // 기념일 메모 지우기 버튼 표시 여부 업데이트
@@ -2669,12 +2648,8 @@ leaveAddForm.addEventListener('submit', async (event) => {
     return;
   }
 
-  const userId = leaveUserSelect.value;
+  const userId = state.me?.id;
   const leaveType = leaveTypeSelect.value;
-  if (state.me && Number(userId) !== state.me.id) {
-    showToast('본인의 휴가만 등록할 수 있습니다.');
-    return;
-  }
   if (!userId) {
     showToast('내 계정 정보를 확인할 수 없습니다.');
     return;
