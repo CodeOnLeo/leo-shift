@@ -42,17 +42,54 @@ dependencies {
 
     // Database
     runtimeOnly 'org.postgresql:postgresql'
-    testRuntimeOnly 'com.h2database:h2'
 
     compileOnly 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     annotationProcessor 'org.projectlombok:lombok'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testImplementation 'org.springframework.security:spring-security-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    // 스키마와 엔티티가 어긋나지 않는지 진짜 PostgreSQL로 검증한다.
+    // 이전 구현은 ddl-auto=update와 Flyway를 같이 써서 환경마다 스키마가 달랐다.
+    testImplementation 'org.springframework.boot:spring-boot-testcontainers'
+    testImplementation 'org.testcontainers:junit-jupiter'
+    testImplementation 'org.testcontainers:postgresql'
+    testRuntimeOnly 'org.postgresql:postgresql'
 }
 
 tasks.named('test') {
     useJUnitPlatform()
+
+    // Testcontainers가 Docker 소켓을 찾게 한다.
+    // Colima, Podman, Rancher Desktop 등은 소켓이 /var/run/docker.sock이 아니다.
+    // DOCKER_HOST가 이미 있으면 건드리지 않는다.
+    doFirst {
+        if (!System.getenv('DOCKER_HOST')) {
+            def host = resolveDockerHost()
+            if (host) {
+                environment 'DOCKER_HOST', host
+                // Ryuk(정리용 컨테이너)이 소켓을 마운트할 때 쓰는 VM 내부 경로
+                environment 'TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE', '/var/run/docker.sock'
+                logger.lifecycle("Testcontainers DOCKER_HOST = ${host}")
+            }
+        }
+    }
+}
+
+/** 활성 docker context에서 소켓 주소를 읽는다. 실패하면 null. */
+static String resolveDockerHost() {
+    try {
+        def process = ['docker', 'context', 'inspect', '--format', '{{.Endpoints.docker.Host}}'].execute()
+        def out = new StringWriter()
+        process.consumeProcessOutput(out, new StringWriter())
+        if (!process.waitFor(5, java.util.concurrent.TimeUnit.SECONDS)) {
+            process.destroy()
+            return null
+        }
+        def host = out.toString().trim()
+        return (process.exitValue() == 0 && host.startsWith('unix://')) ? host : null
+    } catch (Exception ignored) {
+        return null
+    }
 }

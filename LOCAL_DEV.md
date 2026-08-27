@@ -2,8 +2,17 @@
 
 ## Prerequisites
 
-- JDK 21
-- Docker Desktop or another Docker runtime
+- **JDK 21** — Gradle 8.10.2가 Java 25 이상에서 빌드 스크립트를 컴파일하지 못한다.
+  더 최신 JDK가 기본이라면 실행 시 지정해야 한다.
+
+  ```bash
+  export JAVA_HOME=$(/usr/libexec/java_home -v 21)   # macOS
+  ```
+
+- Docker 런타임 (Docker Desktop, Colima, Podman 등)
+
+  테스트가 Testcontainers로 진짜 PostgreSQL을 띄운다. 소켓 경로는 `build.gradle`이
+  활성 docker context에서 자동으로 읽으므로 별도 설정이 필요 없다.
 
 ## Run Locally
 
