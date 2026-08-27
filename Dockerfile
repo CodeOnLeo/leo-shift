@@ -2,28 +2,28 @@
 FROM gradle:8.5-jdk21-alpine AS build
 WORKDIR /app
 
-# Copy gradle files first for better caching
+# 의존성 캐시를 위해 빌드 파일을 먼저 복사
 COPY build.gradle settings.gradle ./
 COPY gradle ./gradle
 COPY gradlew ./
 
-# Copy source code
 COPY src ./src
 
-# Build the application (skip tests for faster builds)
-RUN ./gradlew bootJar --no-daemon -x test
+RUN ./gradlew bootJar --no-daemon
 
 # Runtime stage
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
-# Copy the built jar from build stage
+# 컨테이너 기본 시간대. 설정하지 않으면 UTC라 모든 시각이 9시간 어긋난다.
+ENV TZ=Asia/Seoul
+RUN apk add --no-cache tzdata
+
 COPY --from=build /app/build/libs/*.jar app.jar
-COPY docker-entrypoint.sh ./docker-entrypoint.sh
-RUN chmod +x docker-entrypoint.sh
 
-# Set default port (Railway will provide PORT via environment)
 ENV PORT=8080
+ENV JAVA_OPTS="-XX:MaxRAMPercentage=70 -XX:+UseG1GC"
 
-# Use custom entrypoint to normalize database variables before boot
-ENTRYPOINT ["/app/docker-entrypoint.sh"]
+EXPOSE 8080
+
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -Dserver.port=$PORT -jar /app/app.jar"]

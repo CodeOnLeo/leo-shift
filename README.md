@@ -1,84 +1,68 @@
 # Leo Shift
 
-반복 일정, 교대 근무, 예외 메모, 공유 캘린더를 함께 관리할 수 있는 일정 앱입니다.
+근무표를 만들고, 같이 일하거나 같이 사는 사람과 서로의 일정을 한 화면에서 보는 캘린더.
 
-<div align="center">
-  <img src="https://img.shields.io/badge/Spring%20Boot-3.3.5-6DB33F?style=flat-square&logo=springboot&logoColor=white" />
-  <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white" />
-  <img src="https://img.shields.io/badge/PWA-5A0FC8?style=flat-square&logo=pwa&logoColor=white" />
-</div>
+교대 근무자의 순환 패턴과 일반 근무자의 요일 반복을 같은 방식으로 다루고,
+프로젝트·직장·가족·친구 같은 그룹 단위로 서로의 근무와 부재를 겹쳐 볼 수 있게 하는 것이 목표다.
 
-## 현재 지원 기능
+## 현재 상태
 
-### 캘린더 유형
-- `교대 근무 캘린더`
-- `일반 일정 캘린더`
+**전면 재작성 중이다.** 기존 서비스는 내렸고, 옛 애플리케이션 코드는
+[`49433ff`](../../commit/49433ff) 이전 히스토리에 남아 있다.
 
-일반 일정 캘린더는 주간 반복 규칙 기반으로 사용할 수 있고, 별도의 `비어 있는 캘린더` 템플릿은 제거되었습니다.
+지금 저장소에 있는 것:
 
-### 일정 관리
-- 교대 패턴 기반 월간 일정 생성
-- 일반 캘린더용 주간 반복 일정
-- 날짜별 예외 처리
-- 메모 및 기념일 메모
-- 일정 타입별 범례와 월간 요약
+| 영역 | 상태 |
+|---|---|
+| 근무 규칙 엔진 (`schedule` 패키지) | 완료. 테스트 160개 |
+| 프리셋 딕셔너리 (`resources/presets`) | 완료. 13종 |
+| DB 스키마 (`db/migration-next`) | 완료. PostgreSQL 16에서 검증 |
+| 도메인 설계 문서 (`docs/`) | 완료 |
+| 엔티티 · API · 프런트엔드 | 아직 없음 |
 
-### 캘린더 탐색
-- `내 캘린더` / `공유받은 캘린더` 분리
-- 공유받은 캘린더 소유자별 그룹화
-- 캘린더가 여러 개일 때 첫 진입용 선택 화면
+애플리케이션으로는 아직 동작하지 않는다.
 
-### 공유
-- 사용자 이메일 초대
-- 보기 / 편집 권한
-- 공유 그룹 생성
-- 공유 그룹 멤버 관리
-- 캘린더에 그룹 권한 부여
+## 설계
 
-## 현재 상태 요약
+읽는 순서는 이렇다.
 
-현재 코드는 다음 단계까지 반영된 상태입니다.
+1. **[도메인 설계](docs/domain-design.md)** — 기준 문서. 모델과 결정 사항
+2. [기능 명세](docs/feature-spec.md) — 사용자 관점에서 무엇을 만들 것인가
+3. [현행 코드 진단](docs/service-readiness-review.md) — 재작성 이전 코드에서 무엇이 왜 문제였나
 
-- 일반 일정 캘린더와 교대 캘린더 분리
-- 기존 잘못 생성된 일반 캘린더 보정 마이그레이션 포함
-- 공유 그룹 백엔드/프런트 1차 구현 완료
-- 접근 권한 계산에 `직접 공유 + 그룹 공유` 반영
+핵심 원칙 두 가지다.
 
-아직 남아 있는 작업은 주로 완성도 영역입니다.
+**캘린더는 사람의 것이고, 그룹은 그릇이 아니라 화면이다.** 근무·휴가·일정은 전부
+개인 캘린더에 있고, 그룹은 "이 사람들의 캘린더를 이 기간 동안 겹쳐 보여줘"라는
+뷰의 정의일 뿐이다. 그래서 프로젝트를 옮겨도 데이터가 따라간다.
 
-- 공유 관리 화면 UX 추가 정리
-- `calendar_shares`와 `calendar_share_grants` 모델 정리
-- 테스트 보강
+**모든 반복 근무는 하나의 원시 타입이다.**
 
-## 시작하기
+```
+code(date) = sequence[ floorMod(date - anchorDate, sequence.size()) ]
+```
 
-1. 웹사이트 접속
-   - https://leo-shift-production.up.railway.app
+주5일은 월요일 기준 주기 7이고, 격일제는 주기 2, 4조 3교대는 주기 12다.
+요일 규칙을 위한 별도 타입이 없다.
 
-2. 로그인
-   - Google 계정 로그인
-   - 또는 이메일 회원가입
+## 개발
 
-3. 캘린더 생성
-   - `일반 일정`
-   - 또는 `교대 근무`
+```bash
+./scripts/run-local.sh
+```
 
-4. 사용 시작
-   - 캘린더가 여러 개면 먼저 캘린더를 선택
-   - 교대 캘린더는 패턴 구성
-   - 일반 캘린더는 주간 일정 또는 예외 메모로 사용
+PostgreSQL 컨테이너를 띄우고 `local` 프로파일로 애플리케이션을 실행한다.
+자세한 내용은 [LOCAL_DEV.md](LOCAL_DEV.md).
+
+```bash
+./gradlew test
+```
+
+근무 규칙 엔진과 프리셋은 스프링 의존이 없어 컨텍스트 로딩 없이 실행된다.
 
 ## 기술 스택
 
-- Backend: Spring Boot, PostgreSQL
-- Frontend: Vanilla JavaScript
-- Security: JWT, OAuth2
-- Client: PWA
-
-## 문서
-
-- [범용 일정 앱 확장 리팩터링 설계안](docs/generalization-refactor-plan.md)
-- [캘린더 공유 기능 구현 계획](docs/calendar-sharing-implementation-plan.md)
+Spring Boot 3.3.5 · Java 21 · PostgreSQL 16 · Flyway
 
 ## 라이선스
 

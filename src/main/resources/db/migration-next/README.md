@@ -1,31 +1,22 @@
-# 신규 스키마 (migration-next)
+# 스키마 (migration-next)
 
-`docs/domain-design.md` 설계를 구현한 새 스키마다. **기존 `db/migration/`과 별개 경로**라서
-지금은 Flyway가 읽지 않는다. 현재 앱은 그대로 돌아간다.
+`docs/domain-design.md` 설계를 구현한 스키마다. `application.properties`의
+`spring.flyway.locations`가 이 경로를 가리킨다.
 
-## 왜 별도 경로인가
+기존 `db/migration/`의 V1~V11은 재작성과 함께 삭제했다. 옛 스키마가 필요하면
+커밋 `49433ff` 이전 히스토리에서 꺼낼 수 있다.
 
-새 스키마는 기존 Java 엔티티와 맞지 않는다. `db/migration/`에 바로 넣으면 앱이 부팅부터 실패한다.
-Railway 병렬 운영 기간에도 기존 배포가 깨지면 안 되므로, 재작성이 끝날 때까지 여기 둔다.
+## 전제
 
-## 전환 방법
+**빈 데이터베이스에 적용한다.** 기존 서비스 데이터는 가져오지 않기로 했다
+(사유: `docs/service-readiness-review.md` 7장). 운영 DB에는 테스터 8명과
+`exceptions` 0건뿐이었고, 마이그레이션을 짜는 비용이 데이터를 다시 넣는 비용보다 컸다.
 
-새 코드가 준비되면 `application.properties`를 이렇게 바꾼다.
+더 중요한 이유는 "기존 데이터를 받아와야 한다"는 제약이 새 설계를 오염시킨다는
+점이었다. 존재하지도 않는 데이터를 위해 모델을 타협할 이유가 없었다.
 
-```properties
-# 기존 마이그레이션 대신 새 스키마를 읽는다
-spring.flyway.locations=classpath:db/migration-next
-spring.flyway.baseline-on-migrate=false
-
-# Hibernate가 스키마를 건드리지 않는다.
-# 기존 설정은 update였고, Flyway와 동시에 쓰면서 운영/로컬 스키마가 어긋났다.
-spring.jpa.hibernate.ddl-auto=validate
-```
-
-그리고 **빈 데이터베이스에** 적용한다. 기존 데이터는 가져오지 않는다
-(사유: `docs/service-readiness-review.md` 7장).
-
-Railway를 내리기 전에 `pg_dump`를 떠서 아카이브만 해둘 것. 임포트는 하지 않는다.
+Hibernate는 스키마를 건드리지 않는다 (`ddl-auto=validate`). 이전 설정은 `update`였고,
+Flyway와 동시에 쓰면서 운영과 로컬 스키마가 조용히 어긋났다.
 
 ## 요구 사항
 
