@@ -1,0 +1,268 @@
+{
+  "version": 1,
+
+  "_comment": [
+    "근무 패턴 프리셋. 사용자가 고르면 이 내용이 사용자 캘린더로 '복사'된다.",
+    "이후 이 파일이 바뀌어도 기존 사용자에게 영향이 없다. sourcePresetId는 참조가 아니라 출처 기록이다.",
+    "",
+    "sequence는 schedule_types의 code 배열이고, 길이가 곧 주기다.",
+    "teams가 있는 프리셋은 offset만큼 시퀀스를 회전해서 각 조의 근무를 만든다.",
+    "REGULAR은 anchorWeekday에 기준일을 맞춰야 요일과 어긋나지 않는다.",
+    "",
+    "프리셋은 정답이 아니라 출발점이다. 사업장마다 변형이 크므로",
+    "고른 직후 순서 빌더에서 바로 편집할 수 있어야 한다."
+  ],
+
+  "commonScheduleTypes": [
+    { "code": "ANNUAL",  "name": "연차",      "color": "#14B8A6", "category": "LEAVE" },
+    { "code": "HALF_AM", "name": "오전 반차", "color": "#5EEAD4", "category": "LEAVE", "halfDay": true },
+    { "code": "HALF_PM", "name": "오후 반차", "color": "#5EEAD4", "category": "LEAVE", "halfDay": true }
+  ],
+
+  "presets": [
+    {
+      "id": "kr.regular.weekday5",
+      "name": "주5일 (월~금)",
+      "category": "REGULAR",
+      "tags": ["사무직", "일반"],
+      "description": "월요일부터 금요일까지 근무하고 토·일 휴무.",
+      "anchorWeekday": "MONDAY",
+      "sequence": ["WORK", "WORK", "WORK", "WORK", "WORK", "OFF", "OFF"],
+      "scheduleTypes": [
+        { "code": "WORK", "name": "근무", "color": "#2563EB", "category": "WORK", "startTime": "09:00", "endTime": "18:00" },
+        { "code": "OFF",  "name": "휴무", "color": "#94A3B8", "category": "OFF" }
+      ]
+    },
+    {
+      "id": "kr.regular.weekday5.altsat",
+      "name": "주5일 + 격주 토요일",
+      "category": "REGULAR",
+      "tags": ["사무직", "제조"],
+      "description": "평일 근무에 더해 2주에 한 번 토요일 근무. 첫 주 토요일이 근무일이다.",
+      "anchorWeekday": "MONDAY",
+      "sequence": [
+        "WORK", "WORK", "WORK", "WORK", "WORK", "WORK", "OFF",
+        "WORK", "WORK", "WORK", "WORK", "WORK", "OFF",  "OFF"
+      ],
+      "scheduleTypes": [
+        { "code": "WORK", "name": "근무", "color": "#2563EB", "category": "WORK", "startTime": "09:00", "endTime": "18:00" },
+        { "code": "OFF",  "name": "휴무", "color": "#94A3B8", "category": "OFF" }
+      ]
+    },
+    {
+      "id": "kr.regular.weekday6",
+      "name": "주6일 (월~토)",
+      "category": "REGULAR",
+      "tags": ["소매", "서비스"],
+      "description": "월요일부터 토요일까지 근무하고 일요일 휴무.",
+      "anchorWeekday": "MONDAY",
+      "sequence": ["WORK", "WORK", "WORK", "WORK", "WORK", "WORK", "OFF"],
+      "scheduleTypes": [
+        { "code": "WORK", "name": "근무", "color": "#2563EB", "category": "WORK", "startTime": "09:00", "endTime": "18:00" },
+        { "code": "OFF",  "name": "휴무", "color": "#94A3B8", "category": "OFF" }
+      ]
+    },
+    {
+      "id": "kr.regular.weekday4",
+      "name": "주4일 (월~목)",
+      "category": "REGULAR",
+      "tags": ["사무직"],
+      "description": "월요일부터 목요일까지 근무하고 금·토·일 휴무.",
+      "anchorWeekday": "MONDAY",
+      "sequence": ["WORK", "WORK", "WORK", "WORK", "OFF", "OFF", "OFF"],
+      "scheduleTypes": [
+        { "code": "WORK", "name": "근무", "color": "#2563EB", "category": "WORK", "startTime": "09:00", "endTime": "18:00" },
+        { "code": "OFF",  "name": "휴무", "color": "#94A3B8", "category": "OFF" }
+      ]
+    },
+
+    {
+      "id": "kr.shift.alternate24",
+      "name": "격일제 (24시간 맞교대)",
+      "category": "SHIFT",
+      "tags": ["경비", "시설관리", "당직"],
+      "description": "24시간 근무 후 하루 비번. 2일 주기이고 두 조가 하루씩 번갈아 선다.",
+      "sequence": ["DUTY", "OFF"],
+      "teams": [
+        { "label": "1조", "offset": 0 },
+        { "label": "2조", "offset": 1 }
+      ],
+      "anchorHint": { "code": "DUTY", "question": "가장 최근 근무(당번)를 선 날은 언제인가요?" },
+      "scheduleTypes": [
+        { "code": "DUTY", "name": "근무", "color": "#DC2626", "category": "WORK", "startTime": "09:00", "endTime": "09:00", "crossesMidnight": true },
+        { "code": "OFF",  "name": "비번", "color": "#94A3B8", "category": "OFF" }
+      ]
+    },
+    {
+      "id": "kr.shift.fire3team",
+      "name": "3조 1교대 (소방형)",
+      "category": "SHIFT",
+      "tags": ["소방", "구급", "당직"],
+      "description": "당번(24시간) → 비번 → 휴무의 3일 주기. 세 조가 하루씩 밀려 돈다.",
+      "sequence": ["DUTY", "STANDBY", "REST"],
+      "teams": [
+        { "label": "1조", "offset": 0 },
+        { "label": "2조", "offset": 1 },
+        { "label": "3조", "offset": 2 }
+      ],
+      "anchorHint": { "code": "DUTY", "question": "가장 최근 당번을 선 날은 언제인가요?" },
+      "scheduleTypes": [
+        { "code": "DUTY",    "name": "당번", "color": "#DC2626", "category": "WORK", "startTime": "09:00", "endTime": "09:00", "crossesMidnight": true },
+        { "code": "STANDBY", "name": "비번", "color": "#64748B", "category": "OFF" },
+        { "code": "REST",    "name": "휴무", "color": "#94A3B8", "category": "OFF" }
+      ]
+    },
+    {
+      "id": "kr.shift.2team2shift",
+      "name": "2조 2교대 (12시간)",
+      "category": "SHIFT",
+      "tags": ["경비", "제조"],
+      "description": "12시간 주간·야간을 두 조가 나눠 선다. 2일마다 주야가 바뀌며 주기 안에 휴무가 없으므로 휴무는 따로 지정한다.",
+      "sequence": ["D", "D", "N", "N"],
+      "teams": [
+        { "label": "1조", "offset": 0 },
+        { "label": "2조", "offset": 2 }
+      ],
+      "anchorHint": { "code": "N", "question": "가장 최근 야간 근무를 시작한 날은 언제인가요?" },
+      "scheduleTypes": [
+        { "code": "D", "name": "주간", "color": "#2563EB", "category": "WORK", "startTime": "08:00", "endTime": "20:00" },
+        { "code": "N", "name": "야간", "color": "#7C3AED", "category": "WORK", "startTime": "20:00", "endTime": "08:00", "crossesMidnight": true }
+      ]
+    },
+    {
+      "id": "kr.shift.3team2shift",
+      "name": "3조 2교대 (12시간)",
+      "category": "SHIFT",
+      "tags": ["제조", "병원", "간호"],
+      "description": "주간 2일 → 야간 2일 → 휴무 2일의 6일 주기. 세 조가 2일씩 밀려 돌며 매일 주간·야간이 정확히 한 조씩 선다.",
+      "sequence": ["D", "D", "N", "N", "O", "O"],
+      "teams": [
+        { "label": "1조", "offset": 0 },
+        { "label": "2조", "offset": 2 },
+        { "label": "3조", "offset": 4 }
+      ],
+      "anchorHint": { "code": "N", "question": "가장 최근 야간 근무를 시작한 날은 언제인가요?" },
+      "scheduleTypes": [
+        { "code": "D", "name": "주간", "color": "#2563EB", "category": "WORK", "startTime": "08:00", "endTime": "20:00" },
+        { "code": "N", "name": "야간", "color": "#7C3AED", "category": "WORK", "startTime": "20:00", "endTime": "08:00", "crossesMidnight": true },
+        { "code": "O", "name": "휴무", "color": "#94A3B8", "category": "OFF" }
+      ]
+    },
+    {
+      "id": "kr.shift.4team2shift",
+      "name": "4조 2교대 (12시간)",
+      "category": "SHIFT",
+      "tags": ["제조", "석유화학", "발전"],
+      "description": "주간 2일 → 야간 2일 → 휴무 4일의 8일 주기. 네 조가 2일씩 밀려 돌며 매일 주간·야간이 정확히 한 조씩 선다.",
+      "sequence": ["D", "D", "N", "N", "O", "O", "O", "O"],
+      "teams": [
+        { "label": "1조", "offset": 0 },
+        { "label": "2조", "offset": 2 },
+        { "label": "3조", "offset": 4 },
+        { "label": "4조", "offset": 6 }
+      ],
+      "anchorHint": { "code": "N", "question": "가장 최근 야간 근무를 시작한 날은 언제인가요?" },
+      "scheduleTypes": [
+        { "code": "D", "name": "주간", "color": "#2563EB", "category": "WORK", "startTime": "08:00", "endTime": "20:00" },
+        { "code": "N", "name": "야간", "color": "#7C3AED", "category": "WORK", "startTime": "20:00", "endTime": "08:00", "crossesMidnight": true },
+        { "code": "O", "name": "휴무", "color": "#94A3B8", "category": "OFF" }
+      ]
+    },
+    {
+      "id": "kr.shift.4team3shift",
+      "name": "4조 3교대",
+      "category": "SHIFT",
+      "tags": ["제조", "병원", "간호", "생산직"],
+      "description": "주간 3일 → 오후 3일 → 야간 3일 → 휴무 3일의 12일 주기. 네 조가 3일씩 밀려 돌며 매일 세 교대가 한 조씩 선다.",
+      "sequence": ["D", "D", "D", "A", "A", "A", "N", "N", "N", "O", "O", "O"],
+      "teams": [
+        { "label": "1조", "offset": 0 },
+        { "label": "2조", "offset": 3 },
+        { "label": "3조", "offset": 6 },
+        { "label": "4조", "offset": 9 }
+      ],
+      "anchorHint": { "code": "N", "question": "가장 최근 야간 근무를 시작한 날은 언제인가요?" },
+      "scheduleTypes": [
+        { "code": "D", "name": "주간", "color": "#2563EB", "category": "WORK", "startTime": "06:00", "endTime": "14:00" },
+        { "code": "A", "name": "오후", "color": "#F97316", "category": "WORK", "startTime": "14:00", "endTime": "22:00" },
+        { "code": "N", "name": "야간", "color": "#7C3AED", "category": "WORK", "startTime": "22:00", "endTime": "06:00", "crossesMidnight": true },
+        { "code": "O", "name": "휴무", "color": "#94A3B8", "category": "OFF" }
+      ]
+    },
+    {
+      "id": "kr.shift.5team3shift",
+      "name": "5조 3교대",
+      "category": "SHIFT",
+      "tags": ["제조", "발전", "병원"],
+      "description": "각 교대를 4일씩 서고 사이에 휴무가 들어가는 20일 주기. 사업장별 변형이 특히 크므로 고른 뒤 편집해서 쓰는 것을 권한다.",
+      "sequence": [
+        "D", "D", "D", "D", "O",
+        "A", "A", "A", "A", "O",
+        "N", "N", "N", "N", "O",
+        "O", "O", "O", "O", "O"
+      ],
+      "teams": [
+        { "label": "1조", "offset": 0 },
+        { "label": "2조", "offset": 4 },
+        { "label": "3조", "offset": 8 },
+        { "label": "4조", "offset": 12 },
+        { "label": "5조", "offset": 16 }
+      ],
+      "anchorHint": { "code": "N", "question": "가장 최근 야간 근무를 시작한 날은 언제인가요?" },
+      "scheduleTypes": [
+        { "code": "D", "name": "주간", "color": "#2563EB", "category": "WORK", "startTime": "06:00", "endTime": "14:00" },
+        { "code": "A", "name": "오후", "color": "#F97316", "category": "WORK", "startTime": "14:00", "endTime": "22:00" },
+        { "code": "N", "name": "야간", "color": "#7C3AED", "category": "WORK", "startTime": "22:00", "endTime": "06:00", "crossesMidnight": true },
+        { "code": "O", "name": "휴무", "color": "#94A3B8", "category": "OFF" }
+      ]
+    },
+    {
+      "id": "intl.shift.panama",
+      "name": "2-2-3 (파나마)",
+      "category": "SHIFT",
+      "tags": ["제조", "보안", "해외"],
+      "description": "2일 근무 - 2일 휴무 - 3일 근무를 반복하고 2주마다 주간과 야간이 바뀌는 28일 주기. 주말이 격주로 통째로 쉬어진다.",
+      "sequence": [
+        "D", "D", "O", "O", "D", "D", "D", "O", "O", "D", "D", "O", "O", "O",
+        "N", "N", "O", "O", "N", "N", "N", "O", "O", "N", "N", "O", "O", "O"
+      ],
+      "teams": [
+        { "label": "1조", "offset": 0 },
+        { "label": "2조", "offset": 7 },
+        { "label": "3조", "offset": 14 },
+        { "label": "4조", "offset": 21 }
+      ],
+      "anchorHint": { "code": "N", "question": "가장 최근 야간 근무를 시작한 날은 언제인가요?" },
+      "scheduleTypes": [
+        { "code": "D", "name": "주간", "color": "#2563EB", "category": "WORK", "startTime": "07:00", "endTime": "19:00" },
+        { "code": "N", "name": "야간", "color": "#7C3AED", "category": "WORK", "startTime": "19:00", "endTime": "07:00", "crossesMidnight": true },
+        { "code": "O", "name": "휴무", "color": "#94A3B8", "category": "OFF" }
+      ]
+    },
+    {
+      "id": "intl.shift.dupont",
+      "name": "듀폰 (DuPont)",
+      "category": "SHIFT",
+      "tags": ["석유화학", "제조", "해외"],
+      "description": "야간 4일 → 휴무 3일 → 주간 3일 → 휴무 1일 → 야간 3일 → 휴무 3일 → 주간 4일 → 휴무 7일의 28일 주기. 4주마다 연속 7일 휴무가 온다.",
+      "sequence": [
+        "N", "N", "N", "N", "O", "O", "O",
+        "D", "D", "D", "O", "N", "N", "N",
+        "O", "O", "O", "D", "D", "D", "D",
+        "O", "O", "O", "O", "O", "O", "O"
+      ],
+      "teams": [
+        { "label": "1조", "offset": 0 },
+        { "label": "2조", "offset": 7 },
+        { "label": "3조", "offset": 14 },
+        { "label": "4조", "offset": 21 }
+      ],
+      "anchorHint": { "code": "N", "question": "가장 최근 야간 근무를 시작한 날은 언제인가요?" },
+      "scheduleTypes": [
+        { "code": "D", "name": "주간", "color": "#2563EB", "category": "WORK", "startTime": "07:00", "endTime": "19:00" },
+        { "code": "N", "name": "야간", "color": "#7C3AED", "category": "WORK", "startTime": "19:00", "endTime": "07:00", "crossesMidnight": true },
+        { "code": "O", "name": "휴무", "color": "#94A3B8", "category": "OFF" }
+      ]
+    }
+  ]
+}
