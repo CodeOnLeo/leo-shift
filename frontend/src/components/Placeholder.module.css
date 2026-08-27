@@ -1,0 +1,17 @@
+.root { padding: var(--space-4); }
+.title { margin: 0 0 var(--space-2); font-size: 22px; }
+.description { margin: 0 0 var(--space-6); color: var(--text-muted); }
+.todoTitle {
+  margin: var(--space-6) 0 var(--space-2);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.todo {
+  margin: 0;
+  padding-left: var(--space-4);
+  color: var(--text-muted);
+  line-height: 1.9;
+}

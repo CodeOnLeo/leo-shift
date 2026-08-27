@@ -2,12 +2,11 @@
 
 ## Prerequisites
 
-- **JDK 21** — Gradle 8.10.2가 Java 25 이상에서 빌드 스크립트를 컴파일하지 못한다.
-  더 최신 JDK가 기본이라면 실행 시 지정해야 한다.
+- **JDK 21** — 시스템 기본 JDK가 더 최신이어도 된다.
+  `gradle/gradle-daemon-jvm.properties`가 데몬을 21로 고정하므로 `JAVA_HOME`을
+  따로 맞출 필요가 없다. (Gradle 8.10.2는 Java 25에서 빌드 스크립트를 컴파일하지 못한다.)
 
-  ```bash
-  export JAVA_HOME=$(/usr/libexec/java_home -v 21)   # macOS
-  ```
+- **Node 20 이상** — 프런트엔드 빌드용
 
 - Docker 런타임 (Docker Desktop, Colima, Podman 등)
 
@@ -15,6 +14,8 @@
   활성 docker context에서 자동으로 읽으므로 별도 설정이 필요 없다.
 
 ## Run Locally
+
+### 백엔드
 
 ```bash
 ./scripts/run-local.sh
@@ -69,3 +70,32 @@ docker compose down -v
 If your Docker installation uses the older standalone binary, replace `docker compose` with `docker-compose`.
 
 The app runs Flyway migrations on startup in the `local` profile.
+
+### 프런트엔드
+
+```bash
+cd frontend
+npm install
+npm run dev        # http://localhost:5173
+```
+
+개발 서버는 `/api`를 `localhost:8080`으로 프록시한다. 백엔드를 같이 띄워두면 된다.
+
+### 함께 빌드
+
+```bash
+./gradlew bootJar              # 프런트엔드를 빌드해 jar 안에 넣는다
+./gradlew bootJar -PskipFrontend   # 백엔드만
+```
+
+배포는 jar 하나로 유지된다.
+
+## Tests
+
+```bash
+./gradlew test
+```
+
+테스트가 Testcontainers로 진짜 PostgreSQL을 띄운다. Docker 런타임이 켜져 있어야 한다.
+소켓 경로는 `build.gradle`이 활성 docker context에서 자동으로 읽으므로
+Colima나 Podman을 써도 별도 설정이 필요 없다.

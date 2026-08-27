@@ -58,6 +58,54 @@ dependencies {
     testRuntimeOnly 'org.postgresql:postgresql'
 }
 
+// ---------------------------------------------------------------------------
+// 프런트엔드
+//
+// frontend/를 Vite로 빌드해서 jar 안 static/에 넣는다. 배포는 jar 하나로 유지된다.
+// 백엔드만 만질 때는 -PskipFrontend 로 건너뛴다.
+// ---------------------------------------------------------------------------
+def frontendDir = layout.projectDirectory.dir('frontend')
+def skipFrontend = project.hasProperty('skipFrontend')
+
+def npmCommand = { List<String> args ->
+    def isWindows = System.getProperty('os.name').toLowerCase().contains('windows')
+    return (isWindows ? ['cmd', '/c', 'npm'] : ['npm']) + args
+}
+
+tasks.register('frontendInstall', Exec) {
+    description = '프런트엔드 의존성 설치'
+    group = 'frontend'
+    workingDir = frontendDir
+    commandLine npmCommand(file("${frontendDir}/package-lock.json").exists() ? ['ci'] : ['install'])
+
+    inputs.file("${frontendDir}/package.json")
+    inputs.file("${frontendDir}/package-lock.json").optional()
+    outputs.dir("${frontendDir}/node_modules")
+}
+
+tasks.register('frontendBuild', Exec) {
+    description = '프런트엔드 빌드'
+    group = 'frontend'
+    dependsOn 'frontendInstall'
+    workingDir = frontendDir
+    commandLine npmCommand(['run', 'build'])
+
+    inputs.dir("${frontendDir}/src")
+    inputs.file("${frontendDir}/index.html")
+    inputs.file("${frontendDir}/vite.config.ts")
+    inputs.file("${frontendDir}/package.json")
+    outputs.dir("${frontendDir}/dist")
+}
+
+tasks.named('processResources') {
+    if (!skipFrontend) {
+        dependsOn 'frontendBuild'
+        from("${frontendDir}/dist") {
+            into 'static'
+        }
+    }
+}
+
 tasks.named('test') {
     useJUnitPlatform()
 

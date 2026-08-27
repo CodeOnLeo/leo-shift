@@ -1,0 +1,82 @@
+/*
+ * 색과 간격을 토큰으로 둔다.
+ * 이전 구현은 #007AFF 같은 값이 CSS·JS·manifest에 흩어져 있어서
+ * 테마 변경이 찾아 바꾸기 작업이었고, 다크 모드 대응이 0건이었다.
+ */
+:root {
+  color-scheme: light dark;
+
+  --bg: #ffffff;
+  --bg-subtle: #f8fafc;
+  --bg-raised: #ffffff;
+  --border: #e2e8f0;
+  --border-strong: #cbd5e1;
+
+  --text: #0f172a;
+  --text-muted: #64748b;
+  --text-faint: #94a3b8;
+
+  --accent: #2563eb;
+  --accent-text: #ffffff;
+  --danger: #dc2626;
+
+  --weekend: #ef4444;
+  --saturday: #3b82f6;
+
+  --radius: 10px;
+  --radius-lg: 16px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  --font: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard",
+          "Malgun Gothic", system-ui, sans-serif;
+
+  --header-height: 56px;
+  --nav-height: 56px;
+}
+
+/* 야간 근무자가 새벽에 여는 앱이다. 다크 모드는 부가 기능이 아니다. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #0b1220;
+    --bg-subtle: #111a2e;
+    --bg-raised: #161f36;
+    --border: #24304a;
+    --border-strong: #33415c;
+
+    --text: #e8eefc;
+    --text-muted: #94a3b8;
+    --text-faint: #64748b;
+
+    --accent: #60a5fa;
+    --accent-text: #0b1220;
+    --danger: #f87171;
+
+    --weekend: #f87171;
+    --saturday: #60a5fa;
+  }
+}
+
+:root[data-theme='dark'] {
+  --bg: #0b1220;
+  --bg-subtle: #111a2e;
+  --bg-raised: #161f36;
+  --border: #24304a;
+  --border-strong: #33415c;
+
+  --text: #e8eefc;
+  --text-muted: #94a3b8;
+  --text-faint: #64748b;
+
+  --accent: #60a5fa;
+  --accent-text: #0b1220;
+  --danger: #f87171;
+
+  --weekend: #f87171;
+  --saturday: #60a5fa;
+}

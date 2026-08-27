@@ -1,0 +1,47 @@
+.headers,
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+
+.headerCell {
+  padding: var(--space-2) 0;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.headerCell[data-weekend='sat'] { color: var(--saturday); }
+.headerCell[data-weekend='sun'] { color: var(--weekend); }
+
+.cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  /* 고정 높이로 자르지 않는다. 내용이 늘면 칸이 늘어난다.
+     이전 구현은 max-height + overflow:hidden이라 일정이 조용히 잘렸다. */
+  min-height: 64px;
+  padding: var(--space-1);
+  border: 0;
+  border-top: 1px solid var(--border);
+  background: none;
+  cursor: pointer;
+}
+
+.cell[data-outside] { opacity: 0.35; }
+.cell[data-weekend='sat'] .day { color: var(--saturday); }
+.cell[data-weekend='sun'] .day { color: var(--weekend); }
+
+.cell[data-today] .day {
+  display: grid;
+  place-items: center;
+  min-width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-text);
+  font-weight: 600;
+}
+
+.day { font-size: 14px; line-height: 24px; }

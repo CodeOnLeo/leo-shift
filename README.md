@@ -18,9 +18,12 @@
 | 프리셋 딕셔너리 (`resources/presets`) | 완료. 13종 |
 | DB 스키마 (`db/migration-next`) | 완료. PostgreSQL 16에서 검증 |
 | 도메인 설계 문서 (`docs/`) | 완료 |
-| 엔티티 · API · 프런트엔드 | 아직 없음 |
+| 엔티티 · 리포지토리 | 완료. 스키마 정합성 테스트 포함 |
+| 프런트엔드 골격 (`frontend/`) | 완료. 라우팅 · 다크 모드 · PWA |
+| API · 화면 내용 | 아직 없음 |
 
-애플리케이션으로는 아직 동작하지 않는다.
+컨트롤러가 없어 애플리케이션으로는 아직 동작하지 않는다.
+프런트엔드는 `npm run dev`로 단독 실행된다.
 
 ## 설계
 
@@ -62,7 +65,9 @@ PostgreSQL 컨테이너를 띄우고 `local` 프로파일로 애플리케이션�
 
 ## 기술 스택
 
-Spring Boot 3.3.5 · Java 21 · PostgreSQL 16 · Flyway
+- 백엔드: Spring Boot 3.3.5 · Java 21 · PostgreSQL 16 · Flyway
+- 프런트엔드: React 18 · TypeScript · Vite · React Router
+- 테스트: JUnit 5 · Testcontainers
 
 ## 라이선스
 
