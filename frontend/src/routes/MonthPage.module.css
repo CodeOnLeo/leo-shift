@@ -25,3 +25,12 @@
   font-size: 17px;
   font-weight: 600;
 }
+
+.notice,
+.error {
+  padding: var(--space-4);
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.error { color: var(--danger); }

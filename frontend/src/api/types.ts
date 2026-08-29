@@ -39,6 +39,8 @@ export interface CalendarSummary {
   kind: 'WORK' | 'GENERAL'
   isDefault: boolean
   ownedByGroup: boolean
+  canEdit: boolean
+  visibility: 'FULL' | 'BUSY_ONLY'
 }
 
 export interface CalendarEvent {
@@ -55,12 +57,13 @@ export interface CalendarEvent {
   cancelled: boolean
 }
 
-export interface MonthView {
-  year: number
-  month: number
+export interface ScheduleRange {
+  calendarId: number
+  from: Iso8601Date
+  to: Iso8601Date
   days: ResolvedDay[]
-  events: CalendarEvent[]
   scheduleTypes: ScheduleType[]
+  /** 코드별 일수. 요청에 year/month를 주면 그 달만 센다. */
   summary: Record<string, number>
 }
 

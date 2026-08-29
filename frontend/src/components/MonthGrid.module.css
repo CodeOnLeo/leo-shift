@@ -18,30 +18,50 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
+  gap: 3px;
   /* 고정 높이로 자르지 않는다. 내용이 늘면 칸이 늘어난다.
      이전 구현은 max-height + overflow:hidden이라 일정이 조용히 잘렸다. */
-  min-height: 64px;
-  padding: var(--space-1);
+  min-height: 66px;
+  padding: var(--space-1) 2px;
   border: 0;
   border-top: 1px solid var(--border);
   background: none;
   cursor: pointer;
 }
 
-.cell[data-outside] { opacity: 0.35; }
+.cell[data-outside] { opacity: 0.3; }
 .cell[data-weekend='sat'] .day { color: var(--saturday); }
 .cell[data-weekend='sun'] .day { color: var(--weekend); }
 
 .cell[data-today] .day {
   display: grid;
   place-items: center;
-  min-width: 24px;
-  height: 24px;
+  min-width: 22px;
+  height: 22px;
   border-radius: 999px;
   background: var(--accent);
   color: var(--accent-text);
   font-weight: 600;
 }
 
-.day { font-size: 14px; line-height: 24px; }
+.day {
+  font-size: 13px;
+  line-height: 22px;
+}
+
+.code {
+  display: block;
+  min-width: 22px;
+  padding: 1px 5px;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 16px;
+}
+
+.noteDot {
+  width: 4px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--text-faint);
+}
