@@ -1,0 +1,35 @@
+.page { padding-bottom: var(--space-8); }
+.body { padding: var(--space-4); display: grid; gap: var(--space-6); }
+
+.section { display: grid; gap: var(--space-3); }
+.title { margin: 0; font-size: 15px; font-weight: 600; }
+
+.note {
+  width: 100%;
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-raised);
+  color: var(--text);
+  font: inherit;
+  font-size: 16px; /* iOS에서 포커스 시 확대되지 않는 최소 크기 */
+  resize: vertical;
+}
+
+.actions { display: grid; gap: var(--space-2); }
+.revert { padding: 0 var(--space-3); color: var(--danger); font-size: 14px; }
+
+.leave {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-subtle);
+  font-size: 14px;
+}
+
+.leaveButtons { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.leaveButton { padding: 0 var(--space-4); font-size: 14px; }

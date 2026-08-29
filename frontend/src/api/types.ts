@@ -142,3 +142,34 @@ export interface WorkRule {
   effectiveTo: Iso8601Date | null
   sourcePresetId: string | null
 }
+
+export interface DayOverride {
+  id: number
+  code: string | null
+  note: string | null
+  /** 낙관적 잠금. 저장할 때 되돌려줘야 다른 사람 수정을 덮어쓰지 않는다. */
+  version: number
+}
+
+export interface DayLeave {
+  id: number
+  startDate: Iso8601Date
+  endDate: Iso8601Date
+  code: string
+  note: string | null
+}
+
+export interface DayDetail {
+  date: Iso8601Date
+  code: string | null
+  source: DaySource
+  note: string | null
+  /** 예외를 지우면 돌아갈 코드. "원래 야간입니다"를 보여준다. */
+  baseCode: string | null
+  baseSource: DaySource
+  override: DayOverride | null
+  leave: DayLeave | null
+  scheduleType: ScheduleType | null
+  scheduleTypes: ScheduleType[]
+  canEdit: boolean
+}
