@@ -6,6 +6,7 @@ import { WeekPage } from '@/routes/WeekPage'
 import { DayPage } from '@/routes/DayPage'
 import { GroupTimelinePage } from '@/routes/GroupTimelinePage'
 import { SettingsPage } from '@/routes/SettingsPage'
+import { PatternSetupPage } from '@/routes/PatternSetupPage'
 import { LoginPage } from '@/routes/LoginPage'
 import { today } from '@/lib/date'
 
@@ -32,6 +33,7 @@ export const router = createBrowserRouter([
       { path: 'day/:date', element: <DayPage /> },
       { path: 'groups/:groupId', element: <GroupTimelinePage /> },
       { path: 'settings', element: <SettingsPage /> },
+      { path: 'settings/pattern', element: <PatternSetupPage /> },
       { path: 'settings/:section', element: <SettingsPage /> },
     ],
   },

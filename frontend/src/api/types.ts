@@ -100,3 +100,45 @@ export interface CurrentUser {
   colorTag: string | null
   timeZone: string
 }
+
+export interface PresetScheduleType {
+  code: string
+  name: string
+  color: string
+  category: ScheduleCategory
+  startTime: string | null
+  endTime: string | null
+  crossesMidnight: boolean
+}
+
+export interface PresetTeam {
+  label: string
+  offset: number
+}
+
+export interface Preset {
+  id: string
+  name: string
+  category: 'REGULAR' | 'SHIFT'
+  tags: string[]
+  description: string | null
+  /** REGULAR은 기준일이 이 요일로 맞춰진다. SHIFT는 null. */
+  anchorWeekday: string | null
+  cycleLength: number
+  sequence: string[]
+  scheduleTypes: PresetScheduleType[]
+  teams: PresetTeam[]
+  /** 기준일을 묻는 방법. "가장 최근 야간을 시작한 날은?" */
+  anchorCode: string | null
+  anchorQuestion: string | null
+}
+
+export interface WorkRule {
+  id: number
+  anchorDate: Iso8601Date
+  cycleLength: number
+  sequence: string[]
+  effectiveFrom: Iso8601Date
+  effectiveTo: Iso8601Date | null
+  sourcePresetId: string | null
+}

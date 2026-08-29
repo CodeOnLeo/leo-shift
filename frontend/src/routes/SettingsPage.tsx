@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { Placeholder } from '@/components/Placeholder'
 import { applyTheme, readTheme, type Theme } from '@/lib/theme'
 import styles from './SettingsPage.module.css'
@@ -22,7 +23,6 @@ export function SettingsPage() {
       title="설정"
       description="개인 설정과 캘린더 관리"
       todo={[
-        '근무 패턴 — 프리셋 고르기, 조 선택, 달력 미리보기',
         '근무 코드 관리',
         '내 캘린더 목록',
         '공유 관리 — 누구에게 어디까지 공개 중인지',
@@ -31,6 +31,13 @@ export function SettingsPage() {
         '알림',
       ]}
     >
+      <nav className={styles.links}>
+        <Link className={styles.link} to="/settings/pattern">
+          근무 패턴
+          <span className={styles.linkHint}>프리셋 고르기 · 조 선택 · 미리보기</span>
+        </Link>
+      </nav>
+
       <fieldset className={styles.field}>
         <legend className={styles.legend}>화면 테마</legend>
         <div className={styles.options} role="radiogroup" aria-label="화면 테마">
