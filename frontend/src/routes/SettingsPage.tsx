@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Placeholder } from '@/components/Placeholder'
 import { applyTheme, readTheme, type Theme } from '@/lib/theme'
+import shared from '@/styles/shared.module.css'
 import styles from './SettingsPage.module.css'
 
 const THEMES: readonly { value: Theme; label: string }[] = [
@@ -32,7 +33,7 @@ export function SettingsPage() {
       ]}
     >
       <nav className={styles.links}>
-        <Link className={styles.link} to="/settings/pattern">
+        <Link className={`${shared.pressable} ${styles.link}`} to="/settings/pattern">
           근무 패턴
           <span className={styles.linkHint}>프리셋 고르기 · 조 선택 · 미리보기</span>
         </Link>

@@ -1,14 +1,15 @@
 import type { PresetScheduleType } from '@/api/types'
+import { IconButton } from '@/components/ui/IconButton'
+import { ScheduleCodeBadge } from '@/components/ui/ScheduleCodeBadge'
+import shared from '@/styles/shared.module.css'
 import styles from './SequenceEditor.module.css'
 
 /**
  * 근무 순서 편집기.
  *
- * 이전 구현은 추가만 됐다. 되돌리기는 마지막 하나 pop뿐이라 14일 주기의
- * 3번째 칸을 고치려면 12개를 되돌려야 했고, "주간 ×4" 같은 반복 입력이 없어
- * 25일 주기면 25번 눌러야 했다.
+ * 이전 구현은 추가만 됐다. 되돌리기가 마지막 하나 pop뿐이라 14일 주기의 3번째를
+ * 고치려면 12개를 되돌려야 했고, 반복 입력이 없어 25일 주기면 25번 눌러야 했다.
  *
- * 여기서는 위치마다 삭제·이동·삽입이 되고, 코드를 누를 때 반복 횟수를 고를 수 있다.
  * 드래그 대신 버튼으로 이동시키는 것은 키보드로도 쓸 수 있게 하기 위해서다.
  */
 export function SequenceEditor({
@@ -47,8 +48,8 @@ export function SequenceEditor({
           <button
             key={type.code}
             type="button"
-            className={styles.paletteButton}
-            style={{ borderColor: type.color }}
+            className={`${shared.pressable} ${styles.paletteButton}`}
+            style={{ borderLeftColor: type.color }}
             onClick={() => append(type.code)}
           >
             <span className={styles.dot} style={{ background: type.color }} aria-hidden="true" />
@@ -61,17 +62,20 @@ export function SequenceEditor({
       <label className={styles.repeat}>
         한 번에 넣을 일수
         <input
+          className={`${shared.field} ${styles.repeatInput}`}
           type="number"
           min={1}
           max={30}
           value={repeatCount}
-          onChange={(e) => onRepeatCountChange(Math.max(1, Math.min(30, Number(e.target.value) || 1)))}
+          onChange={(e) =>
+            onRepeatCountChange(Math.max(1, Math.min(30, Number(e.target.value) || 1)))
+          }
         />
         일
       </label>
 
       {sequence.length === 0 ? (
-        <p className={styles.empty}>위에서 근무를 눌러 순서를 만드세요.</p>
+        <p className={shared.hint}>위에서 근무를 눌러 순서를 만드세요.</p>
       ) : (
         <ol className={styles.list}>
           {sequence.map((code, index) => {
@@ -79,23 +83,18 @@ export function SequenceEditor({
             return (
               <li key={`${code}-${index}`} className={styles.item}>
                 <span className={styles.index}>{index + 1}</span>
-                <span
-                  className={styles.badge}
-                  style={{ background: type?.color ?? 'var(--border-strong)' }}
-                >
-                  {code}
-                </span>
+                <ScheduleCodeBadge code={code} color={type?.color} label={type?.name} />
                 <span className={styles.name}>{type?.name ?? code}</span>
 
                 <span className={styles.actions}>
-                  <button type="button" onClick={() => moveBy(index, -1)}
-                          disabled={index === 0} aria-label={`${index + 1}번째를 앞으로`}>↑</button>
-                  <button type="button" onClick={() => moveBy(index, 1)}
-                          disabled={index === sequence.length - 1} aria-label={`${index + 1}번째를 뒤로`}>↓</button>
-                  <button type="button" onClick={() => duplicateAt(index)}
-                          aria-label={`${index + 1}번째 뒤에 하루 추가`}>+</button>
-                  <button type="button" onClick={() => removeAt(index)}
-                          aria-label={`${index + 1}번째 삭제`}>×</button>
+                  <IconButton label={`${index + 1}번째를 앞으로`} disabled={index === 0}
+                              onClick={() => moveBy(index, -1)}>↑</IconButton>
+                  <IconButton label={`${index + 1}번째를 뒤로`} disabled={index === sequence.length - 1}
+                              onClick={() => moveBy(index, 1)}>↓</IconButton>
+                  <IconButton label={`${index + 1}번째 뒤에 하루 추가`}
+                              onClick={() => duplicateAt(index)}>+</IconButton>
+                  <IconButton label={`${index + 1}번째 삭제`}
+                              onClick={() => removeAt(index)}>×</IconButton>
                 </span>
               </li>
             )
@@ -104,7 +103,7 @@ export function SequenceEditor({
       )}
 
       {sequence.length > 0 ? (
-        <button type="button" className={styles.clear} onClick={() => onChange([])}>
+        <button type="button" className={`${shared.pressable} ${styles.clear}`} onClick={() => onChange([])}>
           전체 지우기
         </button>
       ) : null}

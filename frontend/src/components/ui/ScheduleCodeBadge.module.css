@@ -1,0 +1,20 @@
+.badge {
+  display: inline-block;
+  border-radius: 5px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.badge[data-size='md'] {
+  min-width: 22px;
+  padding: 1px 5px;
+  font-size: 11px;
+  line-height: 16px;
+}
+
+.badge[data-size='sm'] {
+  min-width: 18px;
+  padding: 0 4px;
+  font-size: 10px;
+  line-height: 15px;
+}

@@ -1,0 +1,16 @@
+.presetName { margin: 0 0 var(--space-2); font-size: 20px; }
+.description { margin: 0 0 var(--space-6); color: var(--text-muted); font-size: 14px; }
+
+.section { margin-bottom: var(--space-8); }
+.sectionTitle { margin: 0 0 var(--space-3); font-size: 15px; font-weight: 600; }
+
+.teams { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.team { min-width: 60px; padding: 0 var(--space-4); font-size: 15px; }
+.teamOn {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-text);
+  font-weight: 600;
+}
+
+.date { width: 100%; max-width: 220px; }

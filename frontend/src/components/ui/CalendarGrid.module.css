@@ -1,0 +1,55 @@
+.headers,
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+
+.headerCell {
+  padding: var(--space-2) 0;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.root[data-size='md'] .headerCell { font-size: 12px; }
+.root[data-size='sm'] .headerCell { padding-bottom: 4px; font-size: 11px; }
+
+.headerCell[data-weekend='sat'] { color: var(--saturday); }
+.headerCell[data-weekend='sun'] { color: var(--weekend); }
+
+.cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  /* 고정 높이로 자르지 않는다. 내용이 늘면 칸이 늘어난다.
+     이전 구현은 max-height + overflow:hidden이라 일정이 조용히 잘렸다. */
+  padding: var(--space-1) 2px;
+  border: 0;
+  border-top: 1px solid var(--border);
+  background: none;
+  color: inherit;
+  font: inherit;
+}
+
+.root[data-size='md'] .cell { min-height: 66px; cursor: pointer; }
+.root[data-size='sm'] .cell { min-height: 44px; gap: 2px; }
+.root[data-size='sm'] div.cell { cursor: default; }
+
+.cell[data-outside] { opacity: 0.3; }
+.cell[data-weekend='sat'] .dayNumber { color: var(--saturday); }
+.cell[data-weekend='sun'] .dayNumber { color: var(--weekend); }
+
+.dayNumber { color: var(--text); }
+.root[data-size='md'] .dayNumber { font-size: 13px; line-height: 22px; }
+.root[data-size='sm'] .dayNumber { font-size: 11px; color: var(--text-muted); }
+
+.cell[data-today] .dayNumber {
+  display: grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-text);
+  font-weight: 600;
+}

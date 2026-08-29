@@ -4,9 +4,11 @@ import { fetchCalendars, fetchSchedule } from '@/api/calendar'
 import type { ResolvedDay, ScheduleType } from '@/api/types'
 import { MonthGrid } from '@/components/MonthGrid'
 import { ScheduleLegend } from '@/components/ScheduleLegend'
+import { IconButton } from '@/components/ui/IconButton'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { addMonths, monthGrid, today } from '@/lib/date'
 import { useAsync } from '@/lib/useAsync'
-import styles from './MonthPage.module.css'
+import shared from '@/styles/shared.module.css'
 
 export function MonthPage() {
   const params = useParams()
@@ -21,15 +23,16 @@ export function MonthPage() {
   const calendars = useAsync((signal) => fetchCalendars(signal), [])
   const calendarId =
     calendars.status === 'ready'
-      ? (calendars.data.find((c) => c.isDefault) ?? calendars.data[0])?.id
+      ? (calendars.data.find((calendar) => calendar.isDefault) ?? calendars.data[0])?.id
       : undefined
 
   const schedule = useAsync(
     async (signal) => {
       if (calendarId === undefined) return null
-      const from = dates[0]!
-      const to = dates[dates.length - 1]!
-      return fetchSchedule({ calendarId, from, to, year, month }, signal)
+      return fetchSchedule(
+        { calendarId, from: dates[0]!, to: dates[dates.length - 1]!, year, month },
+        signal,
+      )
     },
     [calendarId, dates[0], dates[dates.length - 1], year, month],
   )
@@ -62,13 +65,11 @@ export function MonthPage() {
 
   return (
     <div>
-      <header className={styles.header}>
-        <button type="button" onClick={() => step(-1)} aria-label="이전 달">←</button>
-        <h1 className={styles.title}>
-          {year}년 {month}월
-        </h1>
-        <button type="button" onClick={() => step(1)} aria-label="다음 달">→</button>
-      </header>
+      <PageHeader
+        title={`${year}년 ${month}월`}
+        left={<IconButton label="이전 달" onClick={() => step(-1)}>←</IconButton>}
+        right={<IconButton label="다음 달" onClick={() => step(1)}>→</IconButton>}
+      />
 
       {/* 상태 변화를 스크린리더에도 알린다 */}
       <p className="visually-hidden" role="status">
@@ -88,18 +89,14 @@ export function MonthPage() {
       ) : null}
 
       {calendars.status === 'ready' && calendars.data.length === 0 ? (
-        <p className={styles.notice}>아직 캘린더가 없습니다.</p>
+        <p className={shared.notice}>아직 캘린더가 없습니다.</p>
       ) : null}
 
       {schedule.status === 'error' ? (
-        <p className={styles.error} role="alert">
-          {schedule.error.message}
-        </p>
+        <p className={shared.error} role="alert">{schedule.error.message}</p>
       ) : null}
       {calendars.status === 'error' ? (
-        <p className={styles.error} role="alert">
-          {calendars.error.message}
-        </p>
+        <p className={shared.error} role="alert">{calendars.error.message}</p>
       ) : null}
     </div>
   )
