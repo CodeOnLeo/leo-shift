@@ -173,3 +173,11 @@ export interface DayDetail {
   scheduleTypes: ScheduleType[]
   canEdit: boolean
 }
+
+export interface ScheduleTypeUsage {
+  code: string
+  inUse: boolean
+  usedByRule: boolean
+  usedByLeave: boolean
+  usedByOverride: boolean
+}

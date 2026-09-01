@@ -1,0 +1,14 @@
+.root { display: grid; gap: var(--space-3); }
+.swatches { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+
+.swatch {
+  width: 36px;
+  height: 36px;
+  border: 2px solid transparent;
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+.swatch[data-on] { border-color: var(--text); box-shadow: 0 0 0 2px var(--bg); }
+
+.custom { display: flex; align-items: center; gap: var(--space-2); font-size: 13px; color: var(--text-muted); }
+.custom input { width: 64px; padding: 2px; }

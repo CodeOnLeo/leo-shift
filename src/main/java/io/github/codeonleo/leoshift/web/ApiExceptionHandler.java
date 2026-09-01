@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -67,6 +68,23 @@ public class ApiExceptionHandler {
     @ExceptionHandler(NoResourceFoundException.class)
     ResponseEntity<Map<String, String>> noResource(NoResourceFoundException e) {
         return body(HttpStatus.NOT_FOUND, "not_found", "없는 경로입니다");
+    }
+
+    /**
+     * 요청 본문의 검증 실패. 애노테이션에 적어둔 메시지를 그대로 돌려준다.
+     *
+     * <p>이게 없으면 아래 catch-all이 잡아서 500이 된다. 사용자 입력이 틀린 것을
+     * 서버 장애로 보고하면 진짜 장애와 구분되지 않는다.
+     */
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    ResponseEntity<Map<String, String>> invalidBody(MethodArgumentNotValidException e) {
+        String message = e.getBindingResult().getFieldErrors().stream()
+                .map(error -> error.getDefaultMessage() == null
+                        ? error.getField() + " 값이 올바르지 않습니다"
+                        : error.getDefaultMessage())
+                .findFirst()
+                .orElse("요청 형식이 올바르지 않습니다");
+        return body(HttpStatus.BAD_REQUEST, "invalid_request", message);
     }
 
     /** 파라미터가 없거나 형식이 틀렸다. 클라이언트 잘못이므로 400이다. */

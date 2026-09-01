@@ -83,8 +83,8 @@ public final class PatternDtos {
     public record ApplyPatternRequest(
             String presetId,
             String teamLabel,
-            @Size(max = 366) List<String> sequence,
-            @NotNull LocalDate anchorDate,
-            @NotNull LocalDate effectiveFrom) {
+            @Size(max = 366, message = "주기가 너무 깁니다") List<String> sequence,
+            @NotNull(message = "기준일을 골라 주세요") LocalDate anchorDate,
+            @NotNull(message = "적용 시작일을 골라 주세요") LocalDate effectiveFrom) {
     }
 }

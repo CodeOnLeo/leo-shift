@@ -54,14 +54,14 @@ public final class DayDtos {
      */
     public record SaveOverrideRequest(
             String code,
-            @Size(max = 2000) String note,
+            @Size(max = 2000, message = "메모는 2000자를 넘을 수 없습니다") String note,
             Integer version) {
     }
 
     public record SaveLeaveRequest(
-            @NotNull LocalDate startDate,
-            @NotNull LocalDate endDate,
-            @NotNull String code,
-            @Size(max = 2000) String note) {
+            @NotNull(message = "시작일을 골라 주세요") LocalDate startDate,
+            @NotNull(message = "종료일을 골라 주세요") LocalDate endDate,
+            @NotNull(message = "휴가 종류를 골라 주세요") String code,
+            @Size(max = 2000, message = "메모는 2000자를 넘을 수 없습니다") String note) {
     }
 }

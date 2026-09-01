@@ -1,0 +1,33 @@
+.form {
+  display: grid;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-subtle);
+}
+
+.preview { display: flex; align-items: center; gap: var(--space-2); }
+.previewName { font-size: 16px; font-weight: 600; }
+
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); }
+.label { display: grid; gap: var(--space-1); font-size: 13px; color: var(--text-muted); }
+
+.fieldset { margin: 0; padding: 0; border: 0; }
+.legend { padding: 0 0 var(--space-2); font-size: 13px; color: var(--text-muted); }
+
+.categories { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-2); }
+.category {
+  display: grid;
+  gap: 2px;
+  padding: var(--space-2);
+  font-size: 14px;
+  text-align: center;
+}
+.categoryOn { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.categoryHint { font-size: 11px; color: var(--text-faint); }
+
+.checkbox { display: flex; align-items: center; gap: var(--space-2); min-height: 44px; font-size: 14px; }
+
+.actions { display: grid; gap: var(--space-2); }
+.cancel { padding: 0 var(--space-3); font-size: 14px; }
