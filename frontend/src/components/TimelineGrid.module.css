@@ -1,0 +1,150 @@
+/* 격자만 가로로 밀린다. 페이지 전체가 밀리면 헤더와 탭까지 따라 움직인다. */
+.scroller {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table {
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 12px;
+}
+
+.nameCol { width: 92px; }
+.dateCol { width: 30px; }
+
+/*
+ * 이름 칸은 어디까지 밀어도 남는다. 그러지 않으면 누구 줄인지 알 수 없다.
+ *
+ * 정렬은 안쪽 span이 맡는다. th 자체에 display:flex를 주면 표 레이아웃에서
+ * 빠져나와 열이 어긋난다.
+ */
+.nameCell {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  box-sizing: border-box;
+  width: 92px;
+  min-width: 92px;
+  max-width: 92px;
+  height: 34px;
+  padding: 0 var(--space-2);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  font-weight: 500;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.nameInner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  overflow: hidden;
+}
+
+.nameCell[data-self] { color: var(--accent); }
+
+.corner {
+  z-index: 3;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--border-strong);
+}
+
+.name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.unshared {
+  flex: none;
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--text-faint);
+}
+
+.dateCell {
+  min-width: 30px;
+  height: 34px;
+  padding: 0 1px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  font-weight: 400;
+  line-height: 1.15;
+}
+
+.dateNumber { display: block; font-size: 11px; color: var(--text); }
+.dateWeekday { display: block; font-size: 9px; color: var(--text-faint); }
+
+.dateCell[data-weekend='sat'] .dateWeekday { color: var(--saturday); }
+.dateCell[data-weekend='sun'] .dateWeekday { color: var(--weekend); }
+
+.dateCell[data-today] .dateNumber {
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.cell {
+  height: 30px;
+  padding: 1px;
+  border-bottom: 1px solid var(--border);
+  text-align: center;
+}
+
+/* 소속 밖. 빈 근무와 눈에 띄게 달라야 한다. */
+.cell[data-outside] {
+  background: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 3px,
+    var(--border) 3px,
+    var(--border) 4px
+  );
+}
+
+/* 코드가 길면 잘린다. 넘쳐서 옆 사람 칸을 덮는 것보다 낫다 — 전체 이름은 title에 있다. */
+.chip {
+  display: block;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--border-strong);
+  font-size: 10px;
+  line-height: 28px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* 휴가는 훑어볼 때 먼저 눈에 들어와야 한다. 이 화면의 목적이 부재 파악이다. */
+.cell[data-category='LEAVE'] .chip {
+  outline: 2px solid var(--danger);
+  outline-offset: -2px;
+}
+
+.countCell {
+  height: 26px;
+  border-top: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 11px;
+  text-align: center;
+}
+
+.countCell[data-absent] { color: var(--danger); font-weight: 600; }
+
+.footLabel {
+  height: 26px;
+  border-top: 1px solid var(--border);
+  border-bottom: 0;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 400;
+}

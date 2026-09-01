@@ -1,0 +1,53 @@
+.page { padding-bottom: var(--space-8); }
+.body { padding: var(--space-4); display: grid; gap: var(--space-6); }
+
+.section { display: grid; gap: var(--space-3); }
+.heading { margin: 0; font-size: 14px; font-weight: 600; }
+
+.list { margin: 0; padding: 0; list-style: none; display: grid; gap: var(--space-2); }
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-raised);
+}
+
+.text { flex: 1; display: grid; gap: 2px; min-width: 0; }
+
+.name {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: 15px;
+}
+
+.meta {
+  font-size: 12px;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tagMuted {
+  padding: 1px 5px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  font-size: 10px;
+  color: var(--text-faint);
+}
+
+/* 한 줄에서 바로 단계를 바꿀 수 있어야 한다. 별도 화면으로 넘기면 확인 자체를 안 하게 된다. */
+.level { min-width: 88px; padding: 0 var(--space-2); font-size: 14px; }
+.levelText { font-size: 13px; color: var(--text-muted); }
+
+.actions { display: flex; gap: var(--space-2); }
+.small { padding: 0 var(--space-3); font-size: 14px; }
+.accept { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+
+.invite { display: grid; grid-template-columns: 1fr auto; gap: var(--space-2); }
+.inviteButton { padding: 0 var(--space-4); font-size: 15px; }

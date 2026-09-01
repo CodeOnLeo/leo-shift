@@ -34,4 +34,27 @@ public interface GroupMemberRepository extends JpaRepository<GroupMember, Long> 
 
     @Query("select m from GroupMember m join fetch m.user where m.group.id = :groupId and m.leftOn is null")
     List<GroupMember> findCurrentMembers(@Param("groupId") Long groupId);
+
+    /**
+     * 관리 화면용. 나간 사람도 포함한 전체 이력.
+     *
+     * <p>나간 사람을 감추면 "이 사람 언제까지 있었지?"를 확인할 수 없고,
+     * 기간을 잘못 적었을 때 되돌릴 방법도 없어진다.
+     */
+    @Query("""
+            select m from GroupMember m
+              join fetch m.user
+             where m.group.id = :groupId
+             order by case when m.leftOn is null then 0 else 1 end, m.joinedOn, m.id
+            """)
+    List<GroupMember> findAllOf(@Param("groupId") Long groupId);
+
+    /** 목록 화면의 인원수. 그룹마다 세면 N+1이 된다. */
+    @Query("""
+            select m.group.id, count(m)
+              from GroupMember m
+             where m.group.id in :groupIds and m.leftOn is null
+             group by m.group.id
+            """)
+    List<Object[]> countCurrentMembers(@Param("groupIds") List<Long> groupIds);
 }

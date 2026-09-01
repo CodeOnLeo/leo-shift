@@ -20,9 +20,17 @@ public final class ScheduleDtos {
             String colorTag, String timeZone) {
     }
 
+    /**
+     * @param mine      내가 소유한 캘린더인가.
+     *                  <b>{@code isDefault}만으로 내 것을 고르면 안 된다.</b> 공유받은
+     *                  캘린더도 그 사람에게는 기본 캘린더라 {@code isDefault}가 참이다
+     * @param ownerName 소유자 이름. 공유받은 캘린더는 이름이 겹치므로("내 근무")
+     *                  이게 없으면 목록에서 누구 것인지 구분되지 않는다
+     */
     public record CalendarSummaryResponse(
             Long id, String name, String color, String kind,
-            boolean isDefault, boolean ownedByGroup, boolean canEdit, String visibility) {
+            boolean isDefault, boolean mine, String ownerName,
+            boolean ownedByGroup, boolean canEdit, String visibility) {
 
         public static CalendarSummaryResponse from(CalendarAccessService.Access access) {
             Calendar calendar = access.calendar();
@@ -32,6 +40,8 @@ public final class ScheduleDtos {
                     calendar.getColor(),
                     calendar.getKind().name(),
                     calendar.isDefault(),
+                    access.owner(),
+                    calendar.getOwnerUser() != null ? calendar.getOwnerUser().getName() : null,
                     calendar.isOwnedByGroup(),
                     access.canEdit(),
                     access.visibility().name());

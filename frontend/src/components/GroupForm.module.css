@@ -1,0 +1,36 @@
+.form {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-subtle);
+}
+
+.label {
+  display: grid;
+  gap: var(--space-1);
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.kinds { margin: 0; padding: 0; border: 0; }
+.legend { padding: 0 0 var(--space-1); font-size: 13px; color: var(--text-muted); }
+
+.kindOptions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+
+.kindOption {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: 36px;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-raised);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.actions { display: grid; grid-template-columns: 1fr 2fr; gap: var(--space-2); }
+.cancel { font-size: 15px; }

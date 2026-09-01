@@ -24,9 +24,7 @@ export function SettingsPage() {
       title="설정"
       description="개인 설정과 캘린더 관리"
       todo={[
-        '내 캘린더 목록',
-        '공유 관리 — 누구에게 어디까지 공개 중인지',
-        '그룹 관리',
+        '내 캘린더 목록 — 개인 일정 캘린더 추가',
         '외부 캘린더 연동 · 내보내기 주소',
         '알림',
       ]}
@@ -39,6 +37,10 @@ export function SettingsPage() {
         <Link className={`${shared.pressable} ${styles.link}`} to="/settings/codes">
           근무 코드
           <span className={styles.linkHint}>이름 · 색 · 시간 관리</span>
+        </Link>
+        <Link className={`${shared.pressable} ${styles.link}`} to="/settings/sharing">
+          공유 관리
+          <span className={styles.linkHint}>누가 내 뭘 보고 있는지 · 공개 단계</span>
         </Link>
       </nav>
 

@@ -4,7 +4,10 @@ import { ErrorPage } from '@/routes/ErrorPage'
 import { MonthPage } from '@/routes/MonthPage'
 import { WeekPage } from '@/routes/WeekPage'
 import { DayPage } from '@/routes/DayPage'
+import { GroupsPage } from '@/routes/GroupsPage'
 import { GroupTimelinePage } from '@/routes/GroupTimelinePage'
+import { GroupMembersPage } from '@/routes/GroupMembersPage'
+import { SharesPage } from '@/routes/SharesPage'
 import { SettingsPage } from '@/routes/SettingsPage'
 import { PatternSetupPage } from '@/routes/PatternSetupPage'
 import { ScheduleTypesPage } from '@/routes/ScheduleTypesPage'
@@ -32,10 +35,13 @@ export const router = createBrowserRouter([
       { path: 'week/:date', element: <WeekPage /> },
       { path: 'day/today', element: <Navigate to={`/day/${today()}`} replace /> },
       { path: 'day/:date', element: <DayPage /> },
+      { path: 'groups', element: <GroupsPage /> },
       { path: 'groups/:groupId', element: <GroupTimelinePage /> },
+      { path: 'groups/:groupId/members', element: <GroupMembersPage /> },
       { path: 'settings', element: <SettingsPage /> },
       { path: 'settings/pattern', element: <PatternSetupPage /> },
       { path: 'settings/codes', element: <ScheduleTypesPage /> },
+      { path: 'settings/sharing', element: <SharesPage /> },
       { path: 'settings/:section', element: <SettingsPage /> },
     ],
   },

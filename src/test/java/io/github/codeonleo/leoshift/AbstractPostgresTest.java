@@ -5,8 +5,6 @@ import org.springframework.boot.testcontainers.service.connection.ServiceConnect
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
  * 진짜 PostgreSQL로 도는 테스트의 공통 기반.
@@ -14,16 +12,22 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  * <p>H2로는 부족하다. 스키마가 배제 제약({@code btree_gist}), 부분 인덱스,
  * {@code jsonb}, 복합 FK의 {@code ON UPDATE CASCADE}를 쓰기 때문이다.
  *
- * <p>컨테이너는 정적 필드라 클래스 간에 재사용된다.
+ * <p>컨테이너를 <b>{@code @Container} 없이 직접 띄운다.</b> {@code @Container}는
+ * 클래스가 끝날 때 컨테이너를 멈추는데, 정적 필드는 하위 클래스들이 공유하므로
+ * 먼저 끝난 클래스가 멈춘 컨테이너를 다음 클래스가 물려받아 연결이 거부된다.
+ * 테스트 클래스가 하나일 때는 드러나지 않다가 두 번째가 생기는 순간 터진다.
+ * 정지는 Testcontainers의 Ryuk가 JVM 종료 시에 맡는다.
  */
-@Testcontainers
 @Tag("integration")
 public abstract class AbstractPostgresTest {
 
-    @Container
     @ServiceConnection
     static final PostgreSQLContainer<?> POSTGRES =
             new PostgreSQLContainer<>("postgres:16-alpine");
+
+    static {
+        POSTGRES.start();
+    }
 
     @DynamicPropertySource
     static void properties(DynamicPropertyRegistry registry) {
