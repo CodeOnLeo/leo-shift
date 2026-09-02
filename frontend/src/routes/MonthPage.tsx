@@ -2,14 +2,15 @@ import { useCallback, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { fetchCalendars, fetchSchedule } from '@/api/calendar'
 import { fetchEvents } from '@/api/event'
-import type { EventInstance, ResolvedDay, ScheduleType } from '@/api/types'
+import { fetchExternalEvents } from '@/api/external'
+import type { ResolvedDay, ScheduleType } from '@/api/types'
 import { MonthGrid } from '@/components/MonthGrid'
 import { ScheduleLegend } from '@/components/ScheduleLegend'
 import { IconButton } from '@/components/ui/IconButton'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { addDays, addMonths, monthGrid, today } from '@/lib/date'
 import { toInstant } from '@/lib/datetime'
-import { startingOn } from '@/lib/eventLayout'
+import { startingOn, toEntries, type TimetableEntry } from '@/lib/eventLayout'
 import { useAsync } from '@/lib/useAsync'
 import shared from '@/styles/shared.module.css'
 
@@ -54,16 +55,31 @@ export function MonthPage() {
     [dates[0], dates[dates.length - 1]],
   )
 
+  // 구독해 온 일정도 같은 달력에 얹는다. 주5일 근무자에게는 이쪽이 일정의 대부분이다.
+  const externals = useAsync(
+    (signal) =>
+      fetchExternalEvents(
+        {
+          from: toInstant(dates[0]!, '00:00'),
+          to: toInstant(addDays(dates[dates.length - 1]!, 1), '00:00'),
+        },
+        signal,
+      ),
+    [dates[0], dates[dates.length - 1]],
+  )
+
   const eventsByDate = useMemo(() => {
-    const map = new Map<string, EventInstance[]>()
-    if (events.status === 'ready') {
-      for (const date of dates) {
-        const onDay = startingOn(events.data.instances, date)
-        if (onDay.length > 0) map.set(date, onDay)
-      }
+    const map = new Map<string, TimetableEntry[]>()
+    const entries = toEntries(
+      events.status === 'ready' ? events.data.instances : [],
+      externals.status === 'ready' ? externals.data.events : [],
+    )
+    for (const date of dates) {
+      const onDay = startingOn(entries, date)
+      if (onDay.length > 0) map.set(date, onDay)
     }
     return map
-  }, [events, dates])
+  }, [events, externals, dates])
 
   // 이동 목표를 URL에서 계산한다. 이전 구현은 비동기로 갱신되는 상태에서 계산해서
   // 월 이동 버튼을 빠르게 누르면 클릭이 씹혔다.

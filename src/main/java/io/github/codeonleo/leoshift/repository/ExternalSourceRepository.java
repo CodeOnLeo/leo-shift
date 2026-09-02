@@ -15,6 +15,16 @@ public interface ExternalSourceRepository extends JpaRepository<ExternalSource, 
 
     Optional<ExternalSource> findByCalendarIdAndFeedUrl(Long calendarId, String feedUrl);
 
+    /** 달력에 겹쳐 그릴 피드. 숨김으로 둔 것은 애초에 가져오지 않는다. */
+    @Query("""
+            select s from ExternalSource s
+             where s.calendar.id in :calendarIds
+               and s.active = true
+               and s.displayMode <> io.github.codeonleo.leoshift.domain.external.ExternalSource.DisplayMode.HIDDEN
+             order by s.name
+            """)
+    List<ExternalSource> findVisibleByCalendars(@Param("calendarIds") List<Long> calendarIds);
+
     /** 동기화 대상. 스케줄러가 쓴다. */
     @Query("""
             select s from ExternalSource s

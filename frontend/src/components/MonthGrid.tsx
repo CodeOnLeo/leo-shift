@@ -1,7 +1,8 @@
-import type { EventInstance, ResolvedDay, ScheduleType } from '@/api/types'
+import type { ResolvedDay, ScheduleType } from '@/api/types'
 import { CalendarGrid } from '@/components/ui/CalendarGrid'
 import { ScheduleCodeBadge } from '@/components/ui/ScheduleCodeBadge'
 import { formatKoreanDate } from '@/lib/date'
+import { entryKey, type TimetableEntry } from '@/lib/eventLayout'
 import styles from './MonthGrid.module.css'
 
 /** 월 달력. 격자는 CalendarGrid가 그리고, 여기는 칸 안에 무엇을 넣을지만 정한다. */
@@ -17,8 +18,11 @@ export function MonthGrid({
   month: number
   byDate: ReadonlyMap<string, ResolvedDay>
   typesByCode: ReadonlyMap<string, ScheduleType>
-  /** 그날 시작하는 일정. 칸이 좁아 앞의 두 개만 보이고 나머지는 개수로 접힌다. */
-  eventsByDate: ReadonlyMap<string, EventInstance[]>
+  /**
+   * 그날 시작하는 일정. 내 일정과 구독해 온 일정이 함께 들어온다.
+   * 칸이 좁아 앞의 두 개만 보이고 나머지는 개수로 접힌다.
+   */
+  eventsByDate: ReadonlyMap<string, TimetableEntry[]>
   onSelect: (date: string) => void
 }) {
   const typeOf = (date: string) => {
@@ -46,14 +50,19 @@ export function MonthGrid({
             {/* 색만으로 구분하지 않는다. 코드 글자가 항상 함께 보인다. */}
             {type ? <ScheduleCodeBadge code={type.code} color={type.color} label={type.name} /> : null}
             {day?.note ? <span className={styles.noteDot} aria-hidden="true" /> : null}
-            {events.slice(0, 2).map((instance) => (
+            {events.slice(0, 2).map((entry) => (
               <span
-                key={`${instance.eventId}-${instance.occurrenceStart}`}
+                key={entryKey(entry)}
                 className={styles.event}
-                data-cancelled={instance.change === 'CANCELLED' ? '' : undefined}
-                style={instance.color ? { borderColor: instance.color } : undefined}
+                data-external={entry.kind === 'external' ? '' : undefined}
+                data-cancelled={
+                  entry.kind === 'event' && entry.change === 'CANCELLED' ? '' : undefined
+                }
+                style={entry.color ? { borderColor: entry.color } : undefined}
               >
-                {instance.title}
+                {entry.kind === 'external' && entry.displayMode !== 'INLINE'
+                  ? entry.sourceName
+                  : entry.title}
               </span>
             ))}
             {events.length > 2 ? (

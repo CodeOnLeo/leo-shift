@@ -176,3 +176,18 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/*
+ * 구독해 온 일정.
+ *
+ * 채우지 않고 테두리와 빗금으로 그린다. 내 일정과 한눈에 갈려야 하고,
+ * 여기서는 고칠 수 없다는 것도 모양으로 알려야 한다.
+ */
+.external {
+  border: 1px dashed var(--border-strong);
+  background: var(--bg-subtle);
+  color: var(--text-muted);
+  cursor: default;
+}
+
+.external .eventTime { opacity: 0.8; }

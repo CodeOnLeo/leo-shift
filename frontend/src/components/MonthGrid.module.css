@@ -25,3 +25,12 @@
 .event[data-cancelled] { text-decoration: line-through; color: var(--text-faint); }
 
 .more { font-size: 9px; line-height: 11px; color: var(--text-faint); }
+
+/*
+ * 구독해 온 일정. 점선 테두리로 내 일정과 갈린다.
+ * 칸이 너무 좁아 글자로 구분을 붙일 자리가 없다.
+ */
+.event[data-external] {
+  border-left-style: dashed;
+  color: var(--text-muted);
+}

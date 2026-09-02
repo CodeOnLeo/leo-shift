@@ -116,6 +116,75 @@ export interface ScheduleRange {
   summary: Record<string, number>
 }
 
+/**
+ * 구독한 캘린더를 달력에 어떻게 그릴지.
+ *
+ * BADGE는 있다는 표시만, INLINE은 제목까지, HIDDEN은 아예 가져오지 않는다.
+ * 구독을 지우지 않고 잠깐 치우고 싶을 때가 있어서 HIDDEN이 따로 있다.
+ */
+export type ExternalDisplayMode = 'BADGE' | 'INLINE' | 'HIDDEN'
+
+export interface ExternalSource {
+  id: number
+  calendarId: number
+  calendarName: string
+  name: string
+  feedUrl: string
+  color: string | null
+  displayMode: ExternalDisplayMode
+  active: boolean
+  syncIntervalMinutes: number
+  lastSyncedAt: Iso8601DateTime | null
+  /** 원격 서버가 준 문구가 섞여 있다. 반드시 텍스트로만 넣을 것. */
+  lastError: string | null
+  /** 가져온 일정 수. 동기화가 실제로 됐는지 아는 유일한 신호다. */
+  eventCount: number
+}
+
+/** 구독해 온 일정. 우리 일정과 달리 편집할 수 없다. */
+export interface ExternalEvent {
+  sourceId: number
+  sourceName: string
+  calendarId: number
+  color: string | null
+  displayMode: ExternalDisplayMode
+  startsAt: Iso8601DateTime
+  endsAt: Iso8601DateTime
+  allDay: boolean
+  title: string | null
+  description: string | null
+  location: string | null
+}
+
+export interface ExternalRange {
+  from: Iso8601DateTime
+  to: Iso8601DateTime
+  events: ExternalEvent[]
+}
+
+export interface SyncResult {
+  source: ExternalSource
+  imported: number
+  /** 실패했을 때만 채워진다. 성공이면 null. */
+  error: string | null
+}
+
+/**
+ * 내보내기용 구독 주소.
+ *
+ * 이 주소를 아는 사람은 누구나 캘린더를 볼 수 있다. 화면에서 그 사실을 반드시
+ * 함께 알려야 한다.
+ */
+export interface FeedToken {
+  id: number
+  calendarId: number
+  url: string
+  visibility: 'FULL' | 'BUSY_ONLY'
+  createdAt: Iso8601DateTime
+  /** 마지막으로 누가 읽어간 시각. 구독이 실제로 걸렸는지 아는 신호다. */
+  lastUsedAt: Iso8601DateTime | null
+}
+
 export type GroupKind = 'PROJECT' | 'WORKPLACE' | 'FAMILY' | 'FRIENDS' | 'OTHER'
 
 export interface GroupSummary {

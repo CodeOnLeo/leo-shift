@@ -50,6 +50,18 @@ public class ApiExceptionHandler {
         return body(HttpStatus.NOT_FOUND, "not_found", e.getMessage());
     }
 
+    /**
+     * 구독 주소가 부적절하거나 원격 서버가 응답하지 않았다. 사용자 입력 문제이므로 400이다.
+     *
+     * <p>문구는 {@link io.github.codeonleo.leoshift.service.FeedFetcher}가 사용자에게
+     * 보여줄 것만 담아 던진다. 원격 서버가 준 원문은 붙이지 않는다.
+     */
+    @ExceptionHandler(io.github.codeonleo.leoshift.service.FeedFetcher.FeedException.class)
+    ResponseEntity<Map<String, String>> feed(
+            io.github.codeonleo.leoshift.service.FeedFetcher.FeedException e) {
+        return body(HttpStatus.BAD_REQUEST, "feed_error", e.getMessage());
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     ResponseEntity<Map<String, String>> badRequest(IllegalArgumentException e) {
         return body(HttpStatus.BAD_REQUEST, "invalid_request", e.getMessage());

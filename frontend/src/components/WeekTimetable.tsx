@@ -4,9 +4,11 @@ import { formatMinutes, instantTime, nowMinutes } from '@/lib/datetime'
 import {
   allDayOn,
   daySegments,
+  entryKey,
   hourMarks,
   placement,
   timeWindow,
+  type TimetableEntry,
 } from '@/lib/eventLayout'
 import { isoWeekday, today, weekdayLabel } from '@/lib/date'
 import styles from './WeekTimetable.module.css'
@@ -20,28 +22,31 @@ import styles from './WeekTimetable.module.css'
  *
  * 시간축 구간은 일정에 맞춰 늘어난다. 늘 0~24시를 그리면 대부분이 빈칸이라
  * 정작 일정이 몰린 시간대가 눌린다.
+ *
+ * 구독해 온 일정도 같은 격자에 놓인다. 따로 그리면 회의와 수업이 서로 겹쳐
+ * 보이는데, 겹치는지 아닌지를 보려고 이 화면을 여는 것이다.
  */
 export function WeekTimetable({
   dates,
-  instances,
+  entries,
   codeByDate,
   onSelect,
   onPick,
 }: {
   dates: readonly string[]
-  instances: readonly EventInstance[]
+  entries: readonly TimetableEntry[]
   /** 그날의 근무 코드. 시프트 근무자는 이걸 같이 봐야 주가 읽힌다. */
   codeByDate: ReadonlyMap<string, { code: string; color: string | null }>
   onSelect: (instance: EventInstance) => void
   /** 빈 곳을 눌렀을 때. 그 날짜와 시각으로 새 일정을 연다. */
   onPick: (date: string, minutes: number) => void
 }) {
-  const [from, to] = timeWindow(instances, dates)
+  const [from, to] = timeWindow(entries, dates)
   const marks = hourMarks(from, to)
   const currentDay = today()
   const nowLine = nowMinutes()
 
-  const hasAllDay = dates.some((date) => allDayOn(instances, date).length > 0)
+  const hasAllDay = dates.some((date) => allDayOn(entries, date).length > 0)
 
   return (
     <div className={styles.root}>
@@ -82,17 +87,32 @@ export function WeekTimetable({
           <span className={styles.axisHead}>종일</span>
           {dates.map((date) => (
             <div key={date} className={styles.allDayCell}>
-              {allDayOn(instances, date).map((instance) => (
-                <button
-                  key={`${instance.eventId}-${instance.occurrenceStart}`}
-                  type="button"
-                  className={styles.allDayChip}
-                  style={instance.color ? { background: instance.color, color: contrastText(instance.color) } : undefined}
-                  onClick={() => onSelect(instance)}
-                >
-                  {instance.title}
-                </button>
-              ))}
+              {allDayOn(entries, date).map((entry) =>
+                entry.kind === 'event' ? (
+                  <button
+                    key={entryKey(entry)}
+                    type="button"
+                    className={styles.allDayChip}
+                    style={
+                      entry.color
+                        ? { background: entry.color, color: contrastText(entry.color) }
+                        : undefined
+                    }
+                    onClick={() => onSelect(entry)}
+                  >
+                    {entry.title}
+                  </button>
+                ) : (
+                  <span
+                    key={entryKey(entry)}
+                    className={`${styles.allDayChip} ${styles.external}`}
+                    style={entry.color ? { borderColor: entry.color } : undefined}
+                    title={`${entry.sourceName}에서 구독`}
+                  >
+                    {label(entry)}
+                  </span>
+                ),
+              )}
             </div>
           ))}
         </div>
@@ -112,7 +132,7 @@ export function WeekTimetable({
         </div>
 
         {dates.map((date) => {
-          const segments = daySegments(instances, date)
+          const segments = daySegments(entries, date)
           return (
             <div
               key={date}
@@ -151,26 +171,48 @@ export function WeekTimetable({
               ) : null}
 
               {segments.map((segment) => {
-                const { instance } = segment
-                const cancelled = instance.change === 'CANCELLED'
+                const entry = segment.instance
+                const clipped = segment.continuesBefore || segment.continuesAfter
+
+                // 구독해 온 일정은 누를 수 없다. 여기서 고칠 방법이 없는 것을
+                // 버튼으로 만들면 눌러 보고 나서야 알게 된다.
+                if (entry.kind === 'external') {
+                  return (
+                    <div
+                      key={entryKey(entry)}
+                      className={`${styles.event} ${styles.external}`}
+                      data-clipped={clipped ? '' : undefined}
+                      style={{
+                        ...placement(segment, from, to),
+                        ...(entry.color ? { borderColor: entry.color } : {}),
+                      }}
+                      title={`${entry.sourceName}에서 구독`}
+                    >
+                      <span className={styles.eventTime}>{instantTime(entry.startsAt)}</span>
+                      <span className={styles.eventTitle}>{label(entry)}</span>
+                    </div>
+                  )
+                }
+
+                const cancelled = entry.change === 'CANCELLED'
                 return (
                   <button
-                    key={`${instance.eventId}-${instance.occurrenceStart}`}
+                    key={entryKey(entry)}
                     type="button"
                     className={styles.event}
                     data-cancelled={cancelled ? '' : undefined}
-                    data-clipped={segment.continuesBefore || segment.continuesAfter ? '' : undefined}
+                    data-clipped={clipped ? '' : undefined}
                     style={{
                       ...placement(segment, from, to),
-                      ...(instance.color && !cancelled
-                        ? { background: instance.color, color: contrastText(instance.color) }
+                      ...(entry.color && !cancelled
+                        ? { background: entry.color, color: contrastText(entry.color) }
                         : {}),
                     }}
-                    onClick={() => onSelect(instance)}
+                    onClick={() => onSelect(entry)}
                   >
-                    <span className={styles.eventTime}>{instantTime(instance.startsAt)}</span>
+                    <span className={styles.eventTime}>{instantTime(entry.startsAt)}</span>
                     <span className={styles.eventTitle}>
-                      {instance.title}
+                      {entry.title}
                       {cancelled ? ' (취소됨)' : ''}
                     </span>
                   </button>
@@ -182,4 +224,14 @@ export function WeekTimetable({
       </div>
     </div>
   )
+}
+
+/**
+ * 구독 일정에 보일 글자.
+ *
+ * BADGE로 둔 구독은 제목 대신 출처만 보인다. 구글 캘린더에 적힌 사적인 제목이
+ * 근무표를 같이 보는 사람 화면에 그대로 뜨는 것을 피하려는 설정이다.
+ */
+function label(entry: { displayMode: string; title: string | null; sourceName: string }): string {
+  return entry.displayMode === 'INLINE' ? (entry.title ?? entry.sourceName) : entry.sourceName
 }

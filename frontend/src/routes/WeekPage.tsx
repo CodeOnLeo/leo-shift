@@ -10,6 +10,7 @@ import {
   saveOccurrence,
   updateEvent,
 } from '@/api/event'
+import { fetchExternalEvents } from '@/api/external'
 import { fetchMyCalendars } from '@/api/myCalendar'
 import type { EventInstance } from '@/api/types'
 import { EventForm, type SubmitPayload } from '@/components/EventForm'
@@ -19,6 +20,7 @@ import { IconButton } from '@/components/ui/IconButton'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { addDays, today, weekOf } from '@/lib/date'
 import { toInstant } from '@/lib/datetime'
+import { toEntries } from '@/lib/eventLayout'
 import { useAsync } from '@/lib/useAsync'
 import shared from '@/styles/shared.module.css'
 import styles from './WeekPage.module.css'
@@ -46,6 +48,13 @@ export function WeekPage() {
 
   const events = useAsync(
     (signal) => fetchEvents({ from, to }, signal),
+    [from, to, reloadKey],
+  )
+
+  // 구독해 온 일정은 같은 격자에 겹쳐 놓는다. 따로 그리면 "이 시간에 뭐가 있나"를
+  // 두 번 확인해야 하는데, 그걸 한 번에 보려고 여는 화면이다.
+  const externals = useAsync(
+    (signal) => fetchExternalEvents({ from, to }, signal),
     [from, to, reloadKey],
   )
 
@@ -122,7 +131,10 @@ export function WeekPage() {
     )
   }
 
-  const instances = events.status === 'ready' ? events.data.instances : []
+  const entries = toEntries(
+    events.status === 'ready' ? events.data.instances : [],
+    externals.status === 'ready' ? externals.data.events : [],
+  )
   const editable = myCalendars.status === 'ready' ? myCalendars.data : []
   // 새 일정은 개인 캘린더로 간다.
   //
@@ -149,7 +161,7 @@ export function WeekPage() {
 
       <WeekTimetable
         dates={week}
-        instances={instances}
+        entries={entries}
         codeByDate={codeByDate}
         onSelect={(instance) => {
           setSelected(instance)

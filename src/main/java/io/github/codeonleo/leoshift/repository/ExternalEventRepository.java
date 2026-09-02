@@ -24,4 +24,8 @@ public interface ExternalEventRepository extends JpaRepository<ExternalEvent, Lo
     @Modifying
     @Query("delete from ExternalEvent e where e.source.id = :sourceId")
     int deleteBySourceId(@Param("sourceId") Long sourceId);
+
+    /** 구독 목록에 "일정 N개"를 보여준다. 동기화가 됐는지 사용자가 알 수 있는 유일한 신호다. */
+    @Query("select e.source.id, count(e) from ExternalEvent e where e.source.id in :sourceIds group by e.source.id")
+    List<Object[]> countBySources(@Param("sourceIds") List<Long> sourceIds);
 }

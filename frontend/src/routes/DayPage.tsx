@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { fetchCalendars } from '@/api/calendar'
 import { fetchEvents } from '@/api/event'
+import { fetchExternalEvents } from '@/api/external'
 import { addLeave, clearDay, deleteLeave, fetchDay, saveDay } from '@/api/day'
 import { ApiError } from '@/api/client'
 import type { DayDetail } from '@/api/types'
@@ -33,6 +34,16 @@ export function DayPage() {
   const events = useAsync(
     (signal) =>
       fetchEvents({ from: toInstant(date, '00:00'), to: toInstant(addDays(date, 1), '00:00') }, signal),
+    [date],
+  )
+
+  // 구독해 온 일정. 편집할 수 없으므로 우리 일정과 한 줄에 섞지 않고 따로 놓는다.
+  const externals = useAsync(
+    (signal) =>
+      fetchExternalEvents(
+        { from: toInstant(date, '00:00'), to: toInstant(addDays(date, 1), '00:00') },
+        signal,
+      ),
     [date],
   )
 
@@ -149,6 +160,39 @@ export function DayPage() {
             주간 시간표에서 일정 관리
           </button>
         </section>
+
+        {externals.status === 'ready' && externals.data.events.length > 0 ? (
+          <section className={styles.section}>
+            <h2 className={styles.title}>구독한 캘린더</h2>
+            <ul className={styles.events}>
+              {externals.data.events.map((event) => (
+                <li
+                  key={`${event.sourceId}-${event.startsAt}-${event.title ?? ''}`}
+                  className={styles.event}
+                >
+                  <span
+                    className={styles.eventBar}
+                    style={event.color ? { background: event.color } : undefined}
+                    aria-hidden="true"
+                  />
+                  <span className={styles.eventText}>
+                    <span className={styles.eventTitle}>
+                      {event.displayMode === 'INLINE' ? (event.title ?? '(제목 없음)') : event.sourceName}
+                    </span>
+                    <span className={styles.eventMeta}>
+                      {event.allDay ? '종일' : formatTimeRange(event.startsAt, event.endsAt)}
+                      {event.displayMode === 'INLINE' ? ` · ${event.sourceName}` : ''}
+                      {event.location ? ` · ${event.location}` : ''}
+                    </span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <p className={shared.hint}>
+              다른 캘린더에서 가져온 일정이라 여기서 고칠 수 없습니다.
+            </p>
+          </section>
+        ) : null}
 
         {!detail.canEdit ? (
           <p className={shared.hint}>보기 권한만 있어 수정할 수 없습니다.</p>

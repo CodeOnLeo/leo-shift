@@ -2,6 +2,7 @@ package io.github.codeonleo.leoshift.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -41,6 +42,9 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(PUBLIC_ASSETS).permitAll()
+                        // 읽기 전용 .ics 구독 주소. 구글 캘린더 서버가 읽어가므로
+                        // 쿠키도 헤더도 붙일 수 없다. 권한은 주소 안의 토큰이 판단한다.
+                        .requestMatchers(HttpMethod.GET, "/feed/*.ics").permitAll()
                         .requestMatchers("/api/**").authenticated()
                         // SPA 라우트(/month, /day/... )는 index.html로 넘어간다
                         .anyRequest().permitAll())

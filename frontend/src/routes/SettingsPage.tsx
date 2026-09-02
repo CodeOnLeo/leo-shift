@@ -23,7 +23,7 @@ export function SettingsPage() {
     <Placeholder
       title="설정"
       description="개인 설정과 캘린더 관리"
-      todo={['외부 캘린더 연동 · 내보내기 주소', '알림']}
+      todo={['알림']}
     >
       <nav className={styles.links}>
         <Link className={`${shared.pressable} ${styles.link}`} to="/settings/pattern">
@@ -41,6 +41,10 @@ export function SettingsPage() {
         <Link className={`${shared.pressable} ${styles.link}`} to="/settings/sharing">
           공유 관리
           <span className={styles.linkHint}>누가 내 뭘 보고 있는지 · 공개 단계</span>
+        </Link>
+        <Link className={`${shared.pressable} ${styles.link}`} to="/settings/external">
+          다른 캘린더 연동
+          <span className={styles.linkHint}>구글 캘린더 구독 · 내보내기 주소</span>
         </Link>
       </nav>
 

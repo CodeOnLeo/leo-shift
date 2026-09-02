@@ -16,11 +16,17 @@ export default defineConfig({
         runtimeCaching: [
           {
             // 달력 데이터는 캐시를 먼저 보여주고 뒤에서 갱신한다.
-            urlPattern: /^\/api\/(calendars|schedule)/,
+            //
+            // 정규식은 경로가 아니라 <b>주소 전체</b>에 맞춰진다. `^\/api\/`로 적으면
+            // https://호스트/api/... 와 어긋나서 규칙이 통째로 죽는다. 그러면
+            // 서비스 워커는 있는데 오프라인에서 아무것도 안 보이는 상태가 된다.
+            urlPattern: /\/api\/(calendars|schedule|events|external\/events)/,
             handler: 'StaleWhileRevalidate',
             options: {
               cacheName: 'schedule-api',
-              expiration: { maxEntries: 120, maxAgeSeconds: 60 * 60 * 24 * 30 },
+              expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 30 },
+              // 오류 응답을 캐시에 넣으면 오프라인에서 그 오류가 계속 보인다
+              cacheableResponse: { statuses: [200] },
             },
           },
         ],
