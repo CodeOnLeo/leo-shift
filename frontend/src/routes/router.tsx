@@ -8,6 +8,7 @@ import { GroupsPage } from '@/routes/GroupsPage'
 import { GroupTimelinePage } from '@/routes/GroupTimelinePage'
 import { GroupMembersPage } from '@/routes/GroupMembersPage'
 import { SharesPage } from '@/routes/SharesPage'
+import { CalendarsPage } from '@/routes/CalendarsPage'
 import { SettingsPage } from '@/routes/SettingsPage'
 import { PatternSetupPage } from '@/routes/PatternSetupPage'
 import { ScheduleTypesPage } from '@/routes/ScheduleTypesPage'
@@ -42,6 +43,7 @@ export const router = createBrowserRouter([
       { path: 'settings/pattern', element: <PatternSetupPage /> },
       { path: 'settings/codes', element: <ScheduleTypesPage /> },
       { path: 'settings/sharing', element: <SharesPage /> },
+      { path: 'settings/calendars', element: <CalendarsPage /> },
       { path: 'settings/:section', element: <SettingsPage /> },
     ],
   },

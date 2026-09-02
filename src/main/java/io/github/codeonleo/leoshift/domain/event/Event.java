@@ -93,4 +93,12 @@ public class Event {
     public boolean isRecurring() {
         return rrule != null && !rrule.isBlank();
     }
+
+    /** 전개 엔진이 쓰는 값으로. 엔진은 JPA를 모른다. */
+    public io.github.codeonleo.leoshift.event.EventDefinition toDomain() {
+        return new io.github.codeonleo.leoshift.event.EventDefinition(
+                id, calendar.getId(), title, description, location,
+                startsAt, endsAt, allDay,
+                java.time.ZoneId.of(timeZone), rrule, recurrenceEnd);
+    }
 }

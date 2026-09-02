@@ -33,3 +33,34 @@
 
 .leaveButtons { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 .leaveButton { padding: 0 var(--space-4); font-size: 14px; }
+
+/* 그날의 일정. 편집은 주간 시간표가 맡고 여기는 보여주기만 한다. */
+.events { margin: 0; padding: 0; list-style: none; display: grid; gap: var(--space-2); }
+
+.event {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-raised);
+}
+
+.event[data-cancelled] { opacity: 0.55; }
+.event[data-cancelled] .eventTitle { text-decoration: line-through; }
+
+.eventBar {
+  flex: none;
+  width: 4px;
+  align-self: stretch;
+  min-height: 28px;
+  border-radius: 2px;
+  background: var(--border-strong);
+}
+
+.eventText { display: grid; gap: 2px; min-width: 0; }
+.eventTitle { font-size: 15px; }
+.eventMeta { font-size: 12px; color: var(--text-muted); }
+
+.eventLink { padding: 0 var(--space-3); font-size: 14px; }

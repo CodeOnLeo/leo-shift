@@ -4,3 +4,24 @@
   border-radius: 999px;
   background: var(--text-faint);
 }
+
+/*
+ * 칸 안의 일정. 왼쪽 테두리 색으로 캘린더를 구분하고 제목은 잘린다.
+ * 달력에서는 "무엇이 있는지"만 알면 되고, 자세한 건 주·일 화면이 맡는다.
+ */
+.event {
+  max-width: 100%;
+  padding: 0 2px;
+  border-left: 2px solid var(--border-strong);
+  border-radius: 2px;
+  background: var(--bg-subtle);
+  font-size: 9px;
+  line-height: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.event[data-cancelled] { text-decoration: line-through; color: var(--text-faint); }
+
+.more { font-size: 9px; line-height: 11px; color: var(--text-faint); }

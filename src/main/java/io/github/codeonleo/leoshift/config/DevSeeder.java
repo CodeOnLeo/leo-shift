@@ -2,6 +2,7 @@ package io.github.codeonleo.leoshift.config;
 
 import io.github.codeonleo.leoshift.domain.calendar.Calendar;
 import io.github.codeonleo.leoshift.domain.calendar.CalendarShare;
+import io.github.codeonleo.leoshift.domain.event.Event;
 import io.github.codeonleo.leoshift.domain.group.Group;
 import io.github.codeonleo.leoshift.domain.group.GroupMember;
 import io.github.codeonleo.leoshift.domain.user.User;
@@ -10,6 +11,7 @@ import io.github.codeonleo.leoshift.domain.work.ScheduleType;
 import io.github.codeonleo.leoshift.domain.work.WorkRule;
 import io.github.codeonleo.leoshift.repository.CalendarRepository;
 import io.github.codeonleo.leoshift.repository.CalendarShareRepository;
+import io.github.codeonleo.leoshift.repository.EventRepository;
 import io.github.codeonleo.leoshift.repository.GroupMemberRepository;
 import io.github.codeonleo.leoshift.repository.GroupRepository;
 import io.github.codeonleo.leoshift.repository.LeaveRepository;
@@ -20,6 +22,11 @@ import io.github.codeonleo.leoshift.schedule.preset.PatternPreset;
 import io.github.codeonleo.leoshift.schedule.preset.PatternPresets;
 import io.github.codeonleo.leoshift.schedule.preset.ScheduleTypeSpec;
 import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.temporal.TemporalAdjusters;
+import java.time.DayOfWeek;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -75,6 +82,7 @@ class DevSeeder implements CommandLineRunner {
     private final GroupRepository groupRepository;
     private final GroupMemberRepository memberRepository;
     private final CalendarShareRepository shareRepository;
+    private final EventRepository eventRepository;
 
     DevSeeder(UserRepository userRepository,
               CalendarRepository calendarRepository,
@@ -83,7 +91,8 @@ class DevSeeder implements CommandLineRunner {
               LeaveRepository leaveRepository,
               GroupRepository groupRepository,
               GroupMemberRepository memberRepository,
-              CalendarShareRepository shareRepository) {
+              CalendarShareRepository shareRepository,
+              EventRepository eventRepository) {
         this.userRepository = userRepository;
         this.calendarRepository = calendarRepository;
         this.scheduleTypeRepository = scheduleTypeRepository;
@@ -92,6 +101,7 @@ class DevSeeder implements CommandLineRunner {
         this.groupRepository = groupRepository;
         this.memberRepository = memberRepository;
         this.shareRepository = shareRepository;
+        this.eventRepository = eventRepository;
     }
 
     @Override
@@ -102,6 +112,8 @@ class DevSeeder implements CommandLineRunner {
 
         User dev = ensureUser(LocalDevConfig.DEV_EMAIL, "개발자", "dev", "#2563EB");
         Calendar devCalendar = ensureWorkCalendar(dev, presets, SHIFT_PRESET, "2조", firstOfMonth);
+
+        ensurePersonalCalendarWithEvents(dev);
 
         Group group = ensureGroup(dev);
         ensureMembership(group, dev, firstOfMonth.minusMonths(6), null, GroupMember.Role.OWNER);
@@ -189,6 +201,64 @@ class DevSeeder implements CommandLineRunner {
                 .build());
 
         return calendar;
+    }
+
+    /**
+     * 개인 일정 캘린더와 일정 몇 개.
+     *
+     * <p>주간 시간표는 <b>빈 화면으로는 확인할 수 없다.</b> 정각이 아닌 시각, 같은 날
+     * 여러 개, 서로 겹치는 두 개, 휴강한 회차가 전부 있어야 배치가 맞는지 보인다.
+     * 설계 문서 4.5의 과외 교사 사례를 그대로 심는다.
+     */
+    private void ensurePersonalCalendarWithEvents(User owner) {
+        boolean exists = calendarRepository.findOwnedBy(owner.getId()).stream()
+                .anyMatch(calendar -> calendar.getKind() == Calendar.Kind.GENERAL);
+        if (exists) {
+            return;
+        }
+
+        Calendar personal = calendarRepository.save(Calendar.builder()
+                .ownerUser(owner)
+                .name("개인 일정")
+                .kind(Calendar.Kind.GENERAL)
+                .color("#7C3AED")
+                .build());
+
+        // 이번 주 월요일 기준. 어느 날 띄워도 주간 화면에 내용이 있다.
+        LocalDate monday = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+
+        // 정각이 아닌 반복. 격자에 맞추지 않는다는 걸 이 하나가 증명한다.
+        saveEvent(personal, owner, "김과외 수업", "자택",
+                monday.plusDays(1), LocalTime.of(20, 30), LocalTime.of(21, 30),
+                "FREQ=WEEKLY;BYDAY=TU,TH");
+
+        // 같은 화요일에 겹치는 일정. 나란히 놓이는지 확인용이다.
+        saveEvent(personal, owner, "박과외 수업", null,
+                monday.plusDays(1), LocalTime.of(21, 0), LocalTime.of(22, 0),
+                "FREQ=WEEKLY;BYDAY=TU");
+
+        saveEvent(personal, owner, "팀 회의", "회의실 A",
+                monday, LocalTime.of(10, 0), LocalTime.of(11, 0),
+                "FREQ=WEEKLY;BYDAY=MO");
+
+        // 단발. 반복과 같은 경로로 그려지는지 확인용이다.
+        saveEvent(personal, owner, "병원", null,
+                monday.plusDays(2), LocalTime.of(14, 0), LocalTime.of(15, 0), null);
+    }
+
+    private void saveEvent(Calendar calendar, User owner, String title, String location,
+                           LocalDate date, LocalTime from, LocalTime to, String rrule) {
+        ZoneId zone = ZoneId.of(calendar.getTimeZone());
+        eventRepository.save(Event.builder()
+                .calendar(calendar)
+                .title(title)
+                .location(location)
+                .startsAt(ZonedDateTime.of(date, from, zone).toInstant())
+                .endsAt(ZonedDateTime.of(date, to, zone).toInstant())
+                .timeZone(zone.getId())
+                .rrule(rrule)
+                .createdBy(owner)
+                .build());
     }
 
     private Group ensureGroup(User owner) {

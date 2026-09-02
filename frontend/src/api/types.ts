@@ -47,7 +47,50 @@ export interface CalendarSummary {
   visibility: 'FULL' | 'BUSY_ONLY'
 }
 
-export interface CalendarEvent {
+/** 내가 소유한 캘린더. 공유받은 것은 여기 나오지 않는다. */
+export interface MyCalendar {
+  id: number
+  name: string
+  description: string | null
+  color: string | null
+  kind: 'WORK' | 'GENERAL'
+  isDefault: boolean
+  /** 마지막 캘린더는 지울 수 없다. */
+  removable: boolean
+}
+
+export type RecurrenceFreq = 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY'
+
+/** 이 회차에 손댄 흔적. 취소된 회차도 지우지 않고 내려온다. */
+export type EventChange = 'NONE' | 'CANCELLED' | 'MOVED' | 'MODIFIED'
+
+/** 달력에 실제로 그려지는 한 칸. 단발도 회차가 하나인 반복으로 취급한다. */
+export interface EventInstance {
+  eventId: number
+  calendarId: number
+  calendarName: string
+  color: string | null
+  /** 이 회차의 원래 시각. 옮긴 회차를 다시 가리키는 열쇠다. */
+  occurrenceStart: Iso8601DateTime
+  startsAt: Iso8601DateTime
+  endsAt: Iso8601DateTime
+  allDay: boolean
+  recurring: boolean
+  title: string
+  description: string | null
+  location: string | null
+  change: EventChange
+  canEdit: boolean
+}
+
+export interface EventRange {
+  from: Iso8601DateTime
+  to: Iso8601DateTime
+  instances: EventInstance[]
+}
+
+/** 편집 화면이 쓰는 원본. 회차가 아니라 시리즈 전체다. */
+export interface EventDetail {
   id: number
   calendarId: number
   title: string
@@ -56,9 +99,11 @@ export interface CalendarEvent {
   startsAt: Iso8601DateTime
   endsAt: Iso8601DateTime
   allDay: boolean
-  /** 반복 일정의 한 회차라면 원래 시각. 개별 회차 수정에 쓴다. */
-  occurrenceOf: Iso8601DateTime | null
-  cancelled: boolean
+  timeZone: string
+  /** FREQ=WEEKLY;INTERVAL=2;BYDAY=TU,TH 형태. 단발이면 null. */
+  rrule: string | null
+  recurrenceEnd: Iso8601DateTime | null
+  version: number
 }
 
 export interface ScheduleRange {

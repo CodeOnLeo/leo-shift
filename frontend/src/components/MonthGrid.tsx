@@ -1,4 +1,4 @@
-import type { ResolvedDay, ScheduleType } from '@/api/types'
+import type { EventInstance, ResolvedDay, ScheduleType } from '@/api/types'
 import { CalendarGrid } from '@/components/ui/CalendarGrid'
 import { ScheduleCodeBadge } from '@/components/ui/ScheduleCodeBadge'
 import { formatKoreanDate } from '@/lib/date'
@@ -10,12 +10,15 @@ export function MonthGrid({
   month,
   byDate,
   typesByCode,
+  eventsByDate,
   onSelect,
 }: {
   dates: readonly string[]
   month: number
   byDate: ReadonlyMap<string, ResolvedDay>
   typesByCode: ReadonlyMap<string, ScheduleType>
+  /** 그날 시작하는 일정. 칸이 좁아 앞의 두 개만 보이고 나머지는 개수로 접힌다. */
+  eventsByDate: ReadonlyMap<string, EventInstance[]>
   onSelect: (date: string) => void
 }) {
   const typeOf = (date: string) => {
@@ -37,11 +40,25 @@ export function MonthGrid({
       renderDay={(date) => {
         const day = byDate.get(date)
         const type = typeOf(date)
+        const events = eventsByDate.get(date) ?? []
         return (
           <>
             {/* 색만으로 구분하지 않는다. 코드 글자가 항상 함께 보인다. */}
             {type ? <ScheduleCodeBadge code={type.code} color={type.color} label={type.name} /> : null}
             {day?.note ? <span className={styles.noteDot} aria-hidden="true" /> : null}
+            {events.slice(0, 2).map((instance) => (
+              <span
+                key={`${instance.eventId}-${instance.occurrenceStart}`}
+                className={styles.event}
+                data-cancelled={instance.change === 'CANCELLED' ? '' : undefined}
+                style={instance.color ? { borderColor: instance.color } : undefined}
+              >
+                {instance.title}
+              </span>
+            ))}
+            {events.length > 2 ? (
+              <span className={styles.more}>+{events.length - 2}</span>
+            ) : null}
           </>
         )
       }}

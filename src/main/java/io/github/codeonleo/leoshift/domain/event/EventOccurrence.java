@@ -67,4 +67,11 @@ public class EventOccurrence {
     public boolean isCancelled() {
         return status == Status.CANCELLED;
     }
+
+    public io.github.codeonleo.leoshift.event.OccurrenceException toDomain() {
+        return new io.github.codeonleo.leoshift.event.OccurrenceException(
+                event.getId(), originalStart,
+                io.github.codeonleo.leoshift.event.OccurrenceException.Kind.valueOf(status.name()),
+                startsAt, endsAt, title, note);
+    }
 }

@@ -1,0 +1,178 @@
+/*
+ * 시간표. 세로 위치가 곧 시각이다.
+ * 격자 칸에 넣지 않고 절대 배치하는 이유는 20:30 같은 시각을 그대로 보여주기 위해서다.
+ */
+.root {
+  --axis-width: 42px;
+  --body-height: 900px;
+  display: grid;
+  gap: 0;
+}
+
+.headers,
+.allDayRow,
+.body {
+  display: grid;
+  grid-template-columns: var(--axis-width) repeat(7, 1fr);
+}
+
+.headers {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+
+.axisHead {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: var(--text-faint);
+}
+
+.dayHead {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: var(--space-2) 0;
+}
+
+.weekday { font-size: 10px; color: var(--text-muted); }
+.dayNumber { font-size: 14px; font-weight: 600; }
+
+.dayHead[data-weekend='sat'] .weekday { color: var(--saturday); }
+.dayHead[data-weekend='sun'] .weekday { color: var(--weekend); }
+
+.dayHead[data-today] .dayNumber {
+  display: grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
+/* 근무 코드. 교대근무자는 이걸 같이 봐야 한 주가 읽힌다. */
+.workCode {
+  max-width: 100%;
+  padding: 0 4px;
+  border-radius: 4px;
+  background: var(--border-strong);
+  font-size: 9px;
+  line-height: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.allDayRow { border-bottom: 1px solid var(--border); }
+
+.allDayCell {
+  display: grid;
+  gap: 1px;
+  padding: 2px 1px;
+  border-left: 1px solid var(--border);
+  min-height: 20px;
+}
+
+.allDayChip {
+  border: 0;
+  border-radius: 4px;
+  padding: 0 3px;
+  background: var(--border-strong);
+  color: var(--text);
+  font: inherit;
+  font-size: 10px;
+  line-height: 16px;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.body { height: var(--body-height); }
+
+.axis { position: relative; }
+
+.mark {
+  position: absolute;
+  right: 4px;
+  transform: translateY(-50%);
+  font-size: 10px;
+  color: var(--text-faint);
+}
+
+.column {
+  position: relative;
+  border-left: 1px solid var(--border);
+}
+
+.column[data-today] { background: color-mix(in srgb, var(--accent) 5%, transparent); }
+
+.gridLine {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px solid var(--border);
+}
+
+/* 빈 곳 전체가 "새 일정" 버튼이다. 일정 조각들이 이 위에 얹힌다. */
+.canvas {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: none;
+  padding: 0;
+  cursor: cell;
+}
+
+.now {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 1;
+  border-top: 2px solid var(--danger);
+}
+
+.event {
+  position: absolute;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+  padding: 1px 3px;
+  border: 1px solid var(--bg);
+  border-radius: 4px;
+  background: var(--accent);
+  color: var(--accent-text);
+  font: inherit;
+  font-size: 10px;
+  line-height: 1.15;
+  text-align: left;
+  cursor: pointer;
+}
+
+/* 취소된 회차는 지우지 않고 남긴다. "이번 주 수업 있었나?"에 답할 수 있어야 한다. */
+.event[data-cancelled] {
+  background: var(--bg-raised);
+  color: var(--text-muted);
+  border: 1px dashed var(--border-strong);
+  text-decoration: line-through;
+}
+
+/* 앞뒤 날로 이어지는 일정. 잘린 쪽 모서리를 각지게 둔다. */
+.event[data-clipped] { border-radius: 0 0 4px 4px; }
+
+.eventTime { font-weight: 600; }
+
+.eventTitle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

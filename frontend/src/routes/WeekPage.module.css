@@ -1,0 +1,22 @@
+.page { padding-bottom: var(--space-8); }
+
+.panel {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-top: 1px solid var(--border);
+}
+
+/* 열리면 시간표 위로 올라와 아래 탭바 바로 위에 선다. 어디를 눌렀든 손이 닿는다. */
+.panel[data-open] {
+  position: fixed;
+  inset-inline: 0;
+  bottom: calc(var(--nav-height) + env(safe-area-inset-bottom));
+  z-index: 3;
+  max-height: 62vh;
+  overflow-y: auto;
+  background: var(--bg);
+  box-shadow: 0 -8px 24px rgb(0 0 0 / 0.12);
+}
+
+.add { padding: 0 var(--space-3); font-size: 15px; }

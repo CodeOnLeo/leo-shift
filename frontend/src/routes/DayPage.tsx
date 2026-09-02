@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { fetchCalendars } from '@/api/calendar'
+import { fetchEvents } from '@/api/event'
 import { addLeave, clearDay, deleteLeave, fetchDay, saveDay } from '@/api/day'
 import { ApiError } from '@/api/client'
 import type { DayDetail } from '@/api/types'
@@ -9,6 +10,8 @@ import { DaySourceCard } from '@/components/DaySourceCard'
 import { IconButton } from '@/components/ui/IconButton'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { addDays, formatKoreanDate, today } from '@/lib/date'
+import { formatTimeRange } from '@/lib/datetime'
+import { toInstant } from '@/lib/datetime'
 import { useAsync } from '@/lib/useAsync'
 import shared from '@/styles/shared.module.css'
 import styles from './DayPage.module.css'
@@ -18,10 +21,20 @@ export function DayPage() {
   const navigate = useNavigate()
 
   const calendars = useAsync((signal) => fetchCalendars(signal), [])
+
+  // 이 화면이 다루는 것은 근무다. isDefault로 고르면 개인 일정 캘린더를 기본으로
+  // 잡아둔 사람에게 엉뚱한 캘린더가 잡힌다.
   const calendarId =
     calendars.status === 'ready'
-      ? (calendars.data.find((calendar) => calendar.isDefault) ?? calendars.data[0])?.id
+      ? calendars.data.find((calendar) => calendar.mine && calendar.kind === 'WORK')?.id
       : undefined
+
+  // 일정은 캘린더를 가리지 않고 모은다. 그날 무엇이 있는지가 이 화면의 절반이다.
+  const events = useAsync(
+    (signal) =>
+      fetchEvents({ from: toInstant(date, '00:00'), to: toInstant(addDays(date, 1), '00:00') }, signal),
+    [date],
+  )
 
   const loaded = useAsync(
     async (signal) => (calendarId === undefined ? null : fetchDay(calendarId, date, signal)),
@@ -95,6 +108,47 @@ export function DayPage() {
 
       <div className={styles.body}>
         <DaySourceCard detail={detail} />
+
+        <section className={styles.section}>
+          <h2 className={styles.title}>일정</h2>
+          {events.status === 'ready' && events.data.instances.length > 0 ? (
+            <ul className={styles.events}>
+              {events.data.instances.map((instance) => (
+                <li
+                  key={`${instance.eventId}-${instance.occurrenceStart}`}
+                  className={styles.event}
+                  data-cancelled={instance.change === 'CANCELLED' ? '' : undefined}
+                >
+                  <span
+                    className={styles.eventBar}
+                    style={instance.color ? { background: instance.color } : undefined}
+                    aria-hidden="true"
+                  />
+                  <span className={styles.eventText}>
+                    <span className={styles.eventTitle}>
+                      {instance.title}
+                      {instance.change === 'CANCELLED' ? ' (취소됨)' : ''}
+                    </span>
+                    <span className={styles.eventMeta}>
+                      {instance.allDay ? '종일' : formatTimeRange(instance.startsAt, instance.endsAt)}
+                      {instance.location ? ` · ${instance.location}` : ''}
+                    </span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className={shared.hint}>이 날은 등록된 일정이 없습니다.</p>
+          )}
+          {/* 편집은 주간 시간표에서 한다. 같은 편집기를 두 곳에 두면 갈라진다. */}
+          <button
+            type="button"
+            className={`${shared.pressable} ${styles.eventLink}`}
+            onClick={() => navigate(`/week/${date}`)}
+          >
+            주간 시간표에서 일정 관리
+          </button>
+        </section>
 
         {!detail.canEdit ? (
           <p className={shared.hint}>보기 권한만 있어 수정할 수 없습니다.</p>
